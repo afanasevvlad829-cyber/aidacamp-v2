@@ -1,6 +1,7 @@
 #!/bin/bash
-# Server-side check: задеплоенный код должен соответствовать origin/main.
-# Раз в N минут (cron) сравнивает SHA задеплоенного с GitHub origin/main.
+# Server-side check: задеплоенный код должен соответствовать origin/dev на Forgejo.
+# Раз в N минут (cron) сравнивает SHA задеплоенного с git.aidaplus.ru, ветка dev
+# (единственная боевая с 09.09.2026; GitHub с 08.09.2026 не используется).
 # При расхождении шлёт Telegram-алерт.
 #
 # Установка на сервере:
@@ -8,14 +9,16 @@
 #   crontab: */15 * * * * /opt/etl/scripts/server-deploy-drift-check.sh
 #
 # Требования:
-#   /opt/etl/.env с TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+#   /opt/etl/.env с TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, FORGEJO_TOKEN
+#   (токен Forgejo с правом read:repository; без него скрипт молча выходит)
 #   /var/www/aidacamp/current/.deployed-sha — записывается deploy.sh
 
 set -euo pipefail
 
 ENV_FILE="/opt/etl/.env"
 DEPLOYED_SHA_FILE="/var/www/aidacamp/current/.deployed-sha"
-GH_REPO="afanasevvlad829-cyber/aidacamp-v2"
+FJ_API="https://git.aidaplus.ru/api/v1/repos/vlad/aidacamp-v2"
+FJ_BRANCH="dev"
 STATE_FILE="/var/lib/aidacamp-deploy-drift.state"
 
 [ -f "$ENV_FILE" ] || { echo "no env"; exit 1; }
@@ -24,11 +27,13 @@ source "$ENV_FILE"
 
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
+FORGEJO_TOKEN="${FORGEJO_TOKEN:-}"
 [ -z "$TELEGRAM_BOT_TOKEN" ] && exit 0
+[ -z "$FORGEJO_TOKEN" ] && exit 0   # нет токена — сверять не с чем, не алертим
+fj() { curl -fsSL -H "Authorization: token $FORGEJO_TOKEN" "$FJ_API/$1" 2>/dev/null; }
 
-# 1. SHA на GitHub
-GH_SHA=$(curl -fsSL "https://api.github.com/repos/$GH_REPO/git/ref/heads/main" 2>/dev/null \
-  | grep -oE '"sha":\s*"[a-f0-9]+"' | head -1 | grep -oE '[a-f0-9]{40}' || echo "")
+# 1. SHA ветки dev на Forgejo
+GH_SHA=$(fj "branches/$FJ_BRANCH" | python3 -c 'import sys,json; print(json.load(sys.stdin)["commit"]["id"])' 2>/dev/null || echo "")
 
 # 2. SHA на сервере
 DEPLOYED_SHA=""
@@ -54,23 +59,21 @@ fi
 echo "drift:$DEPLOYED_SHA:$GH_SHA" > "$STATE_FILE"
 
 # Узнаём ahead/behind
-AHEAD=$(curl -fsSL "https://api.github.com/repos/$GH_REPO/compare/$DEPLOYED_SHA...$GH_SHA" 2>/dev/null \
-  | grep -oE '"ahead_by":\s*[0-9]+' | grep -oE '[0-9]+$' || echo "?")
-BEHIND=$(curl -fsSL "https://api.github.com/repos/$GH_REPO/compare/$GH_SHA...$DEPLOYED_SHA" 2>/dev/null \
-  | grep -oE '"ahead_by":\s*[0-9]+' | grep -oE '[0-9]+$' || echo "?")
+AHEAD=$(fj "compare/$DEPLOYED_SHA...$GH_SHA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["total_commits"])' 2>/dev/null || echo "?")
+BEHIND=$(fj "compare/$GH_SHA...$DEPLOYED_SHA" | python3 -c 'import sys,json; print(json.load(sys.stdin)["total_commits"])' 2>/dev/null || echo "?")
 
 MSG="🚨 <b>DEPLOY DRIFT</b>
 
-Прод (aidacamp.ru) <b>не</b> соответствует <code>main</code>:
+Прод (aidacamp.ru) <b>не</b> соответствует <code>dev</code> на Forgejo:
 
-GitHub main: <code>${GH_SHA:0:8}</code>
+Forgejo dev: <code>${GH_SHA:0:8}</code>
 Прод-сервер: <code>${DEPLOYED_SHA:0:8}</code>
 
-GitHub впереди на <b>$AHEAD</b> коммитов
+Forgejo впереди на <b>$AHEAD</b> коммитов
 Сервер  впереди на <b>$BEHIND</b> коммитов
 
 → Возможно агент задеплоил минуя git, или забыли git push, или ручная правка на сервере.
-→ Проверить: <a href=\"https://github.com/$GH_REPO/compare/$DEPLOYED_SHA...$GH_SHA\">diff</a>"
+→ Проверить: <a href=\"https://git.aidaplus.ru/vlad/aidacamp-v2/compare/$DEPLOYED_SHA...$GH_SHA\">diff</a>"
 
 curl -sS -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
   -d "chat_id=$TELEGRAM_CHAT_ID" \

@@ -24,7 +24,7 @@ export interface ClientData {
 }
 
 /** Собираем максимум атрибуции о браузере клиента — реферер, UTM, экран, таймзона, куки Метрики/VK/Andata. */
-export function collectClientData(): ClientData {
+function collectClientData(): ClientData {
   const data: ClientData = {};
   try {
     data.referrer = document.referrer || '';
@@ -111,7 +111,7 @@ export interface BindContext {
 }
 
 /** Отправляет ym_client_id + собранную атрибуцию на /api/bind-lead. Менеджерские визиты логируются, но не дедупятся в sessionStorage. */
-export function bindCid(cid: string, ctx: BindContext): void {
+function bindCid(cid: string, ctx: BindContext): void {
   if (!cid) return;
   const extra = collectClientData();
   // Гард с отметкой «был ли ga_client_id»: GA грузится асинхронно, на 1,5-й секунде

@@ -49,7 +49,7 @@ export function makeFakeClient(opts: { handlers?: Handler[]; defaultResult?: Que
 }
 
 /** Фабрика для vi.mock('pg', () => fakePgModuleFactory(client)) — покрывает Client и Pool.connect(). */
-export function fakePgModuleFactory(client: FakeClient) {
+function fakePgModuleFactory(client: FakeClient) {
   return {
     default: {
       Client: vi.fn(() => client),

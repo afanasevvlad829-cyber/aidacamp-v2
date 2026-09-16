@@ -1,12 +1,16 @@
 ---
+import { Icon } from 'astro-icon/components';
+import { Font } from 'astro:assets';
 import '../styles/global.css';
 import { ensureTrailingSlash } from '../utils/canonical';
-import '../styles/icons.css';
+import '../styles/icons-js.css'; // только иконки, которые публичный JS рождает строками; остальное — <Icon> (astro-icon)
 import '../styles/mobile-ux-p0.css';
 import '../styles/microinteractions.css';
 import '../styles/print.css';
 import '../styles/themes/apple.css';
 import AgeBar from '../components/AgeBar.astro';
+// Глобальный выключатель нижней возрастной плашки (владелец, 07.09.2026).
+const AGE_BAR_ENABLED = false;
 import DynamicPrices from '../components/DynamicPrices.astro';
 import ReferralModal from '../components/hero/ReferralModal.astro';
 import ShiftModal from '../components/ShiftModal.astro';
@@ -15,6 +19,7 @@ import DotPatternBackground from '../components/DotPatternBackground.astro';
 import SiteSearch from '../components/SiteSearch.astro';
 import NudgeBanner from '../components/NudgeBanner.astro';
 import GoogleAnalytics from '../components/GoogleAnalytics.astro';
+import OrganizationSchema from '../components/OrganizationSchema.astro';
 
 interface Props {
   title: string;
@@ -30,9 +35,8 @@ interface Props {
   heroPreloadMobileSrcset?: string;
   /** Responsive hero preload: десктоп ≥769px (рендерится ДО аналитики) */
   heroPreloadDesktop?: string;
-  /** Загружать tag.js Метрики немедленно (без задержки 8 сек / интеракции).
-   *  Используй для страниц с коротким визитом — /r/, /akciya/ и т.п. */
-  eagerMetrika?: boolean;
+  /** Allow image-led pages to prioritize their LCP image over font preloads. */
+  preloadFonts?: boolean;
   /** Запрет индексации страницы поисковиками (robots: noindex, follow) */
   noindex?: boolean;
   /** Переопределяет self-canonical. Если не задан — строится из Astro.url.pathname. */
@@ -54,7 +58,7 @@ const {
   heroPreloadMobile,
   heroPreloadMobileSrcset,
   heroPreloadDesktop,
-  eagerMetrika = false,
+  preloadFonts = true,
   noindex = false,
   canonical: canonicalProp,
   hideAgeBar = false,
@@ -64,7 +68,11 @@ const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp
 // canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
 const canonicalUrl = ensureTrailingSlash(canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href);
 // Автодетект: /stati/ → article, остальные → website
-const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/') ? 'article' : 'website');
+const isArticlePage = Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/');
+const resolvedOgType = ogType ?? (isArticlePage ? 'article' : 'website');
+// Markdown-зеркало статьи (см. src/pages/stati/[slug].md.ts) — подсказка AI-агентам,
+// где взять чистый текст страницы без вёрстки.
+const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : null;
 ---
 
 <!doctype html>
@@ -93,10 +101,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="preload" as="font" href="/fonts/inter-cyrillic.woff2" type="font/woff2" crossorigin />
-    <link rel="preload" as="font" href="/fonts/inter-latin.woff2" type="font/woff2" crossorigin />
+    {/* Inter: @font-face + preload обоих сабсетов + fallback-метрики — Fonts API */}
+    <Font cssVariable="--font-inter" preload={preloadFonts} />
     <!-- Bootstrap Icons: subset of 30 icons inlined locally (no CDN, no font download) -->
-    <link rel="preconnect" href="https://mc.yandex.ru" crossorigin />
+    {/* Метрика грузится с задержкой после отрисовки — preconnect не успевает
+        пригодиться и просто тратит ранний слот браузера (флаг PageSpeed
+        "Неиспользуемое предварительное подключение"). dns-prefetch дешевле
+        и оставлен — это просто резолв DNS, а не полный TCP+TLS. */}
     <link rel="dns-prefetch" href="https://mc.yandex.ru" />
     <script is:inline>
       // === Засечь начало сессии ДО любых других скриптов — для корректного session_ms лида ===
@@ -141,9 +152,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
         window._clarityDisabled = true;
       }
     </script>
-    {/* eagerMetrika: устанавливает глобальный флаг ДО инлайн-скрипта Метрики */}
-    {eagerMetrika && <script is:inline>window.__ymEager=true;</script>}
-    <!-- Yandex.Metrika — lazy load: ym() stub queues calls until tag.js is fetched -->
+    <!-- Yandex.Metrika -->
     <script type="text/javascript" is:inline>
       (function(m,i){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
@@ -151,27 +160,13 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       })(window,'ym');
       if (!window.ym_disable96499295 && !window._ymInited) {
         window._ymInited = true;
-        ym(96499295, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+        ym(96499295, 'init', {ssr:true, webvisor:false, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
       }
-      (function(){
-        if(window.ym_disable96499295) return;
-        var loaded=false;
-        function loadYM(){
-          if(loaded) return; loaded=true;
-          var s=document.createElement('script'); s.async=1;
-          s.src='https://mc.yandex.ru/metrika/tag.js?id=96499295';
-          document.head.appendChild(s);
-        }
-        if(window.__ymEager){
-          /* eagerMetrika: load immediately */
-          loadYM();
-        } else {
-          var t=setTimeout(loadYM,8000);
-          ['scroll','click','touchstart','keydown'].forEach(function(e){
-            document.addEventListener(e,function(){clearTimeout(t);loadYM();},{once:true,passive:true});
-          });
-        }
-      })();
+      if (!window.ym_disable96499295) {
+        var s=document.createElement('script'); s.async=1;
+        s.src='https://mc.yandex.ru/metrika/tag.js?id=96499295';
+        document.head.appendChild(s);
+      }
     </script>
     {/* noscript-фолбэк Метрики вынесен в <body> (Footer.astro) — в <head> он невалиден (div внутри noscript) и ломал W3C-валидацию на всех страницах */}
     <!-- /Yandex.Metrika counter -->
@@ -245,35 +240,16 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content={resolvedOgImage} />
     {!noindex && <link rel="canonical" href={canonicalUrl} />}
+    {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
+    {/* Organization JSON-LD — на всех страницах, кроме главной: там уже есть более
+        полный Organization внутри SchemaOrg.astro (src/pages/index.astro), совпадающий @id. */}
+    {Astro.url.pathname !== '/' && <OrganizationSchema />}
     <slot name="head" />
     <!-- page-globals + dynamic-prices-client: глобальные обработчики + динамические цены -->
     <script>
       import '../scripts/page-globals';
       import '../scripts/dynamic-prices-client';
     </script>
-    <!-- Novofon — отложенная загрузка (idle/после load/первое взаимодействие), чтобы не конкурировать с LCP -->
-    <script>
-      (function () {
-        var loaded = false;
-        function loadNovofon() {
-          if (loaded) return; loaded = true;
-          var s = document.createElement('script');
-          s.type = 'text/javascript'; s.async = true;
-          s.src = 'https://widget.novofon.ru/novofon.js?k=krSWuOAGuEr40pPzs0o66QKdaef8K0BY';
-          document.body.appendChild(s);
-        }
-        var idleWindow = window as Window & { requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number };
-        if (typeof idleWindow.requestIdleCallback === 'function') {
-          idleWindow.requestIdleCallback(loadNovofon, { timeout: 5000 });
-        } else {
-          window.addEventListener('load', function () { setTimeout(loadNovofon, 2500); });
-        }
-        ['scroll', 'pointerdown', 'keydown'].forEach(function (e) {
-          window.addEventListener(e, loadNovofon, { once: true, passive: true });
-        });
-      })();
-    </script>
-    <!-- /Novofon -->
   </head>
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-white focus:font-semibold focus:shadow-lg">Перейти к содержимому</a>
@@ -282,7 +258,7 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
     <!-- Cookie Banner -->
     <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:bottom-[90px] md:w-[340px]" style="display:none">
       <div class="flex items-center gap-3 rounded-[14px] bg-slate-900/90 px-4 py-3 text-base text-white/80 backdrop-blur-sm shadow-[0_8px_24px_rgba(15,23,42,0.18)]">
-        <i class="bi bi-info-circle shrink-0 text-[16px] text-white/60" aria-hidden="true"></i>
+        <Icon name="bi:info-circle" class="bi bi-info-circle shrink-0 text-[16px] text-white/60" aria-hidden="true" />
         <p class="flex-1 leading-[1.4]">Сайт использует cookies и Яндекс.Метрику для аналитики. <a href="/privacy-policy/" class="underline opacity-70 hover:opacity-100">Подробнее</a></p>
         <button id="cookieAccept" class="shrink-0 rounded-[8px] bg-white/15 px-3 py-1.5 text-[12px] font-medium text-white transition hover:bg-white/25">
           Понятно
@@ -295,8 +271,16 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
       <Fragment>
         <!-- DynamicPrices: единый скрипт динамических цен для всех страниц -->
         <DynamicPrices />
-        <!-- AgeBar: мобильная плашка выбора возраста (летние смены) — на сезонных лендингах скрыта -->
-        {!hideAgeBar && <AgeBar />}
+        <!-- AgeBar: мобильная плашка выбора возраста.
+             ⛔ ВЫКЛЮЧЕНА ЦЕЛИКОМ 07.09.2026 по решению владельца («отключи пока»).
+             Причина: после конца летнего сезона плашка предлагала родителю
+             завершённую Смену 3 за 89 400 ₽ с подписью «уже едут ровесники»
+             (см. соседний коммит — компонент был зашит на смены 3/4 и не смотрел
+             на статус). Сам компонент в этом же PR починен и выводится из
+             getOpenShifts(), поэтому включение обратно — снятие AGE_BAR_ENABLED,
+             без правки логики.
+             Включить: AGE_BAR_ENABLED = true. -->
+        {AGE_BAR_ENABLED && !hideAgeBar && <AgeBar />}
         <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах
              (собственный document click-делегат в shift-modal.ts, initShiftModal()) -->
         <ShiftModal />
@@ -308,12 +292,6 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
 
     <DotPatternBackground />
     <BackToTop />
-
-    <!-- Reveal-on-scroll анимация для карточек (концепт aidacamp-full_9) -->
-    <script>
-      import { initReveal } from '../scripts/reveal';
-      initReveal();
-    </script>
 
     <!-- Уровень 3 Apple-скина: секции всплывают при скролле, как на apple.com.
          Инфраструктура (.reveal/.reveal-in, IntersectionObserver, уважает
@@ -327,6 +305,9 @@ const resolvedOgType = ogType ?? (Astro.url.pathname.startsWith('/stati/') && !A
          бы не поймал. -->
     <script>
       import { initReveal } from '../scripts/reveal';
+
+      // Keep default and Apple-theme initialization in one entry point.
+      initReveal();
 
       const APPLE_REVEAL_SELECTORS = ['#shifts', '#faq', 'footer', '.hero-features'];
       let appleRevealApplied = false;

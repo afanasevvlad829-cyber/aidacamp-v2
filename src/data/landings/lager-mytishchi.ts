@@ -1,4 +1,4 @@
-import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
+import { DATES_SHORT_S2, DATES_SHORT_S21, DATES_SHORT_S3, DATES_SHORT_S4, DAYS_MAX, DAYS_MIN, DAYS_S2, DAYS_S21, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S2, PRICE_S21, PRICE_S3, PRICE_S4, SEASON_YEAR, TRANSFER_PRICE_FMT, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S21, VYCHET_S3, VYCHET_S4 } from '../shifts';
 import type { LandingData } from './types';
 import { otzyvyLink, yandexReviewsLink } from '../../lib/reviews-link';
 import { SEASON_FROM_TO } from '../evergreen';
@@ -14,8 +14,8 @@ const landing: LandingData = {
   faqItems: [
     { q: 'Как добраться из Мытищ до АйДаКемп?', a: `На машине — через МКАД и Киевское шоссе (А-101), 66 км, около часа без пробок. На метро — до м. Солнцево (~50–60 минут), дальше трансфер (${TRANSFER_PRICE_FMT}) в день заезда.` },
     { q: 'Есть ли трансфер?', a: `Да, от м. Солнцево — ${TRANSFER_PRICE_FMT} в один конец, с сопровождающим. Дорога от Солнцево до метро — около часа.` },
-    { q: 'Можно ли вернуть часть стоимости путёвки?', a: `Да, налоговый вычет 13% от образовательной части: от ~${VYCHET_S4} (10 дней) до ${VYCHET_MAX} (13 дней). Документы выдаём при заезде.` },
-    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней (август ${SEASON_YEAR}). В стоимость входит всё, кроме трансфера.` },
+    { q: 'Можно ли вернуть часть стоимости путёвки?', a: `Да, налоговый вычет 13% от образовательной части: от ~${VYCHET_S4} (${DAYS_S4}) до ${VYCHET_MAX} (${VYCHET_MAX_DAYS}). Документы выдаём при заезде.` },
+    { q: 'Сколько стоит путёвка?', a: `От ${PRICE_MIN} за ${DAYS_MIN} до ${PRICE_MAX} за ${DAYS_MAX} (август ${SEASON_YEAR}). В стоимость входит всё, кроме трансфера.` },
   ],
   courseSchema: {
     name: 'Детский лагерь Мытищи — выездная IT-программа АйДаКемп',
@@ -44,7 +44,7 @@ const landing: LandingData = {
       h2: 'Налоговый вычет за путёвку',
       text: 'АйДаКемп — лицензированная образовательная организация, вычет 13% доступен всем налогоплательщикам РФ. Оформление — онлайн через nalog.ru.',
       list: [
-        `Возврат от ~${VYCHET_S4} (10 дней) до ${VYCHET_S3} (13 дней)`,
+        `Возврат от ~${VYCHET_S4} (${DAYS_S4}) до ${VYCHET_S3} (${DAYS_S3})`,
         'Договор и чеки выдаём при заезде — больше ничего не нужно',
       ],
     },
@@ -103,10 +103,10 @@ const landing: LandingData = {
       h2: `Смены ${SEASON_YEAR} — цены`,
       text: `IT-программа ${SEASON_FROM_TO} ${SEASON_YEAR} — для развития навыков программирования и отдыха от городской жизни. В стоимость входят проживание, питание, IT-программа, бассейн. Трансфер от м. Солнцево — ${TRANSFER_PRICE_FMT}.`,
       list: [
-        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, 7 дней — ${PRICE_S21}`,
-        `Смена 2 (завершена) — ${DATES_SHORT_S2}, 14 дней — ${PRICE_S2}`,
-        `Смена 3 — ${DATES_SHORT_S3}, 13 дней — ${PRICE_S3}`,
-        `Смена 4 — ${DATES_SHORT_S4}, 10 дней — ${PRICE_S4}`,
+        `Смена 2.1 (завершена) — ${DATES_SHORT_S21}, ${DAYS_S21} — ${PRICE_S21}`,
+        `Смена 2 (завершена) — ${DATES_SHORT_S2}, ${DAYS_S2} — ${PRICE_S2}`,
+        `Смена 3 — ${DATES_SHORT_S3}, ${DAYS_S3} — ${PRICE_S3}`,
+        `Смена 4 — ${DATES_SHORT_S4}, ${DAYS_S4} — ${PRICE_S4}`,
       ],
     },
     {

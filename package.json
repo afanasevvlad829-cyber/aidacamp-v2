@@ -10,10 +10,11 @@
     "check:stack": "node scripts/check-stack-standard.mjs",
     "check:astro": "node --max-old-space-size=6144 ./node_modules/.bin/astro check --minimumSeverity error --minimumFailingSeverity error",
     "check:public": "node scripts/check-public-astro.mjs",
-    "guard": "npm run check:stack && npm run check:public && bash scripts/guard-no-partytown.sh && bash scripts/check-banned-words.sh && bash scripts/check-price-drift.sh && bash scripts/check-transfer-price-drift.sh && bash scripts/check-date-drift.sh && bash scripts/check-evergreen-drift.sh && bash scripts/guard-static-rules.sh && bash scripts/guard-icons-fresh.sh && bash scripts/check-undefined-vars.sh && npm run check:hooks && node scripts/check-articles.mjs && node scripts/check-content-overrides.mjs",
+    "guard": "npm run check:stack && npm run check:public && bash scripts/guard-no-partytown.sh && bash scripts/check-banned-words.sh && bash scripts/check-daria-child.sh && bash scripts/check-price-drift.sh && bash scripts/check-phone-drift.sh && bash scripts/check-transfer-price-drift.sh && bash scripts/check-date-drift.sh && bash scripts/check-duration-drift.sh && bash scripts/check-shift-year-drift.sh && bash scripts/check-evergreen-drift.sh && bash scripts/guard-static-rules.sh && bash scripts/guard-icons-fresh.sh && bash scripts/check-undefined-vars.sh && npm run check:hooks && node scripts/check-articles.mjs && node scripts/check-content-overrides.mjs",
     "articles": "node scripts/gen-articles.mjs",
     "check:articles": "node scripts/check-articles.mjs",
     "check:dates": "bash scripts/check-date-drift.sh",
+    "check:shift-year": "bash scripts/check-shift-year-drift.sh",
     "check:prices": "bash scripts/check-price-drift.sh",
     "check:transfer": "bash scripts/check-transfer-price-drift.sh",
     "check:banned": "bash scripts/check-banned-words.sh",
@@ -25,7 +26,7 @@
     "check:undefined": "bash scripts/check-undefined-vars.sh",
     "check:faq": "node scripts/check-faq-schema.mjs",
     "check:breadcrumbs": "node scripts/check-breadcrumb-schema.mjs",
-    "icons": "node scripts/build-icons-css.mjs",
+    "icons": "node scripts/build-icons-css.mjs && node scripts/build-icons-css.mjs --manifest src/data/icons-js-manifest.json --out src/styles/icons-js.css",
     "build": "bash scripts/build.sh",
     "pagefind": "pagefind --site dist/client --output-subdir _pagefind --exclude-selectors '[data-pagefind-ignore], header, footer, nav, .ad, [data-analytics-goal]'",
     "preview": "node --env-file-if-exists=.env ./node_modules/.bin/astro preview",
@@ -37,13 +38,16 @@
     "test:coverage:core": "vitest run --config vitest.core.config.ts --coverage --coverage.reporter=text-summary",
     "export:articles": "npx tsx scripts/export-articles-json.ts",
     "check:evergreen": "bash scripts/check-evergreen-drift.sh",
-    "check:content-overrides": "node scripts/check-content-overrides.mjs"
+    "check:content-overrides": "node scripts/check-content-overrides.mjs",
+    "check:phones": "bash scripts/check-phone-drift.sh",
+    "check:durations": "bash scripts/check-duration-drift.sh"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",
     "@playwright/test": "^1.60.0",
     "@types/archiver": "^6.0.4",
     "@types/pg": "^8.20.0",
+    "@types/turndown": "^5.0.6",
     "@vitest/coverage-v8": "3.2.7",
     "bootstrap-icons": "^1.13.1",
     "pagefind": "^1.5.2",
@@ -54,6 +58,7 @@
     "@anthropic-ai/sdk": "^0.91.1",
     "@astrojs/node": "10.1.4",
     "@astrojs/sitemap": "^3.7.2",
+    "@iconify-json/bi": "^1.2.7",
     "@playform/compress": "^0.2.3",
     "@tailwindcss/vite": "^4.2.2",
     "@uppy/core": "^5.2.0",
@@ -62,6 +67,7 @@
     "@uppy/xhr-upload": "^5.2.0",
     "archiver": "^7.0.1",
     "astro": "6.4.8",
+    "astro-icon": "^1.2.0",
     "dayjs": "^1.11.21",
     "mammoth": "^1.12.0",
     "marked": "^18.0.4",
@@ -70,9 +76,13 @@
     "photoswipe": "^5.4.4",
     "playwright": "^1.59.1",
     "plyr": "^3.8.4",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.4",
     "sortablejs": "^1.15.7",
     "tailwindcss": "4.2.2",
+    "turndown": "^7.2.4",
     "zod": "^4.3.6"
+  },
+  "overrides": {
+    "sharp": "^0.35.4"
   }
 }

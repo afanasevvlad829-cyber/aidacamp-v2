@@ -11,7 +11,7 @@ export function canEditEvent(role: PortalRole | null | undefined, _eventRoles?: 
 }
 
 /** Поля, которые teacher/vozhaty МОГУТ менять (полный edit от admin/ruk идёт через старый /shift/admin). */
-export const PARTIAL_EDIT_FIELDS = ['title', 'start_time', 'end_time', 'notes'] as const;
+const PARTIAL_EDIT_FIELDS = ['title', 'start_time', 'end_time', 'notes'] as const;
 export type PartialEditField = (typeof PARTIAL_EDIT_FIELDS)[number];
 
 /** Поля, которые НЕЛЬЗЯ менять через partial-edit (только через admin endpoint). */

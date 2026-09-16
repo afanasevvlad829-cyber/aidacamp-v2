@@ -1,6 +1,8 @@
 ---
+import { Icon } from 'astro-icon/components';
 import { DARIA_CUES } from '../data/dariaCues';
 import CallTimeSelector from './CallTimeSelector.astro';
+import PromoField from './PromoField.astro';
 import VideoPlayer from './VideoPlayer.astro';
 
 
@@ -74,9 +76,9 @@ const photoH = compact ? 96 : 192;
                 class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-body-muted hover:text-primary transition-colors no-underline"
                 aria-label="Дарья на ТВ"
               >
-                <i class="bi bi-camera-video-fill text-[12px] text-primary" aria-hidden="true"></i>
+                <Icon name="bi:camera-video-fill" class="bi bi-camera-video-fill text-[12px] text-primary" aria-hidden="true" />
                 Дарья на ТВ
-                <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+                <Icon name="bi:arrow-right" class="bi bi-arrow-right text-[12px]" aria-hidden="true" />
               </a>
             )}
           </div>
@@ -99,7 +101,7 @@ const photoH = compact ? 96 : 192;
               class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover transition-colors"
             >
               Перезвоню и расскажу всё
-              <i class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true"></i>
+              <Icon name="bi:arrow-right" class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true" />
             </button>
 
             {/* Proof-line */}
@@ -131,9 +133,9 @@ const photoH = compact ? 96 : 192;
             href="/video/daria-story/"
             class="mt-2 inline-flex items-center gap-1.5 text-[13px] font-medium text-body-muted hover:text-primary transition-colors no-underline"
           >
-            <i class="bi bi-play-circle text-[12px] text-primary" aria-hidden="true"></i>
+            <Icon name="bi:play-circle" class="bi bi-play-circle text-[12px] text-primary" aria-hidden="true" />
             Смотреть на отдельной странице
-            <i class="bi bi-arrow-right text-[12px]" aria-hidden="true"></i>
+            <Icon name="bi:arrow-right" class="bi bi-arrow-right text-[12px]" aria-hidden="true" />
           </a>
         </div>
       )}
@@ -148,7 +150,7 @@ const photoH = compact ? 96 : 192;
     <div class="relative w-full max-w-[420px] rounded-t-[20px] sm:rounded-[20px] bg-white px-6 pb-8 pt-6 shadow-xl">
       <!-- Close -->
       <button type="button" id="dariaCallbackClose" class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Закрыть">
-        <i class="bi bi-x-lg text-base" aria-hidden="true"></i>
+        <Icon name="bi:x-lg" class="bi bi-x-lg text-base" aria-hidden="true" />
       </button>
 
       <!-- Header -->
@@ -175,6 +177,8 @@ const photoH = compact ? 96 : 192;
 
       <CallTimeSelector />
 
+      <PromoField class="mt-3" />
+
       <!-- Consent: два чекбокса по требованиям 152-ФЗ / РКН -->
       <label class="mt-4 flex items-start gap-2 text-base leading-[1.4] text-body-muted">
         <input type="checkbox" id="daria-callback-consent-policy" class="mt-[2px] h-4 w-4 shrink-0 rounded border border-slate-300 accent-primary" />
@@ -196,7 +200,7 @@ const photoH = compact ? 96 : 192;
 
       <!-- Success state (hidden) -->
       <div id="daria-callback-success" class="hidden text-center py-4">
-        <i class="bi bi-check-circle-fill text-emerald-500 text-[32px]" aria-hidden="true"></i>
+        <Icon name="bi:check-circle-fill" class="bi bi-check-circle-fill text-emerald-500 text-[32px]" aria-hidden="true" />
         <p class="mt-2 text-[16px] font-semibold text-body">Дарья перезвонит вам!</p>
         <p class="mt-1 text-base text-body-muted">Обычно в течение нескольких часов</p>
       </div>
@@ -318,11 +322,14 @@ const photoH = compact ? 96 : 192;
 
     try {
       const { submitLead } = await import('../scripts/form-submit');
+      const { getStoredPromoCode, promoNoteForLead } = await import('../scripts/promo');
       await submitLead({
         phone: phoneInput.value,
         age: '',
         form: 'daria_callback',
         call_time: callTimeInput?.value || '',
+        promo: getStoredPromoCode(),
+        note_extra: promoNoteForLead(),
       });
       // Show success
       const formEls = modal?.querySelectorAll<HTMLElement>('p, input, label, button[id="daria-callback-submit"]');

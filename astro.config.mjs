@@ -1,10 +1,11 @@
 // ⚠️ ВНИМАНИЕ: Partytown ЗАПРЕЩЁН — не возвращайте его. См. CLAUDE.md → раздел «Запрещённые зависимости»
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import compress from '@playform/compress';
 import htmlMinifyCached from './scripts/html-minify-cached.mjs';
+import icon from 'astro-icon';
 
 // SKIP_COMPRESS=1 выключает минификацию. Нужен первому проходу build.sh: тот проход
 // существует только чтобы отрендерить статьи для gen-articles.mjs, его dist/ никуда
@@ -18,8 +19,29 @@ const SKIP_COMPRESS = process.env.SKIP_COMPRESS === '1';
 export default defineConfig({
   site: 'https://aidacamp.ru',
   adapter: node({ mode: 'standalone' }),
-  security: { checkOrigin: false },
+  // CSRF-проверка Origin (checkOrigin, дефолт true) снова включена. В апреле (bf40ff3f)
+  // её выключили: за nginx-прокси Astro без allowedDomains не доверяет X-Forwarded-Proto,
+  // строил URL как http://aidacamp.ru, Origin https://… не совпадал → 403 на form-POST.
+  // allowedDomains — доверяем Host/X-Forwarded-Proto только для наших доменов
+  // (astro/core/app/validate-headers.js; сверка с доками 08.09.2026). Smoke §3 проверяет
+  // оба случая: свой Origin проходит, чужой получает 403.
+  security: {
+    allowedDomains: [
+      { hostname: 'aidacamp.ru', protocol: 'https' },
+      { hostname: 'dev.aidacamp.ru', protocol: 'https' },
+    ],
+  },
   integrations: [
+    // Иконки — astro-icon (Iconify-набор Bootstrap Icons, inline SVG, без блокирующего
+    // CSS). include: весь набор bi — это только серверный реестр, в HTML попадают лишь
+    // использованные иконки; список-манифест здесь не нужен (CI 08.09.2026: три иконки в
+    // разметке не были в манифесте и раньше молча рендерились пустыми, а astro-icon роняет
+    // сборку — незнакомое имя теперь ловится на билде). icons-manifest.json остаётся
+    // источником только для legacy icons.css (портал/стафф и иконки из JS-строк).
+    icon({
+      include: { bi: ['*'] },
+      iconDir: 'src/styles/custom-icons', // blocks, phone-x — кастомные SVG, в Iconify их нет
+    }),
     // Стабильные имена server-чанков (без content-hash). SSR-серверу кэш-бастинг
     // не нужен (Node читает файлы с диска при старте), а хэш в имени ломал
     // rsync-дельту при деплое: манифест-чанк ~150MB каждую сборку получал новое
@@ -83,8 +105,6 @@ export default defineConfig({
         !page.includes('/it-lager-dlya-podrostkov/') &&
         !page.includes('/skolko-stoit-lager-dlya-rebenka/') &&
         !page.includes('/scratch-programmirovanie-dlya-detey/') &&
-        !page.includes('/lanit-v6/') && // партнёрский черновик ЛАНИТ (как сёстры lanit-v5/lanit-economics), noindex
-        !page.includes('/lanit-v5/') && // партнёрский черновик ЛАНИТ, noindex
         !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
@@ -104,7 +124,7 @@ export default defineConfig({
         !/^https:\/\/aidacamp\.ru\/video\/[^/]+\/?$/.test(page) &&
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
         // Яндексу: карта говорит «индексируй», страница — noindex/редирект → тормозит перенос)
-        !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly)\/?$/.test(page),
+        !/\/(deti-otdokhnuli-v-letnikh-lageryakh|detskie-letnie-lagerya-v-podmoskove|detskie-ozdorovitelnye-lagerya-2026|detskiy-letniy-lager-v-podmoskove|detskiy-ozdorovitelnyy-lager|kanikuly-otdykh-v-lagere|kupit-putevku-v-lager-2026|kupit-putevku-v-lager|lager-letniy-na-20-dney|lager-v-podmoskove-na-leto-2026-nedorogo|lagerya-v-podmoskove-na-leto-dlya-podrostkov|letnie-lagerya-podmoskove|letnie-lagerya|letniy-lager-dlya-detey-v-moskve|letniy-lager-v-moskve|luchshie-detskie-lagerya-podmoskovya|luchshie-lagerya-v-podmoskove|mesta-v-letniy-lager|nedorogoy-letniy-lager-dlya-detey-v-podmoskove|ob-organizacii-otdyha-detej-i-ozdarovleniya|popali-v-letniy-lager|programma-smeny|putevka-v-detskiy-lager-letom|putevka-v-lager-v-podmoskove-2026|putevki-v-detskiy-lager-na-leto-2026|fortune-fail|smena2-editor|gde-poluchit-spravku-079u-dlya-lagerya|lager-elochki-domodedovo|lager-petrushka-v-podmoskove|lager-vshe-dlya-shkolnikov-2026|lagerya-za-granitsu-dlya-podrostkov|mos-ru-detskiy-lager|nalogovyy-vychet-za-detskiy-lager|neo-kemp-detskiy-lager|rozendorf-detskiy-lager|skolko-delaetsya-spravka-079u-dlya-lagerya|skolko-deystvuet-spravka-079u-dlya-lagerya|sportzaniya-lager-v-podmoskove|strannyy-detskiy-lager|terra-nostra-shatura-detskiy-lager|lager-na-vesennie-kanikuly-2026|lager-na-osenie-kanikuly|lager-na-leto-2026|lager-na-leto-2027|spravka-079u-dlya-lagerya-obrazets)\/?$/.test(page),
       // lastmod = дата деплоя. Даём Google понять, что страницы актуальны.
       // priority: P1=0.9, P2=0.7, P3=0.5 (на основе SEO-архитектуры 2026)
       serialize(item) {
@@ -113,7 +133,7 @@ export default defineConfig({
         // P1: главные коммерческие страницы (высокая частота, высокая конкурентность)
         const P1_EXACT = [
           '/', '/ceny', '/detskiy-lager', '/it-camp',
-          '/lager-v-podmoskove', '/lager-na-leto-2026',
+          '/lager-v-podmoskove', '/lager-na-leto',
           '/kompyuternyy-lager', '/nalogovyj-vychet',
         ];
 
@@ -161,7 +181,31 @@ export default defineConfig({
       Exclude: [/metodichki\//, /demo\//],
     })]),
   ],
+  // Шрифты — Fonts API (Astro 6): @font-face, preload и fallback с подогнанными метриками
+  // генерирует Astro; в head — <Font cssVariable="--font-inter" />. Файлы в src/assets/fonts
+  // (не public/: иначе дублируются в сборке). Сабсеты latin/cyrillic — те же unicode-range,
+  // что были в ручных @font-face в global.css (сверка с доками 08.09.2026).
+  fonts: [
+    {
+      provider: fontProviders.local(),
+      name: 'Inter',
+      cssVariable: '--font-inter',
+      fallbacks: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      options: {
+        variants: [
+          { weight: '100 900', style: 'normal', src: ['./src/assets/fonts/inter-latin.woff2'], display: 'swap', unicodeRange: ['U+0000-00FF', 'U+0131', 'U+0152-0153', 'U+02BB-02BC', 'U+02C6', 'U+02DA', 'U+02DC', 'U+2000-206F', 'U+2074', 'U+20AC', 'U+2122', 'U+2191', 'U+2193', 'U+2212', 'U+2215', 'U+FEFF', 'U+FFFD'] },
+          { weight: '100 900', style: 'normal', src: ['./src/assets/fonts/inter-cyrillic.woff2'], display: 'swap', unicodeRange: ['U+0400-045F', 'U+0490-0491', 'U+04B0-04B1', 'U+2116'] },
+        ],
+      },
+    },
+  ],
   devToolbar: { enabled: false },
+  // Prefetch страниц по наведению (Astro встроенный, guides/prefetch). prefetchAll — все
+  // внутренние ссылки без разметки; hover не срабатывает на тач, для мобильного меню
+  // стоит data-astro-prefetch="viewport" в MobileMenu.astro. Astro сам откатывается на
+  // tap при data-saver / медленной сети. Safari требует кэш-заголовков на HTML — у прода
+  // на HTML no-cache, там prefetch не даёт выигрыша (сверка с доками 08.09.2026).
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   vite: {
     plugins: [tailwindcss()],
     build: {
@@ -175,7 +219,16 @@ export default defineConfig({
     // блокировал рендер 1350мс → переключили на 'always' (CSS в <style> в HTML).
     // 2026-07-03: CDN отключён — вернули 'auto': CSS отдаётся same-origin с
     // иммутабельным кэшем, HTML худеет на сотни KB, SSR-манифест 148MB → ~4MB.
-    inlineStylesheets: 'auto',
+    // 2026-09-11: снова 'always'. При 'auto' с 357 страницами Vite/Rollup стабильно
+    // (не гонка — воспроизводилось детерминированно, concurrency тут ни при чём,
+    // проверено отдельно) отдавал общий Tailwind-чанк (global.css, тянется через
+    // Base.astro у ВСЕХ страниц) только части HTML — например странице /status/,
+    // а не главной. Прод простоял без стилей: ни preflight, ни одной утилиты на
+    // /, /ceny/ и остальных «непобедивших» страницах. inlineStylesheets: 'always'
+    // кладёт CSS прямо в каждый HTML — зависимости от того, какой странице
+    // достанется общий чанк, больше нет. HTML разово потяжелеет — цена меньше,
+    // чем сайт без стилей.
+    inlineStylesheets: 'always',
     // CDN отключён: cross-origin overhead (DNS+TCP+TLS к huhodirekeka.begetcdn.cloud)
     // замедляет LCP с 1.6s до 3.7s на мобильном тесте. Сервер в России → CDN не даёт
     // выигрыша в latency, только overhead. Откат 2026-05-24.

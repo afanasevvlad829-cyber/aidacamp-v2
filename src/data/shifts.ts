@@ -65,6 +65,56 @@ export function getBookingCta(shift: Pick<Shift, 'free' | 'occupied'>): { label:
   return { label: isWaitlist ? 'Лист ожидания' : 'Забронировать', isWaitlist };
 }
 
+/**
+ * Значок смены для кружка в шапке карточки — ЕДИНЫЙ источник для всех карточек.
+ * Летние смены нумерованные (shift-3, shift-2-1) → «3», «2.1».
+ * Межсезонные номера не имеют: их id раскрывался как «autumn.1»/«winter.1»,
+ * не влезал в кружок 28px и наезжал на «Ближайшая»/месяц в шапке (баг 06.09.2026).
+ * Для них — иконка сезона по месяцу старта.
+ */
+export type ShiftBadge =
+  | { kind: 'num'; text: string }
+  | { kind: 'icon'; icon: string; label: string };
+
+export function getShiftBadge(shift: Pick<Shift, 'id' | 'startDate'>): ShiftBadge {
+  const num = shift.id.replace('shift-', '').replace('-', '.');
+  if (/^\d+(\.\d+)?$/.test(num)) return { kind: 'num', text: num };
+  const month = parseInt(shift.startDate?.split('-')[1] ?? '', 10);
+  if (month === 12 || month === 1 || month === 2) return { kind: 'icon', icon: 'bi-snow', label: 'Зимняя смена' };
+  if (month >= 9 && month <= 11) return { kind: 'icon', icon: 'bi-tree', label: 'Осенняя смена' };
+  if (month >= 3 && month <= 5) return { kind: 'icon', icon: 'bi-flower1', label: 'Весенняя смена' };
+  return { kind: 'icon', icon: 'bi-sun', label: 'Летняя смена' };
+}
+
+/**
+ * Сезон смены — ВСЕГДА по дате старта, независимо от id.
+ *
+ * Зачем отдельно от getShiftBadge: тот для нумерованных смен возвращает номер
+ * («3»), а не сезон, и страница смены не могла спросить у него сезон вообще.
+ * Из-за этого шаблон shifts/[id].astro писал «летняя смена» ВСЕМ смденам:
+ * на проде 08.09.2026 висело «Зимняя смена: летняя смена в IT-лагере» и
+ * «Осенняя смена: летняя смена» — на страницах, которые продаются прямо сейчас.
+ */
+export function getShiftSeason(shift: Pick<Shift, 'startDate'>): { adj: string; nom: string } {
+  const month = parseInt(shift.startDate?.split('-')[1] ?? '', 10);
+  if (month === 12 || month === 1 || month === 2) return { adj: 'зимняя', nom: 'Зима' };
+  if (month >= 9 && month <= 11) return { adj: 'осенняя', nom: 'Осень' };
+  if (month >= 3 && month <= 5) return { adj: 'весенняя', nom: 'Весна' };
+  return { adj: 'летняя', nom: 'Лето' };
+}
+
+/**
+ * Год смены для заголовков и текстов — из её СОБСТВЕННЫХ дат, не из глобального
+ * SEASON_YEAR. Зимняя смена 2026-12-30 — 2027-01-08 показывалась как
+ * «30 декабря — 8 января 2026»: 8 января наступит в 2027-м.
+ * Смена через Новый год отдаётся как «2026/2027».
+ */
+export function shiftYearLabel(shift: Pick<Shift, 'startDate' | 'endDate'>): string {
+  const y1 = shift.startDate?.split('-')[0] ?? '';
+  const y2 = shift.endDate?.split('-')[0] ?? '';
+  return y1 === y2 ? y1 : `${y1}/${y2}`;
+}
+
 /** Единый текст объяснения механики листа ожидания — используется и в попапе, и в модалке брони. */
 export const WAITLIST_EXPLANATION =
   'Смена распродана. Обычно к её старту 2–3 семьи отказываются от путёвки по разным причинам — освободившиеся места предлагаем по листу ожидания, в порядке очереди. Оставьте заявку — позвоним, как только появится место.';
@@ -97,36 +147,31 @@ const _shift22: Shift = {
   price: '75 000 ₽', free: 0, occupied: 45, startDate: '2026-06-16', endDate: '2026-06-23',
 };
 
+// === Лето 2026 — ЗАВЕРШЕНО ===
+// Смены 3 и 4 прошли 3–15 и 17–26 августа. 07.09.2026 их закрыли заплаткой:
+// оставили в mainShifts (позиции сохранены), но пометили завершёнными с нулём
+// мест — вынести в архив тогда было нельзя, потому что PRICE_S3/S4, DATES_S3/S4
+// и VYCHET_S3/S4 выводились ПО ПОЗИЦИИ (mainShifts[0] и mainShifts[1]) и молча
+// переехали бы на осенние смены.
+//
+// Теперь эти экспорты привязаны по id через byId() и ищут смену в
+// allShiftsIncludingArchived — поэтому смены переносятся в архив, как Смены 1 и 2,
+// а заплатка снята. Страж npm run check:durations не даёт вернуть зашитую
+// длительность рядом с ценой или датой смены.
+const _shift3: Shift = {
+  id: 'shift-3', name: 'Смена 3', dates: '3 августа — 15 августа', duration: '13 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'Проект от идеи до результата с акцентом на командную работу.',
+  price: '89 400 ₽', free: 0, occupied: 46, startDate: '2026-08-03', endDate: '2026-08-15',
+};
+const _shift4: Shift = {
+  id: 'shift-4', name: 'Смена 4', dates: '17 августа — 26 августа', duration: '10 дней',
+  status: 'завершена', statusType: 'available',
+  description: 'Закрытие лета: сильный проект и уверенный результат.',
+  price: '74 900 ₽', free: 0, occupied: 45, startDate: '2026-08-17', endDate: '2026-08-26',
+};
+
 export const mainShifts: Shift[] = [
-  {
-    id: 'shift-3',
-    name: 'Смена 3',
-    dates: '3 августа — 15 августа',
-    duration: '13 дней',
-    status: 'мало мест',
-    statusType: 'available',
-    description: 'Проект от идеи до результата с акцентом на командную работу.',
-    price: '89 400 ₽',
-    free: 5,
-    occupied: 41,
-    highlighted: true,
-    startDate: '2026-08-03',
-    endDate: '2026-08-15',
-  },
-  {
-    id: 'shift-4',
-    name: 'Смена 4',
-    dates: '17 августа — 26 августа',
-    duration: '10 дней',
-    status: 'мало мест',
-    statusType: 'available',
-    description: 'Закрытие лета: сильный проект и уверенный результат.',
-    price: '74 900 ₽',
-    free: 3,
-    occupied: 42,
-    startDate: '2026-08-17',
-    endDate: '2026-08-26',
-  },
   // === Осень 2026 — ПРОДАЖИ ОТКРЫТЫ 27.08.2026 (решение владельца) ===
   // free: 20 — реальная ёмкость межсезонного заезда со слов владельца (27.08.2026):
   // «сорок пять мы не наберём, нужно мест двадцать». Летние смены идут по 45,
@@ -172,6 +217,10 @@ export const mainShifts: Shift[] = [
     name: 'Зимняя смена',
     dates: '30 декабря — 8 января',
     duration: '10 дней',
+    // highlighted переехал сюда со Смены 3 (07.09.2026): та завершена вместе
+    // с летом, выделять проданное незачем. Зимняя — в активной продаже
+    // с 27.08, её и выделяем. Решение владельца.
+    highlighted: true,
     status: 'идёт запись',
     statusType: 'available',
     description: 'Новый год со сменой: ёлка, хакатон и собственный проект за каникулы.',
@@ -184,6 +233,23 @@ export const mainShifts: Shift[] = [
 ];
 
 export const shortShifts: Shift[] = [];
+
+/**
+ * Ближайшая смена В ПРОДАЖЕ — для CTA и ссылок, которые должны вести на
+ * актуальный заезд, а не на конкретный id, зашитый в вёрстку.
+ *
+ * Инцидент 08.09.2026: CTA в /stati/kto-edet-v-lager-vozrasty/ вёл на
+ * /shifts/shift-4/ с подписью «Последняя смена этого лета: 17–26 августа».
+ * Когда летние смены вынесли в архив, страницы смены не стало и сборка упала
+ * на проверке внутренних ссылок — но текст врал ещё до этого.
+ *
+ * Приоритет: смена с флагом nearest → самая ранняя из открытых по дате →
+ * самая ранняя вообще (чтобы ссылка не осталась пустой между сезонами).
+ */
+const _openByDate = [...mainShifts].filter((s) => s.free > 0).sort((a, b) => a.startDate.localeCompare(b.startDate));
+const _allByDate = [...mainShifts].sort((a, b) => a.startDate.localeCompare(b.startDate));
+export const NEAREST_OPEN_SHIFT: Shift =
+  mainShifts.find((s) => s.nearest && s.free > 0) ?? _openByDate[0] ?? _allByDate[0];
 
 export const allShifts = [...mainShifts];
 
@@ -207,13 +273,36 @@ export function lastCompletedShift(today: string): Shift | null {
 
 // Все смены для показа в карусели (завершённые + активные), в хронологии.
 // Фаза (предстоит/идёт/прошла) считается по датам в getShiftPhase().
-export const displayShifts: Shift[] = [_shift1, _shift2, ...mainShifts];
+export const displayShifts: Shift[] = [_shift1, _shift2, _shift3, _shift4, ...mainShifts];
 export const shift1 = _shift1;
 export const shift2 = _shift2;
 
 // Полный список смен, включая архивные под-смены 2.1/2.2 — только для lookup по id
 // (модалка ShiftModal, SHIFT_META). НЕ использовать в UI-каруселях — там displayShifts/mainShifts.
-export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, ...mainShifts];
+export const allShiftsIncludingArchived: Shift[] = [_shift1, _shift2, _shift21, _shift22, _shift3, _shift4, ...mainShifts];
+
+/**
+ * Смена по id — ЕДИНСТВЕННЫЙ способ адресовать конкретную смену в производных
+ * экспортах ниже (PRICE_S3, DATES_S4, VYCHET_S3 и т.д.).
+ *
+ * Зачем: до 07.09.2026 эти экспорты выводились ПО ПОЗИЦИИ — mainShifts[0] и
+ * mainShifts[1]. Имя говорило «Смена 3», смысл был «первая смена в массиве».
+ * Пока летний сезон шёл, это совпадало; при попытке вынести завершённые летние
+ * смены в архив экспорты молча переехали бы на осенние, и страницы напечатали бы
+ * «Смена 3: 25–31 октября, 13 дней — 49 900 ₽» — имя, длительность и цена от трёх
+ * разных смен в одной строке.
+ *
+ * Ищет по allShiftsIncludingArchived, а не по mainShifts, — поэтому экспорт
+ * продолжает работать ПОСЛЕ выноса смены в архив. Бросает при опечатке в id:
+ * молчаливого переезда на соседнюю смену больше не будет ни при каких правках.
+ */
+function byId(id: string): Shift {
+  const s = allShiftsIncludingArchived.find((x) => x.id === id);
+  if (!s) throw new Error(`shifts.ts: смены «${id}» нет в allShiftsIncludingArchived`);
+  return s;
+}
+const _s3 = byId('shift-3');
+const _s4 = byId('shift-4');
 
 // === ЕДИНЫЙ ИСТОЧНИК метаданных смены (дата + база + длительность) ===
 // Отсюда dynamicPrices.ts берёт basePrice/startDate/days и применяет правило роста.
@@ -241,16 +330,69 @@ export const SHIFT_META: Record<string, ShiftMeta> = Object.fromEntries(
 const _allForPrice = [...mainShifts];
 const _priceNum = (p: string) => parseInt(p.replace(/[^\d]/g, ''), 10);
 const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(b.price));
-export const PRICE_MIN = _sorted[0].price;
-export const PRICE_MIN_ID = _sorted[0].id; // id смены с ценой PRICE_MIN — для ссылок «от X ₽», ведущих на эту смену
-export const PRICE_MAX = _sorted[_sorted.length - 1].price;
+const _cheapest = _sorted[0];
+const _priciest = _sorted[_sorted.length - 1];
+export const PRICE_MIN = _cheapest.price;
+export const PRICE_MIN_ID = _cheapest.id; // id смены с ценой PRICE_MIN — для ссылок «от X ₽», ведущих на эту смену
+export const PRICE_MAX = _priciest.price;
 export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
 export const PRICE_S1 = _shift1.price;
 export const PRICE_S2 = _shift2.price;
-export const PRICE_S3 = mainShifts[0].price;
-export const PRICE_S4 = mainShifts[1].price;
+export const PRICE_S3 = _s3.price;
+export const PRICE_S4 = _s4.price;
 export const PRICE_S21 = _shift21.price;
 export const PRICE_S22 = _shift22.price;
+
+// === Длительность — ПРОИЗВОДНАЯ, как цена и даты. НЕ писать «13 дней» текстом! ===
+// Длительность жила в объекте смены (duration), но на страницах была зашита
+// текстом рядом с динамическими ${DATES_SHORT_S3} и ${PRICE_S3}. Меняется
+// привязка — цена и дата едут, длительность остаётся, и в одной строке
+// оказываются данные от разных смен. Страж: npm run check:durations.
+export const DAYS_S1 = _shift1.duration;
+export const DAYS_S2 = _shift2.duration;
+export const DAYS_S3 = _s3.duration;
+export const DAYS_S4 = _s4.duration;
+export const DAYS_S21 = _shift21.duration;
+export const DAYS_S22 = _shift22.duration;
+// Длительности смен, задающих границы PRICE_MIN/PRICE_MAX. Без них проза
+// «от ${PRICE_MIN} за 10 дней до ${PRICE_MAX} за 13 дней» врёт, как только
+// границу занимает смена другой длины: 27.08.2026 осенние смены вошли в
+// mainShifts, PRICE_MIN упал с 74 900 (10 дней) на 49 900 (7 дней), а зашитая
+// «10 дней» осталась — и так и уехало в прод на 93 строках.
+export const DAYS_MIN = _cheapest.duration;
+export const DAYS_MAX = _priciest.duration;
+
+/**
+ * Прилагательное «13-дневная» от смены — для прозы, где длительность стоит в
+ * косвенном падеже: «до 5 200 ₽ за 13-дневную смену», «вычет с 13-дневной».
+ *
+ * Подставить туда ${DAYS_S3} нельзя — получится «за 13 дней смену». Заводить
+ * падежные экспорты тоже незачем: основа всегда «N-дневн», меняется только
+ * окончание, словарь не нужен. Род женский — во всей прозе сайта это
+ * согласуется со «сменой»; для множественного числа («7-дневные») формы нет,
+ * такие места переписываются под единственное.
+ *
+ * Принимает саму смену или строку длительности («13 дней»), чтобы работать и
+ * с VYCHET_MAX_DAYS: daysAdj(VYCHET_MAX_DAYS, 'acc') → «13-дневную».
+ */
+/**
+ * Только число дней смены, без слова: «13». Для перечислений, где слово стоит
+ * один раз в конце — «смены 10 и 13 дней». Подставить туда ${DAYS_S4} нельзя:
+ * получится «10 дней и 13 дней».
+ */
+export function daysNum(src: Shift | string): number {
+  const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
+  if (!Number.isFinite(n)) throw new Error(`daysNum: не разобрал длительность «${String(src)}»`);
+  return n;
+}
+
+export type DaysAdjCase = 'nom' | 'acc' | 'gen';
+export function daysAdj(src: Shift | string, form: DaysAdjCase = 'nom'): string {
+  const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
+  if (!Number.isFinite(n)) throw new Error(`daysAdj: не разобрал длительность «${String(src)}»`);
+  const ending = form === 'acc' ? 'ую' : form === 'gen' ? 'ой' : 'ая';
+  return `${n}-дневн${ending}`;
+}
 
 // === Возврат при отказе от путёвки (ФЗ №2300-1 о защите прав потребителей) ===
 export const BYT_PER_DAY = 6100;     // фактические расходы лагеря/день (предоплата базе отдыха) — удерживаются при возврате
@@ -295,11 +437,20 @@ const _fmtV = fmtRub;
 // Форматированные строки вычета для прозы (как PRICE_*): «6 250 ₽».
 export const VYCHET_S1 = _fmtV(shiftDeduction(_shift1));
 export const VYCHET_S2 = _fmtV(shiftDeduction(_shift2));
-export const VYCHET_S3 = _fmtV(shiftDeduction(mainShifts[0]));
-export const VYCHET_S4 = _fmtV(shiftDeduction(mainShifts[1]));
+export const VYCHET_S3 = _fmtV(shiftDeduction(_s3));
+export const VYCHET_S4 = _fmtV(shiftDeduction(_s4));
 export const VYCHET_S21 = _fmtV(shiftDeduction(_shift21));
 export const VYCHET_S22 = _fmtV(shiftDeduction(_shift22));
-export const VYCHET_MAX = _fmtV(Math.max(shiftDeduction(mainShifts[0]), shiftDeduction(mainShifts[1])));
+// Максимальный вычет — по ВСЕМ открытым сменам, а не по двум первым в массиве.
+// Было Math.max(mainShifts[0], mainShifts[1]) — та же позиционная привязка.
+// Сегодняшнее значение не меняется (максимум и так у Смены 3), меняется
+// поведение после выноса лета в архив.
+const _maxVychetShift = mainShifts.reduce((a, b) => (shiftDeduction(b) > shiftDeduction(a) ? b : a));
+export const VYCHET_MAX = _fmtV(shiftDeduction(_maxVychetShift));
+// Длительность смены, дающей VYCHET_MAX. Проза «до ${VYCHET_MAX} за 13-дневную
+// смену» встречается на 76 строках — без этого экспорта она врёт, как только
+// максимум переезжает на смену другой длины.
+export const VYCHET_MAX_DAYS = _maxVychetShift.duration;
 
 // === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
 // Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
@@ -322,6 +473,10 @@ export const AUTUMN_2026_WINDOW2 = {
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
+// Длительность межсезонного заезда — рядом с ценой, по той же причине, что
+// DAYS_S3 рядом с PRICE_S3: «${PRICE_OSEN} за 7 дней» разъедется, как только
+// у осенней смены изменится длина. Страж: npm run check:durations.
+export const DAYS_OSEN = _autumn1.duration;
 export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
 
 // === Зима 2026–2027 — продажи открыты 27.08.2026, смена перенесена в mainShifts ===
@@ -334,6 +489,7 @@ export const WINTER_2026 = {
   days: 10,
 } as const;
 export const PRICE_ZIMA = WINTER_2026.price;
+export const DAYS_ZIMA = _winter1.duration;
 export const VYCHET_ZIMA = _fmtV(Math.round(taxDeduction(_priceNum(WINTER_2026.price), WINTER_2026.days) / 50) * 50);
 
 // === Весна 2027 — ПРЕДВАРИТЕЛЬНО (модель осенней недели, утверждение — к январю) ===
@@ -343,7 +499,99 @@ export const SPRING_2027 = {
   endDate: '2027-04-04',
   days: 7,
 } as const;
+// === ЛЕТО 2027 — ПРЕДВАРИТЕЛЬНО (решение владельца 07.09.2026) ===
+// Сетка: две смены в каждом летнем месяце, «первая» и «вторая половина»,
+// по 14 дней, 50 мест. Цена 119 000 ₽ = 8 500 ₽/день × 14 (топ-ставка со
+// слов владельца; себестоимость 4 500 ₽/день). Для сравнения: 14-дневная
+// Смена 2 сезона 2026 стоила 99 000 ₽ (7 070 ₽/день), у Enjoy Camp 14 дней
+// на лето 2027 — 150 000 ₽ полной ценой и 120 000 ₽ по раннему бронированию.
+//
+// ⚠️ ДАТЫ ПРЕДВАРИТЕЛЬНЫЕ. Точные будут известны 15.10.2026 — до этого дня
+// числа ниже держат рамку «первая/вторая половина месяца», не более.
+// Поэтому смены НЕ в mainShifts: mainShifts — то, что реально продаётся,
+// и предлагать бронь на неподтверждённые даты нельзя. Страницы под лето 2027
+// читают этот экспорт напрямую (как /vesna/ читает SPRING_2027).
+// После 15.10: уточнить startDate/endDate, затем переносить в mainShifts.
+//
+// Зачем так рано: выдача по «лагеря на лето 2027» практически пуста —
+// выгрузка ТОП-10 Арсенкина 07.09.2026 вернула ОДИН URL на запрос
+// (deti-travel.ru). Спрос уже идёт: «лагеря на лето 2027» — 115,
+// «детский лагерь 2027» — 69, «лагеря в подмосковье на лето 2027» — 43.
+export const SUMMER_2027_PRELIMINARY = true;
+export const SUMMER_2027_DATES_KNOWN_AT = '2026-10-15';
+export const SUMMER_2027: Shift[] = [
+  {
+    id: 'shift-2027-06-1', name: 'Июнь, первая смена', dates: '1 июня — 14 июня', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Открытие сезона: полный цикл проекта от идеи до защиты.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-06-01', endDate: '2027-06-14',
+  },
+  {
+    id: 'shift-2027-06-2', name: 'Июнь, вторая смена', dates: '16 июня — 29 июня', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Полный цикл проекта с акцентом на командную работу.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-06-16', endDate: '2027-06-29',
+  },
+  {
+    id: 'shift-2027-07-1', name: 'Июль, первая смена', dates: '1 июля — 14 июля', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Середина лета: больше самостоятельности и сложнее результат.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-07-01', endDate: '2027-07-14',
+  },
+  {
+    id: 'shift-2027-07-2', name: 'Июль, вторая смена', dates: '16 июля — 29 июля', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Проект под собственную идею — от прототипа до презентации.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-07-16', endDate: '2027-07-29',
+  },
+  {
+    id: 'shift-2027-08-1', name: 'Август, первая смена', dates: '1 августа — 14 августа', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Сильный проект и уверенный результат к концу лета.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-08-01', endDate: '2027-08-14',
+  },
+  {
+    id: 'shift-2027-08-2', name: 'Август, вторая смена', dates: '16 августа — 29 августа', duration: '14 дней',
+    status: 'даты уточняются', statusType: 'available',
+    description: 'Закрытие сезона: защита проекта и старт в новый учебный год.',
+    price: '119 000 ₽', free: 50, occupied: 0,
+    startDate: '2027-08-16', endDate: '2027-08-29',
+  },
+];
+// Цена раннего бронирования (её платит родитель) и полная — от которой считается
+// скидка. Решение владельца 07.09.2026 после разбора конкурентов:
+//   Enjoy Camp, 14 дней:  150 000 ₽ полная / 120 000 ₽ раннее бронирование
+//   Дружите.ру, 7 дней:    55 900-59 900 ₽ полная, скидка 3 000-10 000 ₽ в карточке
+// Обе показывают ДВЕ цены и явную скидку. У нас механика роста цены к старту смены
+// уже есть (RAMP_DAYS/DAILY_INC в dynamicPrices.ts), но подана как «дорожает» —
+// покупатель видит рост, а не выгоду. Полная цена даёт точку отсчёта, от которой
+// скидка вообще становится видимой.
+// 139 000 ₽ = 9 929 ₽/день — ниже Enjoy Camp (10 714 ₽/день), но в их лиге.
+export const PRICE_LETO_2027_FULL = '139 000 ₽';
+export const PRICE_LETO_2027 = SUMMER_2027[0].price;          // раннее бронирование
+export const PRICE_LETO_2027_EARLY = PRICE_LETO_2027;
+// Скидка ВЫВОДИТСЯ, а не пишется руками: поменяешь любую из двух цен — сойдётся сама.
+const _priceDigits = (p: string) => Number(p.replace(/[^0-9]/g, ''));
+export const DISCOUNT_LETO_2027 = `${(_priceDigits(PRICE_LETO_2027_FULL) - _priceDigits(PRICE_LETO_2027)).toLocaleString('ru-RU')} \u20BD`;
+export const SEATS_PER_SHIFT_2027 = 50;
+
 export const PRICE_VESNA = SPRING_2027.price;
+// У весны 2027 своего объекта Shift пока нет (даты предварительные), поэтому
+// строка собирается из числа: 5–20 дней — всегда «дней», особые формы «день»
+// и «дня» здесь недостижимы, но helper их учитывает на будущее.
+const _daysWord = (n: number) => {
+  const t = n % 100, o = n % 10;
+  if (t >= 11 && t <= 14) return 'дней';
+  if (o === 1) return 'день';
+  if (o >= 2 && o <= 4) return 'дня';
+  return 'дней';
+};
+export const DAYS_VESNA = `${SPRING_2027.days} ${_daysWord(SPRING_2027.days)}`;
 export const VYCHET_VESNA = _fmtV(Math.round(taxDeduction(_priceNum(SPRING_2027.price), SPRING_2027.days) / 50) * 50);
 
 // === Даты смен — ПРОИЗВОДНЫЕ от startDate/endDate (ISO). НЕ хардкодить даты на страницах! ===
@@ -362,23 +610,41 @@ export function shiftDatesShort(s: Shift): string {
 }
 export const DATES_S1 = shiftDatesFull(_shift1);
 export const DATES_S2 = shiftDatesFull(_shift2);
-export const DATES_S3 = shiftDatesFull(mainShifts[0]);
-export const DATES_S4 = shiftDatesFull(mainShifts[1]);
+export const DATES_S3 = shiftDatesFull(_s3);
+export const DATES_S4 = shiftDatesFull(_s4);
 export const DATES_S21 = shiftDatesFull(_shift21);
 export const DATES_S22 = shiftDatesFull(_shift22);
 export const DATES_SHORT_S1 = shiftDatesShort(_shift1);
 export const DATES_SHORT_S2 = shiftDatesShort(_shift2);
-export const DATES_SHORT_S3 = shiftDatesShort(mainShifts[0]);
-export const DATES_SHORT_S4 = shiftDatesShort(mainShifts[1]);
+export const DATES_SHORT_S3 = shiftDatesShort(_s3);
+export const DATES_SHORT_S4 = shiftDatesShort(_s4);
 export const DATES_SHORT_S21 = shiftDatesShort(_shift21);
 export const DATES_SHORT_S22 = shiftDatesShort(_shift22);
-export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].trim()} ${_MONTHS_RU[_d(mainShifts[0].startDate).m-1]} — ${shiftDatesShort(mainShifts[1])}`; // ориентир сезона
+
+/**
+ * Каноническая строка смены для прозы: «Смена 3 — 3–15 августа, 13 дней, 89 400 ₽».
+ * С opts.vychet — «… (налоговый вычет ~5 200 ₽)».
+ *
+ * Для НОВЫХ страниц. Существующие 170+ страниц сознательно сохраняют свои
+ * формулировки (их не меньше 12 видов) и собираются из атомов DAYS_, PRICE_ и
+ * DATES_: переписывать видимый текст на 50 страницах с FAQ-разметкой ради
+ * единообразия — SEO-риск без выгоды. Решение владельца 07.09.2026.
+ */
+export function shiftLine(s: Shift, opts?: { vychet?: boolean }): string {
+  const base = `${s.name} — ${shiftDatesShort(s)}, ${s.duration}, ${s.price}`;
+  return opts?.vychet ? `${base} (налоговый вычет ~${fmtRub(shiftDeduction(s))})` : base;
+}
 
 // Месяцы, которые реально покрывают ОТКРЫТЫЕ смены (mainShifts) — не хардкодить
 // диапазон месяцев отдельно, иначе он отстаёт при закрытии ранних смен сезона
 // (инцидент: "июнь–август" оставался после того, как июньские смены завершились).
-const _firstMonthIdx = _d(mainShifts[0].startDate).m - 1;
-const _lastMonthIdx = _d(mainShifts[mainShifts.length - 1].endDate).m - 1;
+// Берём МИНИМАЛЬНУЮ startDate и МАКСИМАЛЬНУЮ endDate, а не первый и последний
+// элемент массива: порядок mainShifts — вопрос вёрстки карточек, а не хронологии,
+// и одна переставленная смена молча сдвигала бы весь диапазон месяцев.
+const _earliestStart = mainShifts.reduce((a, b) => (b.startDate < a.startDate ? b : a)).startDate;
+const _latestEnd = mainShifts.reduce((a, b) => (b.endDate > a.endDate ? b : a)).endDate;
+const _firstMonthIdx = _d(_earliestStart).m - 1;
+const _lastMonthIdx = _d(_latestEnd).m - 1;
 export const SEASON_MONTHS = _firstMonthIdx === _lastMonthIdx
   ? _MONTHS_RU[_firstMonthIdx]
   : `${_MONTHS_RU[_firstMonthIdx]}–${_MONTHS_RU[_lastMonthIdx]}`;

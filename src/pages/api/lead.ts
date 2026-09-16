@@ -216,6 +216,9 @@ function buildTgText(body: Record<string, string>, crmId?: number | null): strin
   if (body.name) lines.push(`🙋 <b>${esc(body.name)}</b>`);
   lines.push(`📞 <b>${esc(phone)}</b>  |  👶 ${esc(age) || '—'}  |  🏕 ${esc(shift) || '—'}`);
   if (body.call_time) lines.push(`⏰ Позвонить: <b>${esc(body.call_time)}</b>`);
+  // Промокод виден менеджеру сразу в шапке: по нему считается скидка и трансфер,
+  // а не только в примечании CRM.
+  if (body.promo) lines.push(`🎫 Промокод: <b>${esc(body.promo)}</b>`);
   if (isReferral) lines.push('→ Отправить мерч тому кто поделился!');
   lines.push('');
 
