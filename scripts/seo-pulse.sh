@@ -112,6 +112,22 @@ WAVE_MEASURED=$(sudo -u postgres psql -d aidacamp -tAc "
 WAVE_OPEN_PRS=$(sudo -u postgres psql -d aidacamp -tAc "
   SELECT site || ' | ' || pr_url FROM seo_wave_log WHERE pr_url IS NOT NULL AND edited_at >= now() - interval '24 hours'" 2>/dev/null || true)
 
+# ── 3b. Оборот лейнов (14.09.2026, план 3-лейновой ротации) ─────────────────
+# Не замер «на 3-й день» (слишком рано — см. открытый вопрос SKILL.md), а
+# сводка: сколько лейнов реально получили работу за последние 3 календарных
+# дня и что осталось в каждом лейне на сегодня — точка «конец оборота, можно
+# посмотреть и решить, продолжать ли», без насильственной синхронизации
+# замера с циклом интейка.
+TODAY_LANE=$(sudo -u postgres psql -d aidacamp -tAc \
+  "SELECT 1 + (((extract(epoch from current_date)::bigint / 86400) % 3 + 3) % 3)" 2>/dev/null | tr -d ' ')
+LANE_ROTATION=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | лейн ' || lane
+      || ' | взято за 3 дня: ' || COUNT(*) FILTER (WHERE taken_at >= current_date - interval '2 days')
+      || ' | осталось new: ' || COUNT(*) FILTER (WHERE status='new')
+  FROM seo_keyword_backlog
+  WHERE lane IS NOT NULL
+  GROUP BY site, lane ORDER BY site, lane" 2>/dev/null || true)
+
 # ── 4. Очередь работы (seo_keyword_backlog) ─────────────────────────────────
 # Показываем не только сделанное, но и что впереди: сколько ключей ждёт, какая
 # страница следующая по приоритету. Ранжирование — то же, что использует цикл
@@ -189,6 +205,11 @@ $( if [[ -n "$WAVE_MEASURED" ]]; then echo "<pre>$(echo "$WAVE_MEASURED" | esc)<
 <p class="muted">Открытые PR за сутки:</p>
 $( if [[ -n "$WAVE_OPEN_PRS" ]]; then echo "<pre>$(echo "$WAVE_OPEN_PRS" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
 <p class="muted">Источник — таблица seo_wave_log, заполняется скиллом seo-wave-cycle. Лабрика-конвейер (скор/конкуренты вручную в браузере) сюда не входит — отдельная ручная работа в сессии.</p></div>
+
+<div class="card"><h2>🔁 3b. Оборот лейнов</h2>
+<p class="muted">Сегодняшний лейн (лейн, из которого Шаг E берёт новые правки): <b>${TODAY_LANE:-?}</b>. Взято «за 3 дня» — сколько ключей ушло в работу с начала текущего 3-дневного оборота (по всем лейнам сайта, не только сегодняшнему).</p>
+$( if [[ -n "$LANE_ROTATION" ]]; then echo "<pre>$(echo "$LANE_ROTATION" | esc)</pre>"; else echo "<p>Лейны ещё не назначены — миграция lane не выполнена или бэклог пуст.</p>"; fi )
+<p class="muted">Это НЕ замер позиций на 3-й день — замер каждой правки остаётся per-page через 4–5 дней (Шаг M). Здесь только «сколько работы прошло за оборот», чтобы было на что посмотреть каждые 3 дня без порчи точности измерения.</p></div>
 
 <div class="card"><h2>📋 4. Очередь работы (бэклог ключей)</h2>
 $( if [[ -n "$BACKLOG_STATE" ]]; then echo "<pre>$(echo "$BACKLOG_STATE" | esc)</pre>"; else echo "<p>Бэклог пуст — нужен прогон scripts/seo-backlog-build.mjs.</p>"; fi )

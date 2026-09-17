@@ -75,6 +75,16 @@ fi
 # Так фронт A уничтожал материал фронта C — 22 ключа главной codims
 # отбракованы дважды за сутки (06.09 в логе прогона, повторно 06.09 23:28).
 #
+# ⚠️ Лейн-ротация (14.09.2026, план 3-лейновой перестройки). Шаг E берёт
+# кандидатов ТОЛЬКО из today_lane и только пока не исчерпана дневная квота
+# сайта (см. SKILL.md §«Лейны») — старый запрос ниже этого не учитывал:
+# сторож поднимал прогон, даже когда весь остаток new лежал в двух чужих
+# сегодня лейнах или дневная квота уже выбрана, прогон не находил допустимой
+# работы и завершался пусто, а сторож поднимал его снова после cooldown.
+# Работа фронта A теперь = (есть new-кандидаты С lane=today_lane И у их сайта
+# остаток дневной квоты > 0) ИЛИ есть просроченные измерения (Шаг M не
+# зависит от лейна/квоты вообще — иначе awaiting_measure копится бесконечно).
+#
 # ⚠️ 16.09.2026: живая проверка кластера (SKILL.md, Шаг E, п.3b) теперь пишет
 # вердикт обратно в БД — на исчерпанное сегодня (champion/phantom/declined/просто
 # «смотрели») ставится updated_at=now(), даже если status остаётся 'new'
@@ -90,20 +100,35 @@ fi
 # Старый фильтр `position >= 11` в SQL для NULL не истина — сторож их тихо не
 # видел как работу, даже с привязанной страницей. Условие ниже синхронно с
 # SKILL.md, Шаг E, п.2.
-REMAIN=$(sudo -u postgres psql -d aidacamp -tAc \
-  "SELECT COUNT(*) FROM seo_keyword_backlog
-    WHERE status='new' AND (position >= 11 OR position IS NULL)
-      AND COALESCE(front,'A') <> 'C'
-      AND cluster_page IS NOT NULL
-      AND cluster_page !~ '^https?://[^/]+/?\$'
-      AND cluster_page !~ '^/\$'
-      AND (updated_at IS NULL OR updated_at < current_date)" 2>/dev/null | tr -d ' ')
-if [ -z "$REMAIN" ]; then
+REMAIN_NEW=$(sudo -u postgres psql -d aidacamp -tAc \
+  "WITH quota(site, daily_quota) AS (VALUES
+     ('codims', 25), ('aidacamp', 15), ('icepartners', 10), ('vlad-a', 0)
+   ),
+   used AS (
+     SELECT site, COUNT(*) AS used_today FROM seo_keyword_backlog
+     WHERE taken_at = current_date GROUP BY site
+   )
+   SELECT COUNT(*) FROM seo_keyword_backlog b
+   JOIN quota q ON q.site = b.site
+   LEFT JOIN used u ON u.site = b.site
+   WHERE b.status='new' AND (b.position >= 11 OR b.position IS NULL)
+     AND COALESCE(b.front,'A') <> 'C'
+     AND b.cluster_page IS NOT NULL
+     AND b.cluster_page !~ '^https?://[^/]+/?\$'
+     AND b.cluster_page !~ '^/\$'
+     AND (b.updated_at IS NULL OR b.updated_at < current_date)
+     AND b.lane = (1 + (((extract(epoch from current_date)::bigint / 86400) % 3 + 3) % 3))
+     AND q.daily_quota - COALESCE(u.used_today, 0) > 0" 2>/dev/null | tr -d ' ')
+REMAIN_MEASURE=$(sudo -u postgres psql -d aidacamp -tAc \
+  "SELECT COUNT(*) FROM seo_wave_log
+    WHERE status='awaiting_measure' AND measure_due_at <= now()" 2>/dev/null | tr -d ' ')
+if [ -z "$REMAIN_NEW" ] || [ -z "$REMAIN_MEASURE" ]; then
   say "пропуск: БД не ответила — проверить postgres"
   echo "psql -d aidacamp не ответил при опросе очереди" | /opt/scripts/seo-alert.sh error watchdog "БД недоступна, конвейер не поднять"
   exit 0
 fi
-if [ "$REMAIN" -eq 0 ] 2>/dev/null; then say "пропуск: очередь пуста, работы нет"; exit 0; fi
+REMAIN=$((REMAIN_NEW + REMAIN_MEASURE))
+if [ "$REMAIN" -eq 0 ] 2>/dev/null; then say "пропуск: очередь пуста (лейн/квота исчерпаны, просроченных замеров нет)"; exit 0; fi
 
 if [ -f "$STAMP" ]; then
   AGE=$(( $(date +%s) - $(stat -c %Y "$STAMP") ))
