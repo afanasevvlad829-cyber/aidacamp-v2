@@ -254,11 +254,19 @@ PR → quality-gate (Forgejo) → мерж в dev → ./scripts/release.sh
                                               └─ deploy.sh prod: бэкап → rsync → nginx-снипет → smoke → авто-откат
 ```
 
-Три рубежа защиты:
+Четыре рубежа защиты:
 1. `quality-gate.yml` на раннере Forgejo — `check:banned`, `check:prices`, `build`;
 2. стражи `deploy.sh`: чистое дерево, HEAD == `origin/dev` (обход только `release.sh --force`);
 3. **smoke прода** (страницы, редиректы, Tailwind в CSS, CSRF в обе стороны) + **авто-откат**
    на последний `backup-*`.
+4. **конверсионный smoke прода** (`scripts/smoke-conversion.sh`, вызывается из
+   `deploy.sh prod` сразу после обычного smoke) — Метрика реально инициализируется
+   (headless-проверка через Chrome на сервере: `ym` определён, счётчик отстучал,
+   `reachGoal` доходит до `mc.yandex.ru`) + тестовая заявка `/api/lead` с номера
+   `+7999000…` принимается. Провал → Telegram-алерт «конверсионный контур
+   сломан, откатывай» + тот же авто-откат. Ловит класс инцидента Partytown
+   16-18.04.2026 (сайт 200, Метрика мертва, 0 конверсий, −60К₽ за 2 дня).
+   Недоступность самого чекера (Chrome/CDP) прод не роняет — только алерт.
 
 `release.sh --dev` — то же самое на dev-стенд. Хотфикс не из `dev` — `release.sh --force`,
 осознанно.
