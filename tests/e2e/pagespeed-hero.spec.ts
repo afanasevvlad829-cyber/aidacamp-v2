@@ -13,7 +13,7 @@ test('mobile hero loads one responsive image and back-to-top remains functional'
   const hero = page.locator('#hero-mobile-photo');
   await expect(hero).toBeVisible();
   await expect.poll(() => hero.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-  expect(await hero.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain('hero-mobile-optimized-828.avif');
+  expect(await hero.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain('hero-mobile-optimized-744.avif');
   expect(images).toHaveLength(1);
   await expect(hero).toHaveCSS('opacity', '1');
   const thumbnails = page.locator('picture source[srcset*="proto-smena"]');
@@ -57,4 +57,21 @@ test('returning visitor reaches the viewed shift once across page lifecycle even
   expect(await page.evaluate(() => (window as any).shiftsScrollCalls)).toBe(1);
   expect(await page.evaluate(() => sessionStorage.getItem('ac:scroll_done'))).toBe('1');
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
+test('responsive hero keeps a single request and enough pixels at DPR 1 and 2', async ({ browser, baseURL }) => {
+  for (const [deviceScaleFactor, expectedWidth] of [[1, 414], [2, 828]]) {
+    const context = await browser.newContext({ viewport: { width: 412, height: 844 }, deviceScaleFactor, isMobile: true });
+    const page = await context.newPage();
+    const requests: string[] = [];
+    page.on('request', request => {
+      if (/\/optimized-media\/hero-mobile-optimized-.*\.avif/.test(request.url())) requests.push(request.url());
+    });
+    await page.goto(baseURL!);
+    const hero = page.locator('#hero-mobile-photo');
+    await expect.poll(() => hero.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect(await hero.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(`hero-mobile-optimized-${expectedWidth}.avif`);
+    expect(requests).toHaveLength(1);
+    await context.close();
+  }
 });
