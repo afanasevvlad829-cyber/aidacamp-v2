@@ -141,9 +141,14 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
         || /bot|crawl|spider|headless|puppeteer|playwright|phantom|chrome-lighthouse|gptbot|claudebot|perplexity|ahrefs|semrush|googlebot|yandexbot|bingbot|duckduckbot|applebot|facebookexternalhit/i.test(__ua)
         || (navigator.plugins && navigator.plugins.length === 0 && /Chrome/.test(__ua) && !/Mobile/.test(__ua));
 
-      if (window.location.search.includes('ym_disable=1') || __isInternalPath || __isBot || __isDevHost) {
-        document.cookie = 'ym_disable96499295=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
-        document.cookie = 'clarity_disable=true; expires=Thu, 31 Dec 2099 23:59:59 UTC; path=/';
+      // Кука пишется только для намеренного opt-out (внутренние страницы, ?ym_disable=1) —
+      // и живёт до закрытия вкладки, не до 2099. __isBot/__isDevHost намеренно НЕ пишут куку:
+      // это эвристика с ложными срабатываниями на живых браузерах (webdriver/расширения/корп.
+      // политики), и вечная кука от одного ложного детекта навсегда глушила Метрику у реального
+      // посетителя. Бот/dev по-прежнему проверяются на лету, ниже, без записи в cookie.
+      if (window.location.search.includes('ym_disable=1') || __isInternalPath) {
+        document.cookie = 'ym_disable96499295=true; path=/';
+        document.cookie = 'clarity_disable=true; path=/';
       }
       if (document.cookie.indexOf('ym_disable96499295=true') !== -1 || __isInternalPath || __isBot || __isDevHost) {
         window.ym_disable96499295 = true;
