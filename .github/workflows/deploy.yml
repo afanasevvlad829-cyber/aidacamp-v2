@@ -247,20 +247,41 @@ jobs:
       # результат PR-проверки.
       - name: Дождаться зелёного quality-gate на этом SHA
         if: ${{ !inputs.release_sha }}
+        # Forgejo (17.09.2026): на раннере нет `gh`, а check-runs — GitHub-only API.
+        # Forgejo Actions пишет результат job'а в commit status с контекстом
+        # «Quality Gate / quality (push)» — читаем его автоматическим токеном прогона.
+        # Берём только push-статус: PR-проверка того же SHA промоуту не указ.
         env:
-          GH_TOKEN: ${{ github.token }}
+          API: ${{ github.api_url }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
         run: |
-          SHA="${{ github.sha }}"
-          echo "Жду check 'quality' на $SHA (таймаут 15 мин)..."
+          echo "Жду статус 'quality (push)' на $SHA (таймаут 15 мин)..."
           for i in $(seq 1 60); do
-            CONCLUSION=$(gh api "repos/${{ github.repository }}/commits/$SHA/check-runs" \
-              --jq '[.check_runs[] | select(.name=="quality")] | sort_by(.started_at) | last | .conclusion // "pending"')
+            CONCLUSION=$(python3 - <<'PY'
+          import json, os, urllib.request
+          req = urllib.request.Request(
+              f"{os.environ['API']}/repos/{os.environ['REPO']}/commits/{os.environ['SHA']}/status",
+              headers={"Authorization": f"token {os.environ['TOKEN']}"},
+          )
+          try:
+              statuses = json.load(urllib.request.urlopen(req, timeout=30)).get("statuses") or []
+          except Exception as e:
+              print(f"pending(api:{type(e).__name__})")
+              raise SystemExit
+          q = [s for s in statuses
+               if "quality" in s.get("context", "").lower() and "(push)" in s.get("context", "")]
+          q.sort(key=lambda s: s.get("created_at", ""))
+          print(q[-1].get("status", "pending") if q else "pending")
+          PY
+            )
             echo "  [$i/60] quality: $CONCLUSION"
             if [ "$CONCLUSION" = "success" ]; then
               echo "✅ quality зелёный — можно промоутить"
               exit 0
             fi
-            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ] || [ "$CONCLUSION" = "timed_out" ]; then
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "error" ]; then
               echo "::error::quality завершился с '$CONCLUSION' — промоут отменён"
               exit 1
             fi

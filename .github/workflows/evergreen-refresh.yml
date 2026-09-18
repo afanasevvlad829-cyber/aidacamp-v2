@@ -22,9 +22,12 @@ name: Evergreen refresh
 # упавший деплой не теряет переход — сигнатуры расходятся, пока какой-нибудь
 # деплой не пройдёт успешно.
 #
-# Слепое пятно (осознанное): ручной Deploy с input skip_prod=true обновляет
-# только dev, но засчитывается как точка отсчёта. Редкий ручной случай —
-# лечится следующим обычным деплоем.
+# Forgejo (17.09.2026): workflow исполняет Forgejo Actions, на раннере нет `gh`
+# (прогон 17.09 упал: «gh: command not found»). Вместо `gh run list` / `gh workflow
+# run` — прямые вызовы Forgejo API автоматическим токеном прогона: проверено пробой,
+# токен читает /actions/tasks и его dispatch реально запускает прогон. Точка отсчёта
+# теперь — последний успешный job `deploy-prod` (а не любой успешный ран Deploy),
+# поэтому старое слепое пятно «ручной Deploy со skip_prod засчитывался» закрыто.
 
 on:
   schedule:
@@ -34,10 +37,6 @@ on:
 concurrency:
   group: evergreen-refresh
   cancel-in-progress: false
-
-permissions:
-  contents: read
-  actions: write      # gh run list по Deploy + gh workflow run deploy.yml
 
 jobs:
   refresh:
@@ -50,12 +49,31 @@ jobs:
       - name: Сигнатура сегодня vs на дату последнего деплоя
         id: sig
         env:
-          GH_TOKEN: ${{ github.token }}
+          API: ${{ github.api_url }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
         run: |
           NOW=$(python3 scripts/evergreen-state.py)
-          LAST_DEPLOY=$(gh run list -R "${{ github.repository }}" \
-            --workflow deploy.yml --status success --limit 1 \
-            --json createdAt --jq '.[0].createdAt // empty' | cut -dT -f1)
+          LAST_DEPLOY=$(python3 - <<'PY'
+          import json, os, urllib.request
+          # Задачи идут от новых к старым; листаем страницами, пока не встретим
+          # успешный deploy-prod (без page API отдаёт всю историю разом).
+          done = []
+          for page in range(1, 11):
+              req = urllib.request.Request(
+                  f"{os.environ['API']}/repos/{os.environ['REPO']}/actions/tasks?page={page}&limit=50",
+                  headers={"Authorization": f"token {os.environ['TOKEN']}"},
+              )
+              runs = json.load(urllib.request.urlopen(req, timeout=30)).get("workflow_runs") or []
+              done = [r.get("created_at", "") for r in runs
+                      if r.get("workflow_id") == "deploy.yml"
+                      and r.get("name") == "deploy-prod"
+                      and r.get("status") == "success"]
+              if done or not runs:
+                  break
+          print(max(done)[:10] if done else "")
+          PY
+          )
           if [ -z "$LAST_DEPLOY" ]; then
             echo "Успешных ранов Deploy не найдено — считаем, что пересборка нужна."
             THEN=none
@@ -70,10 +88,20 @@ jobs:
       - name: Переход смены? — запустить деплой
         if: steps.sig.outputs.now != steps.sig.outputs.then
         env:
-          GH_TOKEN: ${{ github.token }}
+          API: ${{ github.api_url }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
         run: |
           echo "Переход: '${{ steps.sig.outputs.then }}' → '${{ steps.sig.outputs.now }}'"
-          gh workflow run deploy.yml --ref dev
+          CODE=$(curl -sS -o /tmp/dispatch.out -w '%{http_code}' -X POST \
+            -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+            -d '{"ref":"dev"}' \
+            "$API/repos/$REPO/actions/workflows/deploy.yml/dispatches")
+          echo "dispatch deploy.yml@dev: HTTP $CODE"
+          if [ "$CODE" != "204" ]; then
+            cat /tmp/dispatch.out
+            exit 1
+          fi
 
       - name: Без изменений — пропуск
         if: steps.sig.outputs.now == steps.sig.outputs.then
