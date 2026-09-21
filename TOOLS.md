@@ -1,10 +1,12 @@
 # TOOLS — каталог инструментов АйДаКемп
 **Канон на сервере:** `/opt/aidacamp-tools/TOOLS.md`  
-**Последнее обновление:** 2026-06-17
+**Последнее обновление:** 2026-09-21 (сверка по ТЗ v2 «Аудит и оркестратор-арбитр» — актуализирован раздел инструментов после слияния read_file/write_file/list_directory/create_directory → `files`)
 
 > Этот файл читается каждым агентом при старте.  
 > **Принцип:** все данные берутся из API напрямую — не из локальной БД.  
 > ETL упразднён. Исторические данные запрашиваются через API с нужными датами.
+>
+> **Актуальность реестра тулов держится автоматически:** `~/MCP/scripts/mcp-drift-check.sh` гоняется ежедневно 08:00 launchd-агентом `ru.aidacamp.mcp-drift-check` (мак, алерт в Штаб при расхождении прод/репозиторий). Сам список тулов и их назначение в этом файле — правь вручную при добавлении/удалении тула, drift-check ловит только код-дрифт, не устаревшую документацию.
 
 ---
 
@@ -1155,9 +1157,7 @@ stats = kinescope("GET", f"videos/{video_id}/statistics")
 | `direct_reports` | Отчёты Директ |
 | `direct_leads` | Лиды из АльфаCRM |
 | `direct_manage_campaign` | Управление кампаниями Директ |
-| `read_file` | Читать файл на сервере |
-| `write_file` | Писать файл на сервере |
-| `list_directory` | Список файлов |
+| `files` | Файлы на сервере: action read/write/list/mkdir (read_file/write_file/list_directory/create_directory слиты в один тул 20.09.2026, PR #13) |
 | `diagnostics` | Диагностика сервера |
 
 ---
@@ -1219,29 +1219,29 @@ ai_tg_users           — маппинг телефон → TG peer_id
 
 > ⚠️ **УСТАРЕЛО (13.07.2026): `Desktop_Commander` полностью удалён** (см. `reference_desktop_commander_idle_shutdown` в памяти агента — регулярно «зависал» на простое ~4 мин). Рецепт ниже больше не работает как описано. Актуальный способ — см. «ОТДАТЬ ФАЙЛ ВНЕШНЕМУ API ПО ССЫЛКЕ» чуть ниже, либо прямой SCP по SSH-ключу без Desktop Commander.
 
-**Два шага, без вариантов (АРХИВ, для истории):**
-1. `aidacamp_tools.write_file` → записать на Мак (локально)
-2. `Desktop_Commander.start_process("scp -i ~/.ssh/aidacamp_prod /путь/на/маке root@159.194.223.55:/путь/на/сервере")` → скопировать на сервер
+**Два шага, без вариантов (АРХИВ, для истории; `write_file` ниже читать как `files(action="write", ...)` — тул переименован 20.09.2026):**
+1. `aidacamp_tools.files(action="write", path=..., content=...)` → записать на Мак (локально)
+2. `scp -i ~/.ssh/aidacamp_prod /путь/на/маке root@159.194.223.55:/путь/на/сервере` (Bash, напрямую — `Desktop_Commander` удалён 13.07.2026) → скопировать на сервер
 
 Всё. 0.44 секунды. Работает с кириллицей, любыми размерами, без проблем.
 
 ```
 # Пример: положить скилл на сервер
-aidacamp_tools.write_file(
+aidacamp_tools.files(
+    action="write",
     path="/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/мой-скилл.md",
     content="полный текст"
 )
-Desktop_Commander.start_process(
-    "scp -i ~/.ssh/aidacamp_prod "
-    "/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/мой-скилл.md "
-    "root@159.194.223.55:/opt/aidacamp-build/.claude/skills/мой-скилл.md"
-)
+# затем Bash:
+scp -i ~/.ssh/aidacamp_prod \
+    /Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/мой-скилл.md \
+    root@159.194.223.55:/opt/aidacamp-build/.claude/skills/мой-скилл.md
 ```
 
 **ЗАПРЕЩЕНО:**
 - base64 + chunking
 - SSH heredoc с кириллицей (таймаутится на больших файлах)
-- aidacamp_tools.write_file на серверный путь /opt/... (он локальный, ENOENT)
+- `aidacamp_tools.files(action="write", ...)` на серверный путь /opt/... (он локальный, ENOENT)
 
 **Канонические пути для скиллов:**
 - Мак:    `/Users/vladimirafanasev/Aidacamp-cloude/.claude/skills/`
@@ -1254,7 +1254,8 @@ Desktop_Commander.start_process(
 Когда стороннему API (Replicate, любой другой генератор по URL) нужна публичная ссылка на файл (картинка/видео с диска) — **не использовать сторонние хостинги вроде tmpfiles.org** (без авторизации, эфемерные, потенциальная утечка данных). Своя площадка уже есть и отдаёт публично:
 
 ```
-aidacamp_tools.write_file(
+aidacamp_tools.files(
+    action="write",
     path="/var/www/aidacamp-media/tmp/<имя-файла>",
     content="<base64 для бинарных / текст как есть>",
     encoding="base64"   # для картинок/видео; "utf8" по умолчанию для текста
@@ -1263,7 +1264,7 @@ aidacamp_tools.write_file(
 # https://dev.aidacamp.ru/media/tmp/<имя-файла>
 ```
 
-Работает потому что `write_file` в текущей регистрации `aidacamp-tools` (HTTP-транспорт на `dev.aidacamp.ru/mcp`) пишет **прямо на сервер**, а nginx-конфиг `aidacamp-dev.conf:308` отдаёт весь `/var/www/aidacamp-media/` целиком по префиксу `/media/` (`location ^~ /media/ { alias /var/www/aidacamp-media/; }`) — вложенные подпапки типа `tmp/` работают из коробки, ничего доп. настраивать не нужно. Проверено сквозным тестом: запись → `curl` → HTTP 200 с верным содержимым.
+Работает потому что `files(action="write", ...)` в текущей регистрации `aidacamp-tools` (HTTP-транспорт на `dev.aidacamp.ru/mcp`) пишет **прямо на сервер**, а nginx-конфиг `aidacamp-dev.conf:308` отдаёт весь `/var/www/aidacamp-media/` целиком по префиксу `/media/` (`location ^~ /media/ { alias /var/www/aidacamp-media/; }`) — вложенные подпапки типа `tmp/` работают из коробки, ничего доп. настраивать не нужно. Проверено сквозным тестом: запись → `curl` → HTTP 200 с верным содержимым.
 
 **Важно:**
 - Только `dev.aidacamp.ru` (закрыт от индексации) — на проде `/media/` location нет, специально.
@@ -1310,6 +1311,38 @@ systemctl status agent-browser-reaper.service
 ```
 
 ⚠️ Скрипт лежит в git как источник правды для аудита/изменений — при правке в репо синхронизировать на сервер вручную (`scp` + `chmod +x`), автодеплоя на `/opt/scripts/` нет.
+
+---
+
+## 🔄 ОБМЕН АРТЕФАКТАМИ CODEX ↔ CLAUDE (`_notes/codex-exchange/`)
+
+Codex CLI и Claude Code работают на одном маке — общая файловая система, поэтому обмен файлами не требует интеграции, только конвенцию путей. Три канала под разные задачи:
+
+- **Итог задачи (summary + лог)** — пишет `codex-task.sh` автоматически, оформлять не нужно: `~/.claude/agent-results/codex-<slug>.md` + `~/.claude/logs/codex-<slug>.log` (детали — `~/.claude/CLAUDE.md` → «Codex CLI доступен локально»).
+- **Codex → Claude, сырые/объёмные данные** (списки, CSV/JSON, скриншоты — что не влезает в summary-md) — `_notes/codex-exchange/<slug>/output/`. В брифе для `codex-task.sh` явно указать этот путь как место для файлов.
+- **Claude → Codex, входные данные** (списки/файлы, которые не влезают в текст брифа) — `_notes/codex-exchange/<slug>/input/`. Claude кладёт файл(ы) туда до запуска `codex-task.sh`, путь передаёт в брифе.
+
+`<slug>` — тот же, что в `codex-task.sh <slug> "..."`, чтобы результат/лог/обменные файлы искались по одному имени.
+
+```bash
+# Claude готовит входные данные для Codex
+mkdir -p _notes/codex-exchange/labrika-meta-batch/input
+cp /tmp/urls.csv _notes/codex-exchange/labrika-meta-batch/input/
+
+~/agent-context/scripts/codex-task.sh labrika-meta-batch \
+  "Прочитай _notes/codex-exchange/labrika-meta-batch/input/urls.csv (список URL),
+   для каждого проверь meta title/description через Labrika,
+   результат — CSV в _notes/codex-exchange/labrika-meta-batch/output/report.csv"
+
+# Позже Claude проверяет и забирает результат
+tail -20 ~/.claude/logs/codex-labrika-meta-batch.log
+cat _notes/codex-exchange/labrika-meta-batch/output/report.csv
+```
+
+**Правила:**
+- Папка `<slug>/` — на время задачи. Как только результат прочитан и перенесён по назначению (отчёт, код, Reports Hub) — удалять, не копить.
+- В git не попадает: `_notes/codex-exchange/*` в `.gitignore`, кроме `README.md` — рабочие файлы транзитные, не документация.
+- Не путать с `/.codex-artifacts/` в `.gitignore` — старая запись под мусор в корне репо (скриншоты/дампы браузерных сессий), к этой конвенции отношения не имеет.
 
 ---
 
