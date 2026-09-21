@@ -57,8 +57,8 @@ name: Deploy
 # (workflow_dispatch) или скриптом ./scripts/release.sh с машины владельца.
 # Вернуть автодеплой = раскомментировать push-блок ниже.
 on:
-  # push:
-  #   branches: [dev]
+  push:
+    branches: [dev]
   workflow_dispatch:
     inputs:
       release_sha:
@@ -200,6 +200,16 @@ jobs:
       - name: Скачать собранный dist
         uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
         with: { name: site-dist, path: dist }
+
+      # Runner-образ не гарантирует rsync (та же причина падения, что закрыли
+      # в deploy-prod 21.09.2026 — там шаг был, тут его забыли завести).
+      - name: Установить rsync для штатного deploy.sh
+        run: |
+          if ! command -v rsync >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends rsync
+          fi
+          for tool in curl rsync ssh tar bash; do command -v "$tool"; done
 
       # deploy.sh dev сам гоняет smoke.sh в конце. Красный smoke → exit 1 → поезд встал.
       # SKIP_BUILD=1 — используем dist из job build, не пересобираем.
