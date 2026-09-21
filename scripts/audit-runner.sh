@@ -21,15 +21,12 @@ SSH_KEY="$HOME/.ssh/aidacamp_prod"
 SCREEN_NAME="aidacamp-audit"
 REMOTE_LOG="/tmp/audit-run.log"
 
-TG_TOKEN="8619240142:AAEZluPyzdCTDNEiRFSLt7I8Ka4dC8ntfHc"
-TG_CHAT="244314247"
-
 R='\033[0;31m'; G='\033[0;32m'; Y='\033[1;33m'; B='\033[0;34m'; N='\033[0m'
 
 ssh_cmd() { ssh -i "$SSH_KEY" -o ConnectTimeout=10 "$SERVER" "$@"; }
+# Уведомления — только через единую точку на сервере (notify.sh), своего бота не держим.
 tg() {
-  curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
-    -d chat_id="${TG_CHAT}" -d parse_mode="HTML" -d text="$1" >/dev/null 2>&1 || true
+  ssh_cmd "/opt/scripts/notify.sh -t system \"\$(cat)\"" <<< "$1" >/dev/null 2>&1 || true
 }
 
 # ── Служебные команды ─────────────────────────────────────────────
