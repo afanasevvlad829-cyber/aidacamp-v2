@@ -1,0 +1,225 @@
+---
+import { Icon } from 'astro-icon/components';
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ArticleBottomCta from '../components/ArticleBottomCta.astro';
+import BreadcrumbSchema from '../components/BreadcrumbSchema.astro';
+import { STAT_FOUNDED_YEAR, STAT_KIDS, STAT_RETURN, STAT_RATING } from '../data/contacts';
+
+const cards = [
+  {
+    icon: 'bi:tv',
+    title: 'Дарья на федеральном ТВ',
+    text: 'Основатель лагеря — в программе «Родительское собрание» на канале ОТР: о современных лагерях, телефонах и детях.',
+    href: '/tv',
+    cta: 'Смотреть отрывки',
+  },
+  {
+    icon: 'bi:trophy-fill',
+    title: 'Хакатон — финал каждой смены',
+    text: '48 часов на рабочий продукт: команда проходит путь от идеи до питча перед жюри из IT-педагогов.',
+    href: '/hakaton-dlya-shkolnikov',
+    cta: 'Как это устроено',
+  },
+  {
+    icon: 'bi:book-half',
+    title: 'Учебник Python «Играем, чтобы программировать»',
+    text: 'Тираж 2 000 экземпляров. Авторы — Никита Брагин и Александр Ташкин, ведущие преподаватели лагеря.',
+    href: '/founders',
+    cta: 'Об авторах',
+  },
+  {
+    icon: 'bi:cash-coin',
+    title: 'Внутренняя экономика смены',
+    text: 'Своя валюта — телефонное время. Зарабатывается за активность, помощь, инициативу; тратить сразу или копить — решает сам ребёнок.',
+    href: '/o-lagere',
+    cta: 'Как устроен лагерь',
+  },
+  {
+    icon: 'bi:award-fill',
+    title: 'ТОП-4 IT-лагерей Подмосковья',
+    text: 'Независимый рейтинг vc.ru / GdeKurs, 2025 год — «Топ-20 детских летних IT-лагерей в Москве и Подмосковье».',
+    href: 'https://vc.ru/gdekurs/1216219-top-20-detskih-letnih-it-lagerei-v-moskve-i-podmoskove',
+    cta: 'Читать рейтинг',
+    external: true,
+  },
+  {
+    icon: 'bi:chat-quote-fill',
+    title: 'Отзывы родителей',
+    text: 'Рейтинг 5.0, 40+ отзывов на Яндекс.Картах — от родителей, чьи дети уже прошли смену.',
+    href: '/otzyvy',
+    cta: 'Читать отзывы',
+  },
+];
+
+const stats = [
+  { num: STAT_FOUNDED_YEAR, label: 'Год основания' },
+  { num: STAT_KIDS, label: 'Выпускников' },
+  { num: STAT_RETURN, label: 'Возвращаются снова' },
+  { num: STAT_RATING, label: 'На Яндекс.Картах' },
+];
+---
+
+<Base
+  title="Регалии АйДаКемп — ТВ, хакатон, учебник, рейтинги"
+  description="Регалии IT-лагеря АйДаКемп: выступление на федеральном ТВ, хакатон в финале смены, учебник Python, внутренняя экономика, ТОП-4 в рейтинге vc.ru, отзывы родителей."
+>
+  <Fragment slot="head">
+    <BreadcrumbSchema label="Регалии" />
+  </Fragment>
+
+  <Header />
+
+  <!-- Hero -->
+  <section class="regalii-hero">
+    <div class="regalii-hero__orb regalii-hero__orb--1" aria-hidden="true"></div>
+    <div class="regalii-hero__orb regalii-hero__orb--2" aria-hidden="true"></div>
+    <div class="regalii-hero__inner">
+      <nav class="text-base text-white/50 mb-3">
+        <a href="/" class="hover:text-white/80 transition-colors">Главная</a>
+        <span class="mx-2">&rarr;</span>
+        <span class="text-white/70">Регалии</span>
+      </nav>
+      <h1 class="regalii-hero__title">Регалии АйДаКемп</h1>
+      <p class="regalii-hero__sub">ТВ, хакатон, свой учебник, своя экономика — и что об этом говорят независимые рейтинги и родители</p>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="py-10 px-4 bg-white">
+    <div class="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-4">
+      {stats.map(s => (
+        <div class="text-center p-5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div class="text-2xl font-bold text-slate-900">{s.num}</div>
+          <div class="text-sm text-slate-500 mt-0.5">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Cards -->
+  <section class="py-8 px-4 pb-16 bg-white">
+    <div class="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-5">
+      {cards.map(c => (
+        <a
+          href={c.href}
+          target={c.external ? '_blank' : undefined}
+          rel={c.external ? 'noopener' : undefined}
+          class="regalii-card"
+        >
+          <div class="regalii-card__icon">
+            <Icon name={c.icon} class={`bi ${c.icon.replace('bi:', 'bi-')}`} aria-hidden="true" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <h2 class="regalii-card__title">{c.title}</h2>
+            <p class="regalii-card__text">{c.text}</p>
+            <span class="regalii-card__cta">
+              {c.cta}
+              <Icon name={c.external ? 'bi:box-arrow-up-right' : 'bi:arrow-right'} class={`bi ${c.external ? 'bi-box-arrow-up-right' : 'bi-arrow-right'}`} aria-hidden="true" />
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <ArticleBottomCta
+    bookingTitle="Запишите ребёнка на ближайшую смену"
+    bookingSubtitle="Ответим за 10 минут. Покажем программу и расскажем про свободные места."
+  />
+
+  <Footer />
+</Base>
+
+<style>
+.regalii-hero {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-navy-950);
+  padding: 100px 20px 56px;
+  text-align: center;
+  isolation: isolate;
+}
+@media (min-width: 768px) {
+  .regalii-hero { padding-top: 120px; }
+}
+.regalii-hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.regalii-hero__orb--1 {
+  width: 640px; height: 640px; left: -10%; top: -30%;
+  background: radial-gradient(circle, rgba(249,115,22,0.28) 0%, transparent 70%);
+}
+.regalii-hero__orb--2 {
+  width: 500px; height: 500px; right: -8%; top: 10%;
+  background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+}
+.regalii-hero__inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+.regalii-hero__title {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin: 0 0 14px;
+}
+.regalii-hero__sub {
+  font-size: clamp(15px, 2vw, 18px);
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.regalii-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.regalii-card:hover {
+  border-color: #fde8c8;
+  transform: translateY(-2px);
+}
+.regalii-card__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: var(--color-primary);
+  font-size: 22px;
+}
+.regalii-card__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+.regalii-card__text {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0 0 10px;
+}
+.regalii-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.regalii-card__cta .bi { font-size: 11px; }
+</style>
