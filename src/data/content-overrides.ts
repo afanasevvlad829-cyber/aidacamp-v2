@@ -75,6 +75,12 @@ export const CONTENT_OVERRIDES: Record<string, PageContentOverrides> = {
       reason: 'Labrika 2026-08-05: «лагерь»(точное) цель 2-5 — снимаем 2 вхождения из общих блоков (вне зоны Body, но снижают общий повтор на странице)',
     },
   },
+  '/lager-shchelkovo/': {
+    shiftsGuideLinkText: {
+      value: 'Кому не подходит — честный список причин',
+      reason: 'Labrika 2026-09-25 (волна 3): «лагерь»(точное) 3, цель 2 — снимаем 1 вхождение из общего бейджа ShiftsGuideLink',
+    },
+  },
   '/lager-odintsovo/': {
     relatedPagesTitle: {
       value: 'Похожие направления рядом',
