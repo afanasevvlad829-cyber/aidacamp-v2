@@ -105,7 +105,6 @@ export default defineConfig({
         !page.includes('/it-lager-dlya-podrostkov/') &&
         !page.includes('/skolko-stoit-lager-dlya-rebenka/') &&
         !page.includes('/scratch-programmirovanie-dlya-detey/') &&
-        !page.includes('/mincifry-v2/') && // клиентская B2B-презентация (Минцифры), не публичная, noindex
         !page.includes('/fortune-success/') && // thank-you страница оплаты, noindex
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
         !page.includes('/foto/') && // фото по сменам с фильтром по ребёнку, noindex — см. docs/superpowers/specs/2026-08-03-shift-photo-filter-design.md
