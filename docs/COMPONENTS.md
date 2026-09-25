@@ -27,7 +27,6 @@
 | `hero/DesktopTrust.astro` | Hero с рейтингами (desktop) | `imageSrc?`, `hasVariants?` | hero-trust |
 | `LandingHero.astro` | Hero лендингов с крошками + SEO | `h1`, `subtitle`, `breadcrumb`, `keywords[]`, `image?` | 50+ лендингов |
 | `LandingTwoCol.astro` | Двухколоночная секция лендинга | `sections[]`, `priceFrom?`, `highlights?` | lager-7-let, scratch-lager |
-| `lanit/TerminalCard.astro` | Card с терминал-эффектом | — | lanit/Hero |
 
 ## 2. Видео (5)
 | Компонент | Назначение | Ключевые props | Где используется |
@@ -125,9 +124,6 @@
 
 ## 14. Вспомогательное (9)
 `AgeBar`, `CallTimeSelector` (`dark?`), `DotPatternBackground`, `DynamicPrices`, `ShiftLink` (`shiftId`, `title?`), `ReturnBanner`, `UploadQueueIndicator`, `FAQ` (эталон), `LastMinuteWidget`.
-
-## 15. Корпоративные `corp/` (20, B2B → `mincifry-v2.astro`)
-`CorpHero`, `CorpNav`, `CorpFooter`, `CorpVideo`, `CorpGallery`, `CorpWhy`, `CorpShifts`, `CorpHackathon`, `CorpTeam`, `CorpReviews`, `CorpFAQ`, `CorpPool`, `CorpContacts`, `CorpBot`, `CorpMap`, `CorpPricing`, `CorpTax`, `CorpTracks`, `CorpRefund`. Многие принимают `client` для персонализации.
 
 ## 16. Портал управления сменой `smena/` (40+)
 - **Ядро:** `ToastInit`, `VoiceInput`, `MediaManager`, `MediaLightbox`, `UppyUploader`.
