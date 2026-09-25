@@ -1,0 +1,297 @@
+---
+import '../../styles/global.css';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RelatedPages from '../../components/RelatedPages.astro';
+import ArticleHero from '../../components/ArticleHero.astro';
+import ArticleBottomCta from '../../components/ArticleBottomCta.astro';
+import BlogCTA from '../../components/BlogCTA.astro';
+import RelatedArticlesAuto from '../../components/RelatedArticlesAuto.astro';
+import { DAYS_OSEN, PRICE_OSEN } from '../../data/shifts';
+import { AUTUMN_SEASON } from '../../data/seasons';
+
+// Даты и цена — только из констант (shifts.ts / seasons.ts), руками не пишем.
+const [windowMain, windowSecond] = AUTUMN_SEASON.windows ?? [];
+
+const relatedPages = [
+  { title: "Лагерь на осенние каникулы", url: "/lager-na-osennie-kanikuly/", icon: "calendar-week", description: "Заезды, цена и запись на осеннюю смену" },
+  { title: "Что взять в лагерь", url: "/stati/chto-vzyat-v-lager/", icon: "bag-check", description: "Полный чек-лист вещей и документов" },
+  { title: "Справки для лагеря", url: "/stati/spravki-dlya-lagera/", icon: "file-earmark-medical", description: "Что оформить у педиатра до заезда" },
+  { title: "Налоговый вычет за лагерь", url: "/nalogovyj-vychet/", icon: "cash-coin", description: "Как вернуть часть стоимости смены" },
+];
+
+const faqItems = [
+  {
+    question: "Что такое лагерь осенью и чем он отличается от летнего?",
+    answer: `Это короткая загородная смена на школьных каникулах: ${DAYS_OSEN} с проживанием вместо двух-трёх недель летом. Программа та же по духу — занятия, бассейн, хакатон, защита проекта, — но неделя собрана вокруг одного результата, и почти всё время ребята проводят в тёплых корпусах.`,
+  },
+  {
+    question: "Не замёрзнет ли школьник в осеннем лагере?",
+    answer: "Корпуса санатория отапливаются, занятия проходят в тёплых классах, бассейн крытый. На улицу выходим на прогулки и активности — по погоде, поэтому нужна тёплая куртка и непромокаемая обувь.",
+  },
+  {
+    question: "Нужно ли брать свой ноутбук?",
+    answer: "Нет. Вся техника есть в лагере: ноутбуки, мыши, наушники. Свой ноутбук — лишний вес в рюкзаке, а в лагере он ничего не добавит.",
+  },
+  {
+    question: "Подойдёт ли осенний лагерь, если опыта в программировании нет?",
+    answer: "Да. Группы делятся по возрасту и уровню: новички начинают со Scratch или базового Python и за неделю собирают первый проект. Опыт нужен только тем, кто идёт на продвинутый трек.",
+  },
+  {
+    question: "Можно ли вернуть часть денег за осенний лагерь?",
+    answer: "Да, у лагеря есть образовательная лицензия, поэтому часть стоимости смены можно вернуть налоговым вычетом. Как это оформить по шагам — в отдельной статье про налоговый вычет.",
+  },
+  {
+    question: "Как понять, что пора записываться?",
+    answer: "Каникулы короткие, а места в группах ограничены, поэтому лучше выбрать заезд заранее. Смотрите на календарь школы: одним подходит основной заезд в конце четверти, другим — второй, для школ с триместровой системой.",
+  },
+];
+
+const metaDescription = "Лагерь осенью: что это за формат, чем отличается от лета, как проходит неделя, что взять и во что одеться. Как выбрать осенний лагерь, чтобы не пожалеть.";
+---
+
+<Base
+  title="Лагерь осенью: как проходит неделя, что взять и кому подходит формат"
+  description={metaDescription}
+  ogImage="/images/articles/og-lager-na-kanikuly.jpg"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "Лагерь осенью: как проходит неделя, что взять и кому подходит формат",
+        "description": metaDescription,
+        "author": {"@type": "Person", "name": "Дарья Афанасьева", "url": "https://aidacamp.ru/o-lagere", "sameAs": ["https://aidacamp.ru/o-lagere"]},
+        "publisher": {"@type": "Organization", "name": "АйДаКемп", "url": "https://aidacamp.ru", "logo": {"@type": "ImageObject", "url": "https://aidacamp.ru/images/logo.svg"}},
+        "datePublished": "2026-09-25",
+        "dateModified": "2026-09-25",
+        "mainEntityOfPage": {"@type": "WebPage", "@id": "https://aidacamp.ru/stati/lager-osenyu/"}
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqItems.map(item => ({
+          "@type": "Question",
+          "name": item.question,
+          "acceptedAnswer": {"@type": "Answer", "text": item.answer}
+        }))
+      }
+    ])} />
+  </Fragment>
+  <Header />
+
+  <ArticleHero
+    title="Лагерь осенью: что это за формат и кому он подходит"
+    subtitle="Неделя на каникулах, тёплые корпуса и свой проект в конце — без лишних сборов и сомнений."
+    image="/images/hero/lager-na-osennie-kanikuly.avif"
+    imageAlt="Корпус АйДаКемп в осенней листве — санаторий «Изумруд», Подмосковье"
+    readTime="7 мин чтения"
+    breadcrumbsLast="Лагерь осенью"
+  />
+
+  <main id="main-content" class="mx-auto max-w-[860px] px-4 pt-8 pb-0 md:pt-12">
+    <article>
+
+      <div class="mb-10">
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Лагерь осенью — это не «летний, только холоднее». Формат другой: короткая смена на каникулах, когда школа отпустила всего на неделю, а сидеть дома с телефоном никому не хочется. Осенний лагерь — способ провести эту неделю с толком, а вам — спокойно выдохнуть и не выдумывать каждый день, чем занять подростка.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          В этой статье — без рекламы и уговоров: что такое осенние каникулы в лагере, чем они отличаются от лета, как проходит неделя, во что одеть школьника и как выбрать осенний лагерь, чтобы вернулись довольные оба.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Что это за формат</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Осенние каникулы — самые короткие в году, поэтому и лагерь на них короткий: {DAYS_OSEN} с проживанием. Школьник уезжает на неделю, живёт в номере санатория вместе с ребятами, учится, ест, купается в бассейне и возвращается домой не с пустыми руками, а с собственной игрой или приложением.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Это выездная смена, а не городской лагерь «с девяти до шести»: ночевать ребята остаются на территории. Для многих школьников это первый опыт самостоятельной недели, и осенью он проходит мягче, чем в жаркое лето: короткий срок, знакомый график и всё под крышей.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Если вы выбираете между форматами, сравните: <a href="/stati/dnevnoy-lager-vs-s-prozhivaniem/" class="text-primary font-semibold hover:underline">дневной лагерь или с проживанием</a> — у каждого свои плюсы, и на неделе каникул разница особенно заметна.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Чем осенний лагерь отличается от летнего</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Сравнивать удобно по пяти пунктам. Летом — длинная смена и много времени на улице. Осенью — компактная неделя, где каждый день работает на результат.
+        </p>
+        <ul class="flex flex-col gap-3">
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Длительность.</strong> Одна неделя вместо двух-трёх. Дорога и адаптация не съедают половину времени, а на дом остаётся остаток каникул.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Где проходит день.</strong> Почти всё время — в тёплых корпусах: занятия в классах, крытый бассейн, столовая. На улицу выходим на прогулки и активности — по погоде.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Фокус.</strong> Неделя целиком нацелена на один проект, который успевают довести до защиты за семь дней. Летом времени больше, осенью — собраннее.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Программа.</strong> Те же треки, бассейн и хакатон, что летом, и ведут их те же наставники.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Гардероб.</strong> Вместо шорт и крема — тёплая куртка и непромокаемая обувь. Подробный список — ниже.</span></li>
+        </ul>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Как проходит неделя</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Каждый день — два занятия по 90 минут, бассейн по графику, пятиразовое питание и лагерная экономика: ребята зарабатывают лагерные рубли за занятия и проекты и сами решают, на что их потратить. Канва недели выглядит так.
+        </p>
+        <ul class="flex flex-col gap-3">
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>День 1 — заезд.</strong> Размещение по номерам, знакомство с наставниками и территорией, деление на группы по возрасту и уровню.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Дни 2–3 — треки.</strong> Scratch и Minecraft для младших, Python и AI для подростков, Roblox Studio для тех, кто делает игры. К вечеру третьего дня у каждого есть заготовки будущего проекта.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>День 4 — хакатон.</strong> Команды за один день собирают мини-игру на общую тему. Драйв, командная работа и лагерные рубли за результат.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>День 5 — финальный проект.</strong> Работа над личным или командным проектом вместе с наставниками: игра, бот или AI-приложение.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>День 6 — защита.</strong> Каждый показывает проект перед всем лагерем. Награждение и прощальный вечер.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>День 7 — выезд.</strong> Прощальный круг, обмен контактами — и домой, с работающим проектом, который не стыдно показать бабушке.</span></li>
+        </ul>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mt-4">
+          Телефон — по расписанию: полчаса вечером на связь с родителями. Остальное время просто некогда: день занят целиком. Подробнее о том, как это устроено, — на странице <a href="/lager-bez-telefonov/" class="text-primary font-semibold hover:underline">лагеря без телефонов</a>.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Где живут и чем кормят</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Осенью бытовые мелочи важнее, чем летом, — за окном уже не жара. Ребята живут в тёплых номерах санатория «Изумруд» по два-четыре человека, удобства в номере. Занятия проходят в отапливаемых классах, бассейн крытый, столовая рядом — до неё не нужно идти по холоду через всю территорию.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Кормят пять раз в день: завтрак, обед, полдник, ужин и вечерний перекус — домашняя кухня санатория. Как устроено питание и что делать с аллергиями и особенностями, подробно описано в статье <a href="/stati/pitanie-v-lagere/" class="text-primary font-semibold hover:underline">питание в лагере</a>.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Во что одеться и что взять с собой</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Октябрь и ноябрь в Подмосковье прохладные, поэтому собираем вещи чуть иначе, чем летом. Базовый набор для осенней смены:
+        </p>
+        <ul class="flex flex-col gap-3 mb-4">
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Тёплая куртка и шапка.</strong> Для прогулок и активностей на улице.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Непромокаемая обувь.</strong> Лужи и мокрая листва — обычное дело. Запасная пара сухих носков не помешает.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Удобная повседневная одежда и спортивная форма.</strong> В корпусах тепло, поэтому хорошо работает «капустка»: свитшот, футболка, кофта на молнии.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Всё для бассейна.</strong> Плавки или купальник, полотенце, сменная обувь. Бассейн крытый, работает и осенью.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Документы.</strong> Справка от педиатра и полис — без них заселение невозможно. Что именно нужно, разобрано в статьях про <a href="/stati/spravki-dlya-lagera/" class="text-primary font-semibold hover:underline">справки для лагеря</a> и <a href="/stati/dokumenty-dlya-rebenka-v-lager/" class="text-primary font-semibold hover:underline">документы на смену</a>.</span></li>
+        </ul>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Ноутбук не нужен — вся техника в лагере. Постельное бельё, подушки и одеяла тоже есть. Полный чек-лист, что брать и что оставить дома, — в статье <a href="/stati/chto-vzyat-v-lager/" class="text-primary font-semibold hover:underline">что взять в лагерь</a>. Подпишите вещи маркером: подписанное всегда возвращается к хозяину.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Кому подходит осенний лагерь</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Осенняя смена особенно хорошо ложится на несколько историй, которые знакомы многим семьям.
+        </p>
+        <ul class="flex flex-col gap-3 mb-4">
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Тем, кто на каникулах «зависает» в телефоне.</strong> Неделя без бесконечной ленты, но с делом, которое затягивает сильнее.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Тем, кто пока не решился на длинную смену.</strong> Неделя — хороший способ попробовать лагерь, не отпуская на месяц.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Тем, кто уже был летом.</strong> Знакомые наставники, знакомый формат и повод встретиться с друзьями до следующего лета.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Семьям, которым нужна неделя для себя.</strong> И это нормально: вы не обязаны проводить каждые каникулы в режиме аниматора.</span></li>
+        </ul>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          А вот если школьник мечтает на каникулах просто лежать и ничего не делать — осенняя смена не для него: день здесь занят целиком. Честнее сказать об этом сразу. Ещё один разбор на эту тему — <a href="/stati/komu-ne-podhodit-lager/" class="text-primary font-semibold hover:underline">кому лагерь не подходит</a>.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Как выбрать осенний лагерь</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Осенью сравнивать лагеря проще, чем летом: смена короткая, и слабые места видны сразу. Проверьте пять вещей.
+        </p>
+        <ul class="flex flex-col gap-3 mb-4">
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Есть ли результат в конце.</strong> Неделя без понятного итога — потерянные каникулы. Спросите, что именно школьник привезёт домой.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Где живут и учатся.</strong> Осенью корпус должен быть отапливаемым, а бассейн — крытым. Уточните это до оплаты.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Размер и состав групп.</strong> Делят ли их по возрасту и уровню, чтобы новичку не было скучно или страшно.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Лицензия, медик и охрана.</strong> Образовательная лицензия, медработник на территории круглосуточно, охраняемая территория. Подробнее — в статье про <a href="/stati/bezopasnost-v-detskom-lagere/" class="text-primary font-semibold hover:underline">безопасность в детском лагере</a>.</span></li>
+          <li class="flex items-start gap-2.5"><span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400"></span><span class="text-[16px] text-slate-700"><strong>Что входит в цену.</strong> Проживание, питание, занятия и бассейн — без доплат. Если у лагеря есть образовательная лицензия, часть стоимости можно вернуть <a href="/nalogovyj-vychet/" class="text-primary font-semibold hover:underline">налоговым вычетом</a>.</span></li>
+        </ul>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Более общий разбор критериев, не привязанный к сезону, — в статье <a href="/stati/kak-vybrat-lager/" class="text-primary font-semibold hover:underline">как выбрать детский лагерь</a>.
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Если вы переживаете, что отпускаете на неделю</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Почти каждая мама перед первой сменой спрашивает себя: не слишком ли рано, не будет ли скучать, справится ли без меня. Это нормальные вопросы, и их задаёт не «плохая», а очень внимательная мама. Неделя — как раз тот срок, на котором отпустить не страшно: достаточно, чтобы школьник почувствовал себя самостоятельным, и слишком мало, чтобы соскучиться до слёз.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          На территории круглосуточно работает медик, территория охраняется, а вечером есть полчаса на звонок домой. Про то, как переживают первые дни, мы писали отдельно: <a href="/stati/pervyj-raz-v-lagere/" class="text-primary font-semibold hover:underline">первый раз в лагере</a> и <a href="/stati/adaptaciya-rebenka-v-lagere/" class="text-primary font-semibold hover:underline">адаптация в лагере</a>. А вам эта неделя пригодится, чтобы выспаться, доделать свои дела или просто побыть без списка «что ещё придумать».
+        </p>
+      </div>
+
+      <div class="mb-8 pt-2">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">Когда ехать и как это выглядит по датам</h2>
+        </div>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Московские школы живут по двум системам каникул, поэтому осенью у нас два заезда — {windowMain}; {windowSecond}. Выбирайте тот, что совпадает с расписанием вашей школы, — подстраиваться под нас не нужно.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">
+          Стоимость осенней смены — {PRICE_OSEN} за {DAYS_OSEN}, всё включено. Актуальные места, условия и запись — на странице <a href="/lager-na-osennie-kanikuly/" class="text-primary font-semibold hover:underline">лагеря на осенние каникулы</a>.
+        </p>
+        <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px]">
+          Добираться удобно: лагерь в 66 км от Москвы по Киевскому шоссе, доехать можно на машине, по желанию — трансфер от метро Солнцево.
+        </p>
+      </div>
+
+      <section class="mt-12 mb-8">
+        <h2 class="text-[22px] md:text-[26px] font-bold text-slate-900 mb-6 flex items-center gap-3">
+          <span class="w-[4px] h-[28px] bg-primary rounded-full flex-shrink-0"></span>
+          Частые вопросы
+        </h2>
+        <div class="space-y-3">
+          {faqItems.map(item => (
+            <div class="rounded-[14px] border border-slate-200 bg-slate-50" data-faq-item>
+              <button type="button" data-faq-toggle class="flex w-full cursor-pointer items-center justify-between p-4 text-left text-base font-semibold text-slate-900" aria-expanded="false">
+                <span>{item.question}</span>
+                <span class="ml-3 shrink-0 text-lg text-slate-400 transition-transform duration-200" data-faq-icon aria-hidden="true">+</span>
+              </button>
+              <div class="px-4 pb-4 text-[16px] leading-[1.55] text-slate-600" data-faq-answer>
+                <p>{item.answer}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <BlogCTA />
+    </article>
+  </main>
+
+  <ArticleBottomCta
+    bookingTitle="Остались вопросы про осеннюю смену?"
+    bookingSubtitle="Напишите нам — расскажем про заезды, программу и всё, что важно перед сборами."
+  />
+
+  <RelatedPages title="Полезные страницы" pages={relatedPages} />
+  <RelatedArticlesAuto />
+  <Footer />
+<script>
+  import { initFaqAccordion } from '../../scripts/faq-accordion';
+  initFaqAccordion();
+</script>
+</Base>
