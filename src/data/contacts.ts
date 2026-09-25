@@ -14,7 +14,7 @@ export const EMAIL_HREF = 'mailto:hello@codims.ru';
 
 export const WHATSAPP_URL = 'https://wa.me/79688086455';
 export const TELEGRAM_URL = 'https://t.me/Progaschool';
-export const VK_URL = 'https://vk.com/aidacamp';
+export const VK_URL = 'https://vk.com/aida_codit';
 
 export const PHONE_MAX = '+7 (985) 449-27-80';
 // MAX не поддерживает диплинк по номеру телефона (в отличие от wa.me) — только
