@@ -102,6 +102,8 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
 <Base
   title={seoTitle}
   description={seoDescription}
+  heroPreloadMobile="/optimized-media/hero-mobile-optimized-414.avif"
+  heroPreloadMobileSrcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w"
   heroPreloadDesktop="/images/hero-desktop.avif"
 >
   <Fragment slot="head">
@@ -190,8 +192,12 @@ const durationDays = parseInt(shift.duration.replace(/[^\d]/g, ''), 10) || 14;
     <section class="relative overflow-hidden bg-dark-navy text-white">
       <!-- Background photo: portrait для mobile, desktop для md+ -->
       <picture>
-        <source media="(max-width: 768px)" srcset="/images/hero-mobile-bean-v3-600.avif" />
-        <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-55" style="object-position: center 30%;" loading="eager" />
+        <!-- Мобильный hero — те же оптимизированные варианты и тот же preload, что на главной
+             (было hero-mobile-bean-v3-600.avif, 95 КБ, без preload/fetchpriority: LCP смены 5–7 с
+             против 3 с на главной, замер 25.09.2026). srcset/sizes совпадают с preload в Base.astro,
+             иначе браузер не переиспользует предзагрузку. -->
+        <source media="(max-width: 768px)" srcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w" sizes="(max-width: 768px) 100vw, 828px" type="image/avif" />
+        <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-55" style="object-position: center 30%;" loading="eager" fetchpriority="high" />
       </picture>
       <!-- Затемняющий градиент -->
       <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,9,18,0.85)_0%,rgba(5,9,18,0.55)_50%,rgba(5,9,18,0.75)_100%)]" aria-hidden="true"></div>
