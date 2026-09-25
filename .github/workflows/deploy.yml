@@ -424,6 +424,21 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: ./scripts/deploy.sh prod
 
+      # Переобход в Яндексе (IndexNow) — только страницы, изменившиеся с прошлого выката.
+      # Идёт ПОСЛЕ успешного deploy.sh (верификация и smoke прошли), иначе робот пришёл бы
+      # за ещё не выложенной версией. Бонус-шаг: провал не роняет деплой. Манифест хэшей
+      # живёт на сервере рядом с current/ (rsync --delete его не трогает).
+      - name: IndexNow — переобход изменённых страниц
+        continue-on-error: true
+        run: |
+          MANIFEST=/var/www/aidacamp/.indexnow-manifest.json
+          SSH_OPTS="-i $HOME/.ssh/aidacamp_prod -o StrictHostKeyChecking=accept-new"
+          scp $SSH_OPTS "root@159.194.223.55:$MANIFEST" "$RUNNER_TEMP/indexnow-old.json" || : > "$RUNNER_TEMP/indexnow-old.json"
+          python3 scripts/indexnow-deploy.py --dist dist/client \
+            --old-manifest "$RUNNER_TEMP/indexnow-old.json" \
+            --out-manifest "$RUNNER_TEMP/indexnow-new.json"
+          scp $SSH_OPTS "$RUNNER_TEMP/indexnow-new.json" "root@159.194.223.55:$MANIFEST"
+
       - name: Уведомление в Telegram
         if: always()
         continue-on-error: true
