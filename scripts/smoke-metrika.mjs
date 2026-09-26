@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-// Headless-проверка Метрики на проде — запускается НА СЕРВЕРЕ через существующий
-// agent-browser-chrome.service (CDP 127.0.0.1:9222). Заливается и вызывается из
+// Headless-проверка Метрики на проде — запускается НА СЕРВЕРЕ через отдельный
+// deploy-smoke-chrome.service (CDP 127.0.0.1:9223, scripts/server/deploy-smoke-chrome.service;
+// не общий agent-browser-chrome на 9222 — он зависал и откатывал здоровый прод).
+// Адрес можно переопределить: SMOKE_CDP_URL. Заливается и вызывается из
 // scripts/smoke-conversion.sh (scp + ssh), playwright берётся из /opt/browser-agent.
 //
 // Проверяет три звена клиентского конверсионного контура:
@@ -44,10 +46,11 @@ function waitFor(fn, ms, step = 500) {
 }
 
 let browser;
+const CDP_URL = process.env.SMOKE_CDP_URL || 'http://127.0.0.1:9223';
 try {
-  browser = await chromium.connectOverCDP('http://127.0.0.1:9222', { timeout: 10000 });
+  browser = await chromium.connectOverCDP(CDP_URL, { timeout: 10000 });
 } catch (e) {
-  infraFail(`CDP 127.0.0.1:9222 недоступен (agent-browser-chrome.service?): ${e.message}`);
+  infraFail(`CDP ${CDP_URL} недоступен (deploy-smoke-chrome.service?): ${e.message}`);
 }
 
 const result = { status: 'fail', ym_defined: false, counter_hit: false, goal_hit: false };
