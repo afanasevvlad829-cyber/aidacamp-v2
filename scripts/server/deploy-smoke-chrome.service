@@ -1,0 +1,51 @@
+# Отдельный headless Chrome ТОЛЬКО под конверсионный smoke деплоя
+# (scripts/smoke-conversion.sh → scripts/smoke-metrika.mjs, CDP 127.0.0.1:9223).
+#
+# Почему не общий agent-browser-chrome.service (9222). Тот Chrome делят Labrika,
+# alfacrm, Дзен и agent-browser: вкладки копятся, а лимит памяти (MemoryHigh=450M)
+# он упирает в потолок — страницы грузятся десятками секунд, page.goto в smoke
+# падает по таймауту 45 с, и здоровый прод откатывается (25–26.09.2026: 4 отката за сутки).
+# Здесь Chrome один на одну задачу, профиль одноразовый (чистится при каждом старте),
+# а smoke-conversion.sh перезапускает юнит перед каждой проверкой.
+#
+# Установка на прод (deploy.sh юниты не ставит — копировать руками):
+#   scp scripts/server/deploy-smoke-chrome.service root@159.194.223.55:/etc/systemd/system/
+#   ssh root@159.194.223.55 'systemctl daemon-reload && systemctl enable --now deploy-smoke-chrome.service'
+[Unit]
+Description=Headless Chrome for deploy smoke (Metrika check, CDP 9223, localhost-only)
+After=network.target
+
+[Service]
+Type=simple
+User=agentbrowser
+Group=agentbrowser
+WorkingDirectory=/home/agentbrowser
+Environment=HOME=/home/agentbrowser
+Environment=XDG_CONFIG_HOME=/home/agentbrowser/.config
+Environment=XDG_CACHE_HOME=/home/agentbrowser/.cache
+ExecStartPre=/bin/rm -rf /tmp/deploy-smoke-profile
+ExecStart=/opt/agent-browser-chrome/chrome-linux64/chrome \
+  --headless=new \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --no-sandbox \
+  --no-first-run \
+  --no-default-browser-check \
+  --remote-debugging-port=9223 \
+  --remote-debugging-address=127.0.0.1 \
+  --user-data-dir=/tmp/deploy-smoke-profile
+Restart=on-failure
+RestartSec=5
+
+MemoryMax=800M
+MemoryHigh=650M
+CPUQuota=150%
+TasksMax=256
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/home/agentbrowser /tmp
+
+[Install]
+WantedBy=multi-user.target

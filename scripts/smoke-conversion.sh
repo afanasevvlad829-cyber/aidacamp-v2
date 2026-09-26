@@ -8,7 +8,7 @@
 #
 # Три проверки:
 #   1) статика: в HTML есть сниппет счётчика и НЕТ partytown;
-#   2) headless (scripts/smoke-metrika.mjs на сервере, CDP 9222):
+#   2) headless (scripts/smoke-metrika.mjs на сервере, свой Chrome deploy-smoke-chrome, CDP 9223):
 #      ym определён + счётчик отстучал визит + reachGoal доходит до Метрики;
 #   3) /api/lead: тестовая заявка с номера +7999000… (зарезервированный
 #      тест-префикс) принимается и записывается (ok:true).
@@ -80,8 +80,11 @@ if ! scp -q -i "$SSH_KEY" -o ConnectTimeout=15 \
   echo "  ⚠️  scp на сервер не прошёл — headless-проверка пропущена"
   WARNS+=("headless-проверка Метрики не выполнена: scp на сервер не прошёл")
 else
+  # Свежий Chrome на каждую проверку: отдельный юнит, профиль одноразовый. Если юнит
+  # не установлен — restart молча не сработает, а node вернёт код 2 (чекер, не прод).
   run_metrika() {
-    ssh -i "$SSH_KEY" -o ConnectTimeout=15 "$SSH_HOST" "node $REMOTE_MJS '$BASE'"
+    ssh -i "$SSH_KEY" -o ConnectTimeout=15 "$SSH_HOST" \
+      "systemctl restart deploy-smoke-chrome.service 2>/dev/null && sleep 4; node $REMOTE_MJS '$BASE'"
   }
   OUT=$(run_metrika); RC=$?
   if [ "$RC" = "1" ]; then
