@@ -6,7 +6,7 @@ import { SEASON_FROM_TO } from '../evergreen';
 const landing: LandingData = {
   slug: 'lager-mytishchi',
   title: `IT-лагерь с проживанием у Мытищ ${SEASON_YEAR} | АйДаКемп`,
-  description: `IT-лагерь с проживанием у Мытищ: 66 км от МКАД, трансфер от м. Солнцево. Бассейн, занятия. Налоговый вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
+  description: `IT-лагерь с проживанием у Мытищ: 66 км от МКАД, трансфер от м. Солнцево, бассейн. Вычет до ${VYCHET_MAX}. Python, AI, Minecraft, 7–15 лет.`,
   h1: `Мытищи: детский лагерь с проживанием ${SEASON_YEAR}`,
   canonical: 'https://aidacamp.ru/lager-mytishchi',
   heroImage: '/images/hero/lager-v-podmoskove.avif',

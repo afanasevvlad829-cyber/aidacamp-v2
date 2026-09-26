@@ -6,7 +6,7 @@ const landing: LandingData = {
   slug: 'lager-korolev',
   title: `Летние лагеря для детей из Королёва — IT-смены ${SEASON_YEAR}`,
   description: `Летние IT-лагеря для ребят из Королёва: Python, AI, Minecraft для 7–15 лет. От ${PRICE_MIN}.`,
-  h1: `Королёв: летние лагеря для детей ${SEASON_YEAR}`,
+  h1: `Лагерь из Королёва`,
   canonical: 'https://aidacamp.ru/lager-korolev',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqDisplayItems: ['documents:0', 'documents:6', 'payment:1', 'payment:2'],
