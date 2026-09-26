@@ -6,8 +6,8 @@ import { SEASON_FROM_TO } from '../evergreen';
 const landing: LandingData = {
   slug: 'lager-kolomna',
   title: `Детский летний IT-лагерь рядом с Коломной ${SEASON_YEAR} — Python, AI, Minecraft, бассейн | АйДаКемп`,
-  description: 'Детский летний IT-лагерь рядом с Коломной — программирование (Python, AI, Minecraft, Roblox) для 7–15 лет. ~2 ч через Новорязанское шоссе, бассейн',
-  h1: 'Детский летний лагерь рядом с Коломной',
+  description: 'Детский летний IT-лагерь рядом с Коломной — программирование (Python, AI, Minecraft, Roblox) для 7–15 лет. ~2 ч через Новорязанское шоссе, бассейн, 5-разовое питание, медработник 24/7.',
+  h1: 'Детский лагерь у Коломны',
   canonical: 'https://aidacamp.ru/lager-kolomna',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   // Labrika 2026-08-12: «лагерь»(точное) 11 → цель 5-6 — documents:0 содержал ссылку

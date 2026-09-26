@@ -7,7 +7,7 @@ const landing: LandingData = {
   slug: 'lager-chehov',
   title: `Летний IT-лагерь Чехов — Москва и Подмосковье ${SEASON_YEAR} | АйДаКемп`,
   description: `Детский летний лагерь для школьников 7–15 лет в Москве и Подмосковье, лето ${SEASON_YEAR}. Python, AI и Minecraft, бассейн, 5-разовое питание. 66 км от МКАД, ~50 минут от Чеховского округа, смены от ${PRICE_MIN}.`,
-  h1: 'Летний лагерь Чехов — Москва и Подмосковье',
+  h1: 'Лагерь Чехов',
   canonical: 'https://aidacamp.ru/lager-chehov',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqDisplayItems: ['documents:0', 'documents:6', 'payment:1', 'payment:2'],
