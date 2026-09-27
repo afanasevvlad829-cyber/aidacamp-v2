@@ -111,6 +111,12 @@ export default defineConfig({
         !page.includes('/audit-portal') && // внутренние security/audit-дашборды, noindex
         !page.includes('/prototype/') && // черновики-прототипы, noindex
         !page.includes('/r/') && // персонализированная страница для возвратников (рассылка), не для органики
+        // /p/<lid>/ — персональная памятка по ссылке из CRM (noindex, nofollow): в публичной
+        // карте ей не место. Google Search Console 26.09.2026: «URL неизвестен Google».
+        !/^https:\/\/aidacamp\.ru\/p\//.test(page) &&
+        // /shifts/shift-1/ и /shifts/shift-2/ — завершённые смены, nginx отдаёт 301 на
+        // /kak-proshla-smena-N/ (sitemap не должен вести на редирект). GSC 26.09.2026.
+        !/^https:\/\/aidacamp\.ru\/shifts\/shift-(1|2)\/?$/.test(page) &&
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
         !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики
