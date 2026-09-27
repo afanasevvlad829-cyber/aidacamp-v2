@@ -229,12 +229,31 @@ const formattedDate = _rawDate
       var key = 'av:' + slug;
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, '1');
-      fetch('/api/article-views', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: slug }),
-        keepalive: true,
-      }).catch(function () {});
+
+      function sendView() {
+        fetch('/api/article-views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: slug }),
+          keepalive: true,
+        }).catch(function () {});
+      }
+
+      function scheduleView() {
+        setTimeout(function () {
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(sendView, { timeout: 2500 });
+          } else {
+            sendView();
+          }
+        }, 3500);
+      }
+
+      if (document.readyState === 'complete') {
+        scheduleView();
+      } else {
+        window.addEventListener('load', scheduleView, { once: true });
+      }
     } catch (e) {}
   })();
 </script>

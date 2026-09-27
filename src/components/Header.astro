@@ -14,6 +14,13 @@ interface NavItem {
   highlight?: boolean;
 }
 
+interface Props {
+  hideSearch?: boolean;
+}
+
+const isArticlePage = Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/');
+const hideSearch = Astro.props.hideSearch ?? isArticlePage;
+
 const navItems: NavItem[] = [
   { label: 'Смены', href: '/#shifts' },
   { label: 'Цены', href: '/#shifts' },
@@ -98,15 +105,17 @@ const allNavItems = [...navItems, ...moreItems];
 
     <!-- Search trigger + Phone Dropdown (Desktop) -->
     <div class="flex items-center gap-2">
-      <button
-        type="button"
-        data-search-trigger
-        aria-label="Поиск по сайту (Ctrl+K)"
-        title="Поиск (Ctrl+K)"
-        class="search-trigger inline-flex h-11 w-11 items-center justify-center text-white transition" style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 0 14px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(0,0,0,0.45));"
-      >
-        <Icon name="bi:search" class="bi bi-search text-[16px]" aria-hidden="true" />
-      </button>
+      {!hideSearch && (
+        <button
+          type="button"
+          data-search-trigger
+          aria-label="Поиск по сайту (Ctrl+K)"
+          title="Поиск (Ctrl+K)"
+          class="search-trigger inline-flex h-11 w-11 items-center justify-center text-white transition" style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 0 14px rgba(0,0,0,0.7)) drop-shadow(0 0 24px rgba(0,0,0,0.45));"
+        >
+          <Icon name="bi:search" class="bi bi-search text-[16px]" aria-hidden="true" />
+        </button>
+      )}
       <PhoneDropdown variant="desktop" />
     </div>
   </div>
