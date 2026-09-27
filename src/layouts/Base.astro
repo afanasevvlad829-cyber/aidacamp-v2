@@ -46,6 +46,16 @@ interface Props {
   /** Скрыть конверсионные виджеты (DynamicPrices, AgeBar, ShiftModal, ReferralModal,
    *  NudgeBanner) — для страниц без воронки записи (404, юридические документы). */
   hideMarketingWidgets?: boolean;
+  /** Скрыть глобальную модалку карточек смен, когда страница использует свой booking-flow. */
+  hideGlobalShiftModal?: boolean;
+  /** Скрыть глобальный поиск, когда страница не показывает search trigger и не нуждается в overlay. */
+  hideSiteSearch?: boolean;
+  /** Скрыть нижний догревающий баннер на performance-critical страницах. */
+  hideNudgeBanner?: boolean;
+  /** Скрыть декоративный точечный фон на performance-critical страницах. */
+  hideDotPattern?: boolean;
+  /** Скрыть кнопку наверх и её scroll listener. */
+  hideBackToTop?: boolean;
 }
 
 const {
@@ -63,12 +73,21 @@ const {
   canonical: canonicalProp,
   hideAgeBar = false,
   hideMarketingWidgets = false,
+  hideGlobalShiftModal = false,
+  hideSiteSearch: hideSiteSearchProp,
+  hideNudgeBanner: hideNudgeBannerProp,
+  hideDotPattern: hideDotPatternProp,
+  hideBackToTop: hideBackToTopProp,
 } = Astro.props;
 const resolvedOgImage = ogImage.startsWith('http') ? ogImage : `https://aidacamp.ru${ogImage}`;
 // canonical/og:url — на финальный слеш-URL (см. src/utils/canonical.ts, инцидент 03.07.2026).
 const canonicalUrl = ensureTrailingSlash(canonicalProp ?? new URL(Astro.url.pathname, 'https://aidacamp.ru').href);
 // Автодетект: /stati/ → article, остальные → website
 const isArticlePage = Astro.url.pathname.startsWith('/stati/') && !Astro.url.pathname.endsWith('/stati/');
+const hideSiteSearch = hideSiteSearchProp ?? isArticlePage;
+const hideNudgeBanner = hideNudgeBannerProp ?? isArticlePage;
+const hideDotPattern = hideDotPatternProp ?? isArticlePage;
+const hideBackToTop = hideBackToTopProp ?? isArticlePage;
 const resolvedOgType = ogType ?? (isArticlePage ? 'article' : 'website');
 // Markdown-зеркало статьи (см. src/pages/stati/[slug].md.ts) — подсказка AI-агентам,
 // где взять чистый текст страницы без вёрстки.
@@ -246,9 +265,6 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
     <meta name="twitter:image" content={resolvedOgImage} />
     {!noindex && <link rel="canonical" href={canonicalUrl} />}
     {markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
-    {/* Organization JSON-LD — на всех страницах, кроме главной: там уже есть более
-        полный Organization внутри SchemaOrg.astro (src/pages/index.astro), совпадающий @id. */}
-    {Astro.url.pathname !== '/' && <OrganizationSchema />}
     <slot name="head" />
     <!-- page-globals + dynamic-prices-client: глобальные обработчики + динамические цены -->
     <script>
@@ -259,6 +275,10 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
   <body class="font-sans text-[var(--color-text)] bg-white antialiased">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-white focus:font-semibold focus:shadow-lg">Перейти к содержимому</a>
     <slot />
+    {/* Organization JSON-LD — на всех страницах, кроме главной: там уже есть более
+        полный Organization внутри SchemaOrg.astro (src/pages/index.astro), совпадающий @id.
+        Держим вне <head>, чтобы не задерживать критичный preload/CSS-парсинг. */}
+    {Astro.url.pathname !== '/' && <OrganizationSchema />}
 
     <!-- Cookie Banner -->
     <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:bottom-[90px] md:w-[340px]" style="display:none">
@@ -288,15 +308,15 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
         {AGE_BAR_ENABLED && !hideAgeBar && <AgeBar />}
         <!-- ShiftModal: открывается из AgeBar «Посмотреть» и data-shift-link на всех страницах
              (собственный document click-делегат в shift-modal.ts, initShiftModal()) -->
-        <ShiftModal />
+        {hideGlobalShiftModal ? null : <ShiftModal />}
       </Fragment>
     )}
     {!hideMarketingWidgets && <ReferralModal />}
     <!-- <ExitIntentPopup /> отключён -->
     <!-- Debug: ?modal=referral → обработано в page-globals.ts -->
 
-    <DotPatternBackground />
-    <BackToTop />
+    {!hideDotPattern && <DotPatternBackground />}
+    {!hideBackToTop && <BackToTop />}
 
     <!-- Уровень 3 Apple-скина: секции всплывают при скролле, как на apple.com.
          Инфраструктура (.reveal/.reveal-in, IntersectionObserver, уважает
@@ -338,9 +358,9 @@ const markdownUrl = isArticlePage ? `${canonicalUrl.replace(/\/$/, '')}.md` : nu
         attributeFilter: ['data-theme'],
       });
     </script>
-    <SiteSearch />
+    {!hideSiteSearch && <SiteSearch />}
     <!-- ReturnBanner отключён → заменён на NudgeBanner (догрев повторщиков, A/B отзывы vs ТВ) -->
-    {!hideMarketingWidgets && <NudgeBanner />}
+    {!hideMarketingWidgets && !hideNudgeBanner && <NudgeBanner />}
 
     <!-- Неизвестные якоря и ретаргет-трафик → #shifts (обработано в page-globals.ts) -->
 
