@@ -1,21 +1,19 @@
 // SEO weekly positions check — Пн 10:00 МСК
-// aidacamp: из PostgreSQL | остальные: Topvisor API
+// Все 4 сайта — через Topvisor API (project_id ниже), напрямую, без промежуточных таблиц.
 import { readFileSync } from 'fs';
-import { createRequire } from 'module';
 import { notify } from './notify.mjs';
-const require = createRequire(import.meta.url);
-const { Client } = require('/opt/mcp/node_modules/pg');
 
 const env = Object.fromEntries(
   readFileSync('/opt/mcp/.env', 'utf8').split('\n')
     .filter(l => l.includes('=')).map(l => [l.split('=')[0].trim(), l.split('=').slice(1).join('=').trim()])
 );
 const TV_TOKEN = env.TOPVISOR_TOKEN, TV_USER = env.TOPVISOR_USER_ID;
-const CONN = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
 
 const fmt = d => d.toISOString().slice(0, 10);
 const today = fmt(new Date());
-const weekAgo = fmt(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+// 21д — снимки Topvisor нерегулярны (не строго раз в 7 дней, интервалы 3-10 дней),
+// окно шире недели, чтобы гарантированно поймать хотя бы 2 снимка для дельты.
+const weekAgo = fmt(new Date(Date.now() - 21 * 24 * 60 * 60 * 1000));
 
 // ── Брендовый спрос (Wordstat через локальный MCP-сервер) ────────────────────
 // Прямые запросы к arsenkin.ru из скриптов запрещены (конфликт с очередью задач
@@ -91,50 +89,32 @@ async function checkBrand() {
   }
 }
 
-async function checkAidacamp() {
-  const client = new Client({ connectionString: CONN });
-  await client.connect();
-  try {
-    const { rows: [dates] } = await client.query(`
-      SELECT max(date) as d2,
-             (SELECT max(date) FROM seo_positions WHERE searcher='yandex_mobile' AND date < (SELECT max(date) FROM seo_positions WHERE searcher='yandex_mobile')) as d1
-      FROM seo_positions WHERE searcher='yandex_mobile'`);
-    if (!dates?.d2) return 'aidacamp.ru: нет данных\n';
-    const d1 = fmt(new Date(dates.d1)), d2 = fmt(new Date(dates.d2));
-    const { rows } = await client.query(`
-      SELECT
-        count(*) FILTER (WHERE position<=10) AS top10_now,
-        count(*) FILTER (WHERE position<=3)  AS top3_now,
-        (SELECT count(*) FILTER (WHERE position<=10) FROM seo_positions WHERE searcher='yandex_mobile' AND date=$1) AS top10_prev
-      FROM seo_positions WHERE searcher='yandex_mobile' AND date=$2`, [d1, d2]);
-    const { rows: ups } = await client.query(`
-      SELECT k2.keyword, k1.position AS prev, k2.position AS curr, (k1.position - k2.position) AS delta
-      FROM seo_positions k1 JOIN seo_positions k2
-        ON k1.keyword=k2.keyword AND k1.searcher=k2.searcher
-      WHERE k1.date=$1 AND k2.date=$2 AND k1.searcher='yandex_mobile'
-        AND k1.position>k2.position AND k2.position<=20
-      ORDER BY delta DESC LIMIT 3`, [d1, d2]);
-    const r = rows[0];
-    const diff10 = r.top10_now - (r.top10_prev || 0);
-    const sign = diff10 >= 0 ? '+' : '';
-    let msg = `<b>aidacamp.ru</b> (${d2})\nТОП-10: ${r.top10_now} (${sign}${diff10}) | ТОП-3: ${r.top3_now}\n`;
-    ups.forEach(u => { msg += `  ↑${u.delta} <i>${u.keyword}</i> ${u.prev}→${u.curr}\n`; });
-    return msg;
-  } finally { await client.end(); }
-}
-
+// ⚠️ 28.09.2026: раньше здесь была отдельная checkAidacamp() из Postgres-таблицы
+// seo_positions — она МЁРТВАЯ с 14.07.2026 (SEO-ETL отключён, см. память
+// seo-etl-decommissioned), последний снимок 2026-06-12. Отчёт молча показывал
+// позиции трёхмесячной давности как «сегодняшние». Убрано — все 4 сайта теперь
+// идут единой веткой через checkTopvisor() напрямую из Topvisor API.
+//
+// Также была сломана checkTopvisor() для codims/icepartners/vlad-a: в body
+// запроса Topvisor API передавалось fields:['id','name','positionsData'] —
+// 'positionsData' не валидное имя поля для параметра fields (это отдельный
+// объект в ответе, а не колонка), API возвращал errors[code=2004] и result=null,
+// который код тихо трактовал как «нет данных» (проверял только keywords.length,
+// не errors). Исправлено: 'positionsData' убран из fields, лишний
+// positions_fields (тоже не поддерживаемое имя параметра) убран —
+// historyFields по умолчанию уже включает position.
 async function checkTopvisor(proj) {
   const r = await fetch('https://api.topvisor.com/v2/json/get/positions_2/history/', {
     method: 'POST',
     headers: { 'User-Id': TV_USER, 'Authorization': `bearer ${TV_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       project_id: proj.id, date1: weekAgo, date2: today,
-      fields: ['id', 'name', 'positionsData'],
-      positions_fields: ['position'],
+      fields: ['id', 'name'],
       regions_indexes: [33],
     })
   });
   const d = await r.json();
+  if (d.errors) return `${proj.site}: ошибка Topvisor — ${d.errors[0]?.string || JSON.stringify(d.errors)}\n`;
   const keywords = d.result?.keywords || [];
   if (!keywords.length) return `${proj.site}: нет данных\n`;
 
@@ -144,7 +124,7 @@ async function checkTopvisor(proj) {
     const pd = kw.positionsData || {};
     const entries = Object.entries(pd)
       .filter(([k]) => k.endsWith(`:${proj.id}:33`))
-      .map(([k, v]) => [k.slice(0, 10), v.position || 100])
+      .map(([k, v]) => [k.slice(0, 10), v.position === '--' || v.position == null ? 100 : Number(v.position)])
       .sort((a, b) => a[0].localeCompare(b[0]));
     if (entries.length < 2) return;
     const prev = entries[0][1], curr = entries[entries.length - 1][1];
@@ -161,9 +141,8 @@ async function checkTopvisor(proj) {
 (async () => {
   const dateStr = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   let msg = `📊 <b>SEO-позиции</b> (${dateStr})\n\n`;
-  msg += await checkAidacamp().catch(e => `aidacamp.ru: ошибка — ${e.message}\n`);
-  msg += '\n';
   for (const proj of [
+    { id: 11807186, site: 'aidacamp.ru' },
     { id: 28354270, site: 'codims.ru' },
     { id: 28585795, site: 'icepartners.ru' },
     { id: 29041803, site: 'vlad-a.ru' },
