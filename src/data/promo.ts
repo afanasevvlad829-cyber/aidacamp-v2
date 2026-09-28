@@ -32,6 +32,12 @@ export const PROMOS: Record<string, Promo> = {
     discountPct: 8,
     freeTransfer: true,
   },
+  AIDAPREMIUM: {
+    code: 'AIDAPREMIUM',
+    partner: 'PremiumCode',
+    discountPct: 5,
+    freeTransfer: true,
+  },
 };
 
 /** Приводит ввод пользователя к каноническому виду: обрезает пробелы, поднимает регистр. */
