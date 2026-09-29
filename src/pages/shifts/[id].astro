@@ -24,6 +24,7 @@ import { displayShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingC
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import { getShiftPhase } from '../../data/dynamicPrices';
 import { getNextSeason } from '../../data/seasons';
+import { getShiftLocation } from '../../data/locations';
 
 export async function getStaticPaths() {
   return displayShifts.map((shift) => ({
@@ -80,6 +81,8 @@ const ssrVychet   = getTaxDeduction(shift.id);
 // которые продаются прямо сейчас. Год у зимней смены был 2026, хотя она
 // заканчивается 8 января 2027.
 const season = getShiftSeason(shift);
+// Площадка смены: межсезонье — пансионат «Воробьи», лето — своя (null).
+const loc = getShiftLocation(shift);
 const seasonAdj = season.adj;                    // «летняя» / «осенняя» / «зимняя»
 const seasonAdjCap = seasonAdj.charAt(0).toUpperCase() + seasonAdj.slice(1);
 const shiftYear = shiftYearLabel(shift);         // «2026» или «2026/2027»
@@ -111,7 +114,18 @@ const shiftJsonLd = {
       "eventStatus": "https://schema.org/EventScheduled",
       "url": `https://aidacamp.ru/shifts/${shift.id}/`,
       "image": "https://aidacamp.ru/images/hero-desktop.avif",
-      "location": {
+      "location": loc ? {
+        "@type": "Place",
+        "name": loc.name,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "д. Воробьи, Лесная ул., 1/16",
+          "addressLocality": "Жуковский район",
+          "addressRegion": "Калужская область",
+          "addressCountry": "RU"
+        },
+        "geo": { "@type": "GeoCoordinates", "latitude": loc.lat, "longitude": loc.lon }
+      } : {
         "@type": "Place",
         "name": "Санаторий Изумруд",
         "address": {
@@ -259,7 +273,7 @@ const shiftJsonLd = {
         </p>
 
         <p class="mt-4 text-[16px] md:text-[18px] text-white/85 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
-          <strong class="font-bold text-white">{shift.duration}</strong> · Санаторий «Изумруд» · 66 км от Москвы
+          <strong class="font-bold text-white">{shift.duration}</strong> · {loc ? <a href={loc.path} class="underline decoration-white/40 underline-offset-4 hover:decoration-white">{loc.name}</a> : 'Санаторий «Изумруд»'} · {loc ? loc.distance : '66 км от Москвы'}
         </p>
         <p class="mt-2 text-base text-white/70 max-w-[640px]" style="text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
           {season.nom === 'Лето' ? 'Летние' : season.nom === 'Осень' ? 'Осенние' : season.nom === 'Зима' ? 'Зимние' : 'Весенние'} смены лагерей {shiftYear} для школьников 7–15 лет. Смена в лагере — проживание, питание, IT-программа всё включено.
@@ -394,7 +408,7 @@ const shiftJsonLd = {
             <Icon name="bi:tree-fill" class="bi bi-tree-fill text-[28px] text-primary mb-3" aria-hidden="true" />
             <p class="text-[12px] font-semibold uppercase tracking-[0.12em] text-body-faint mb-1">Между занятиями</p>
             <h3 class="text-[20px] font-bold text-body mb-2">Жизнь за экраном</h3>
-            <p class="text-base leading-[1.55] text-body-muted">Бассейн, лес, настолки, мафия по вечерам. Телефон — только вечером для связи с домом.</p>
+            <p class="text-base leading-[1.55] text-body-muted">{loc ? 'Сосновый лес, горка, настолки, мафия по вечерам.' : 'Бассейн, лес, настолки, мафия по вечерам.'} Телефон — только вечером для связи с домом.</p>
           </article>
           <article class="reveal flex flex-col rounded-[16px] border border-border-light bg-card p-6 card-shadow" data-reveal-delay="200">
             <Icon name="bi:trophy-fill" class="bi bi-trophy-fill text-[28px] text-primary mb-3" aria-hidden="true" />
