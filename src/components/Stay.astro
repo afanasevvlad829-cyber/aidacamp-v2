@@ -1,71 +1,127 @@
 ---
 import { Icon } from 'astro-icon/components';
+import { VOROBI, VOROBI_STAY } from '../data/locations';
 
 interface StayItem { title: string; image: string; description: string }
+interface StayPlace { id: string; tab: string; note: string; items: StayItem[]; moreHref: string }
 interface Props {
-  /** Свои карточки (межсезонье — «Воробьи»). По умолчанию — летнее размещение. */
+  /** Свой набор карточек без вкладок (сезонные лендинги — только «Воробьи»). */
   items?: StayItem[];
   heading?: string;
   moreHref?: string;
 }
 
-const defaultRooms: StayItem[] = [
-  {
-    title: 'Комнаты размещения',
-    image: '/images/stay/stay-room-01.avif',
-    description: 'Комнаты на 2-4 человека, тёплое одеяло, мягкая постель — как дома.',
-  },
-  {
-    title: 'Санузлы и бытовые зоны',
-    image: '/images/stay/stay-bathroom-01.avif',
-    description: 'Душ в каждом блоке, горячая вода всегда, ежедневная уборка.',
-  },
-  {
-    title: 'Общие пространства',
-    image: '/images/stay/stay-lounge-01.avif',
-    description: 'Холлы для настолок, комната для занятий, бассейн рядом.',
-  },
-];
-const { items, heading = 'Размещение', moreHref = '/razmeshchenie/' } = Astro.props;
-const rooms = items ?? defaultRooms;
+// Лагерь живёт в двух местах: летом — санаторий «Изумруд», в каникулы учебного
+// года — пансионат «Воробьи» (решение владельца 29.09.2026). Без props блок
+// показывает обе площадки вкладками.
+const summer: StayPlace = {
+  id: 'leto',
+  tab: 'Лето · «Изумруд»',
+  note: 'Летние смены — в санатории «Изумруд»: капитальные корпуса, бассейн, большая территория.',
+  moreHref: '/razmeshchenie/',
+  items: [
+    {
+      title: 'Комнаты размещения',
+      image: '/images/stay/stay-room-01.avif',
+      description: 'Комнаты на 2-4 человека, тёплое одеяло, мягкая постель — как дома.',
+    },
+    {
+      title: 'Санузлы и бытовые зоны',
+      image: '/images/stay/stay-bathroom-01.avif',
+      description: 'Душ в каждом блоке, горячая вода всегда, ежедневная уборка.',
+    },
+    {
+      title: 'Общие пространства',
+      image: '/images/stay/stay-lounge-01.avif',
+      description: 'Холлы для настолок, комната для занятий, бассейн рядом.',
+    },
+  ],
+};
+const vorobi: StayPlace = {
+  id: 'vorobi',
+  tab: 'Осень, зима, весна · «Воробьи»',
+  note: 'Смены на каникулах учебного года — в пансионате «Воробьи»: тёплые корпуса в сосновом лесу, пруд и горка.',
+  moreHref: VOROBI.path,
+  items: VOROBI_STAY,
+};
+
+const { items, heading = 'Размещение', moreHref } = Astro.props;
+
+// Первой открыта площадка ближайшего сезона: июнь–август — лето, иначе «Воробьи».
+// Сайт пересобирается ежедневно (Evergreen refresh), так что вкладка переключится сама.
+const month = new Date().getMonth() + 1;
+const places: StayPlace[] = items
+  ? [{ id: 'custom', tab: '', note: '', items, moreHref: moreHref ?? '/razmeshchenie/' }]
+  : month >= 6 && month <= 8 ? [summer, vorobi] : [vorobi, summer];
+const withTabs = places.length > 1;
 ---
 
-<section id="stay" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
+<section id="stay" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4" data-stay-root>
   <div class="p-[18px]">
     <div class="flex items-center justify-between gap-3 mb-1">
       <div class="flex items-center gap-2">
         <div class="list-accent-dot"></div>
         <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">{heading}</h2>
       </div>
-      <a href={moreHref} aria-label={`Подробнее: ${heading}`} class="group inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
+      <a href={places[0].moreHref} data-stay-more aria-label={`Подробнее: ${heading}`} class="group inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
         Подробнее
         <Icon name="bi:arrow-right" class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true" />
       </a>
     </div>
 
-    <div class="-mx-[2px] px-[2px] mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pt-3 pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pt-1 md:pb-2" data-stay-carousel>
-      {rooms.map((room, i) => (
-        <article class="reveal min-w-[84%] snap-start overflow-hidden rounded-[22px] border border-border-light bg-card md:min-w-0 card-shadow">
-          <div role="button" tabindex="0" data-stay-open data-stay-index={i} data-stay-src={room.image} data-stay-alt={room.title} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
-            <img src={room.image} alt={room.title} title={room.description} width="640" height="220" class="h-[220px] w-full object-cover" loading="lazy" />
-            <div class="p-4">
-              <h3 class="text-[19px] font-semibold text-body">{room.title}</h3>
-              <p class="mt-1 text-[16px] leading-[1.5] text-body-muted">{room.description}</p>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-    <!-- Dots — mobile only -->
-    <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-stay-dots role="group" aria-label="Навигация по размещению">
-      {rooms.map((_, i) => (
-        <span
-          class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-slate-300'}`}
-          data-stay-dot={i}
-          aria-current={i === 0 ? 'true' : 'false'}
-        ></span>
-      ))}
-    </div>
+    {withTabs && (
+      <div class="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Где живём">
+        {places.map((p, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`stay-tab-${p.id}`}
+            aria-controls={`stay-panel-${p.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            data-stay-tab={p.id}
+            data-stay-href={p.moreHref}
+            class="rounded-full border px-4 py-2 text-[15px] font-semibold transition-colors border-border-light bg-card text-body-muted hover:border-primary/40 hover:text-primary aria-selected:border-primary aria-selected:bg-primary aria-selected:text-white aria-selected:hover:text-white"
+          >
+            {p.tab}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {places.map((p, pi) => (
+      <div
+        id={`stay-panel-${p.id}`}
+        role={withTabs ? 'tabpanel' : undefined}
+        aria-labelledby={withTabs ? `stay-tab-${p.id}` : undefined}
+        data-stay-panel={p.id}
+        hidden={pi !== 0}
+      >
+        {p.note && <p class="mt-3 text-base text-body-muted max-w-[62ch]">{p.note}</p>}
+        <div class="-mx-[2px] px-[2px] mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pt-3 pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pt-1 md:pb-2" data-stay-carousel>
+          {p.items.map((room, i) => (
+            <article class="reveal min-w-[84%] snap-start overflow-hidden rounded-[22px] border border-border-light bg-card md:min-w-0 card-shadow">
+              <div role="button" tabindex="0" data-stay-open data-stay-index={i} data-stay-src={room.image} data-stay-alt={room.title} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
+                <img src={room.image} alt={room.title} title={room.description} width="640" height="220" class="h-[220px] w-full object-cover" loading="lazy" />
+                <div class="p-4">
+                  <h3 class="text-[19px] font-semibold text-body">{room.title}</h3>
+                  <p class="mt-1 text-[16px] leading-[1.5] text-body-muted">{room.description}</p>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <!-- Dots — mobile only -->
+        <div class="mt-3 flex justify-center items-center gap-2 md:hidden" data-stay-dots role="group" aria-label="Навигация по размещению">
+          {p.items.map((_, i) => (
+            <span
+              class={`h-2 rounded-full transition-all duration-200 ${i === 0 ? 'w-6 bg-primary-dark' : 'w-2 bg-slate-300'}`}
+              data-stay-dot={i}
+              aria-current={i === 0 ? 'true' : 'false'}
+            ></span>
+          ))}
+        </div>
+      </div>
+    ))}
 
   </div>
 </section>
@@ -98,58 +154,73 @@ const rooms = items ?? defaultRooms;
 
 <script>
   function initStay() {
-    // Dots for mobile carousel
-    const stayCarousel = document.querySelector<HTMLElement>('[data-stay-carousel]');
-    const stayDots = document.querySelectorAll<HTMLElement>('[data-stay-dot]');
-    if (stayCarousel && stayDots.length) {
-      const stayCards = Array.from(stayCarousel.children) as HTMLElement[];
-      const stayObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = stayCards.indexOf(entry.target as HTMLElement);
-            stayDots.forEach((d, di) => {
-              const isActive = di === idx;
-              d.classList.toggle('bg-primary-dark', isActive);
-              d.classList.toggle('w-6', isActive);
-              d.classList.toggle('bg-slate-300', !isActive);
-              d.classList.toggle('w-2', !isActive);
-              d.setAttribute('aria-current', isActive ? 'true' : 'false');
-            });
-          }
-        });
-      }, { root: stayCarousel, threshold: 0.6 });
-      stayCards.forEach((card) => stayObserver.observe(card));
-    }
-
+    const root = document.querySelector<HTMLElement>('[data-stay-root]');
     const modal = document.getElementById('stayLightbox') as HTMLDialogElement | null;
     const img = document.getElementById('stayLightboxImg') as HTMLImageElement | null;
-    const caption = document.getElementById('stayLightboxCaption');
-    const counter = document.getElementById('stayLightboxCounter');
-    if (!modal || !img) return;
+    if (!root || !modal || !img || root.dataset.stayReady) return;
+    root.dataset.stayReady = '1';
     const dialog = modal;
     const lightboxImage = img;
+    const caption = document.getElementById('stayLightboxCaption');
+    const counter = document.getElementById('stayLightboxCounter');
 
-    // Фото берём из самих карточек — у блока бывают разные наборы (лето / «Воробьи»).
-    const photos = Array.from(document.querySelectorAll<HTMLElement>('[data-stay-open]')).map((el) => ({
-      src: el.dataset.staySrc || '',
-      alt: el.dataset.stayAlt || '',
-    }));
+    // Вкладки площадок: переключают панель и ссылку «Подробнее»
+    const tabs = Array.from(root.querySelectorAll<HTMLElement>('[data-stay-tab]'));
+    const more = root.querySelector<HTMLAnchorElement>('[data-stay-more]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => t.setAttribute('aria-selected', t === tab ? 'true' : 'false'));
+        root.querySelectorAll<HTMLElement>('[data-stay-panel]').forEach((p) => {
+          p.hidden = p.dataset.stayPanel !== tab.dataset.stayTab;
+        });
+        if (more && tab.dataset.stayHref) more.href = tab.dataset.stayHref;
+      });
+    });
 
+    // Dots для мобильной карусели — у каждой панели свои
+    root.querySelectorAll<HTMLElement>('[data-stay-panel]').forEach((panel) => {
+      const carousel = panel.querySelector<HTMLElement>('[data-stay-carousel]');
+      const dots = panel.querySelectorAll<HTMLElement>('[data-stay-dot]');
+      if (!carousel || !dots.length) return;
+      const cards = Array.from(carousel.children) as HTMLElement[];
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const idx = cards.indexOf(entry.target as HTMLElement);
+          dots.forEach((d, di) => {
+            const isActive = di === idx;
+            d.classList.toggle('bg-primary-dark', isActive);
+            d.classList.toggle('w-6', isActive);
+            d.classList.toggle('bg-slate-300', !isActive);
+            d.classList.toggle('w-2', !isActive);
+            d.setAttribute('aria-current', isActive ? 'true' : 'false');
+          });
+        });
+      }, { root: carousel, threshold: 0.6 });
+      cards.forEach((card) => observer.observe(card));
+    });
+
+    // Лайтбокс листает фото той панели, из которой открыт
+    let photos: { src: string; alt: string }[] = [];
     let current = 0;
 
     function show(index: number) {
       current = ((index % photos.length) + photos.length) % photos.length;
-      img!.src = photos[current].src;
-      img!.alt = photos[current].alt;
+      lightboxImage.src = photos[current].src;
+      lightboxImage.alt = photos[current].alt;
       if (caption) caption.textContent = photos[current].alt;
       if (counter) counter.textContent = `${current + 1} / ${photos.length}`;
     }
 
     // Open on card click (div role="button" — нужен свой keydown для Enter/Space)
-    document.querySelectorAll('[data-stay-open]').forEach((btn) => {
+    root.querySelectorAll<HTMLElement>('[data-stay-open]').forEach((btn) => {
       const open = () => {
-        const idx = Number((btn as HTMLElement).dataset.stayIndex);
-        show(idx);
+        const panel = btn.closest('[data-stay-panel]');
+        photos = Array.from(panel?.querySelectorAll<HTMLElement>('[data-stay-open]') ?? []).map((el) => ({
+          src: el.dataset.staySrc || '',
+          alt: el.dataset.stayAlt || '',
+        }));
+        show(Number(btn.dataset.stayIndex));
         dialog.showModal();
       };
       btn.addEventListener('click', open);
@@ -162,7 +233,6 @@ const rooms = items ?? defaultRooms;
       });
     });
 
-    // Close
     function closeLightbox() {
       lightboxImage.src = '';
       dialog.close();
@@ -170,25 +240,18 @@ const rooms = items ?? defaultRooms;
 
     dialog.querySelector('[data-stay-close]')?.addEventListener('click', closeLightbox);
     dialog.addEventListener('click', (e) => { if (e.target === dialog) closeLightbox(); });
-
-    // Arrows
     dialog.querySelector('[data-stay-prev]')?.addEventListener('click', () => show(current - 1));
     dialog.querySelector('[data-stay-next]')?.addEventListener('click', () => show(current + 1));
-
-    // Keyboard arrows
-    modal.addEventListener('keydown', (e) => {
+    dialog.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') show(current - 1);
       if (e.key === 'ArrowRight') show(current + 1);
     });
 
-    // Swipe on mobile
     let touchStartX = 0;
-    modal.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    modal.addEventListener('touchend', (e) => {
+    dialog.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    dialog.addEventListener('touchend', (e) => {
       const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        show(diff > 0 ? current + 1 : current - 1);
-      }
+      if (Math.abs(diff) > 50) show(diff > 0 ? current + 1 : current - 1);
     });
   }
 
