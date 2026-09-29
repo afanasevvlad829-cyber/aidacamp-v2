@@ -1,0 +1,47 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  src: string;
+  title: string;
+  height?: number;
+  label?: string;
+  allowFullscreen?: boolean;
+}
+
+const { src, title, height = 360, label = 'Показать карту', allowFullscreen = false } = Astro.props;
+---
+
+<!-- Виджет ~800 KB, а loading="lazy" на медленной мобильной сети его не откладывает — грузим по клику. -->
+<button
+  type="button"
+  class="flex w-full flex-col items-center justify-center gap-3 bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
+  style={`height:${height}px`}
+  data-lazy-map={src}
+  data-lazy-map-title={title}
+  data-lazy-map-height={height}
+  data-lazy-map-fullscreen={allowFullscreen ? '1' : undefined}
+>
+  <Icon name="bi:geo-alt-fill" class="bi bi-geo-alt-fill text-[32px] text-slate-400" aria-hidden="true" />
+  <span class="text-base font-semibold">{label}</span>
+</button>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('button[data-lazy-map]').forEach((btn) => {
+    btn.addEventListener(
+      'click',
+      () => {
+        const iframe = document.createElement('iframe');
+        iframe.src = btn.dataset.lazyMap!;
+        iframe.title = btn.dataset.lazyMapTitle || '';
+        iframe.width = '100%';
+        iframe.height = btn.dataset.lazyMapHeight || '360';
+        iframe.className = 'block w-full';
+        iframe.setAttribute('frameborder', '0');
+        if (btn.dataset.lazyMapFullscreen) iframe.allowFullscreen = true;
+        btn.replaceWith(iframe);
+      },
+      { once: true },
+    );
+  });
+</script>

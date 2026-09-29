@@ -12,6 +12,7 @@ import {
   YANDEX_MAPS_URL, YANDEX_MAPS_ROUTE_URL, VK_URL, INSTAGRAM_URL,
 } from '../data/contacts';
 import BreadcrumbSchema from '../components/BreadcrumbSchema.astro';
+import LazyYandexMap from '../components/LazyYandexMap.astro';
 
 const relatedPages = getRelatedPages('/kontakty');
 ---
@@ -38,15 +39,10 @@ const relatedPages = getRelatedPages('/kontakty');
       </p>
 
       <div class="mt-6 overflow-hidden rounded-[18px] border border-slate-200">
-        <button
-          type="button"
-          id="map-placeholder"
-          class="flex h-[360px] w-full flex-col items-center justify-center gap-3 bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
-          data-map-src="https://yandex.ru/map-widget/v1/?ll=37.160000%2C55.500000&z=8&pt=36.724185,55.265643,pm2rdm"
-        >
-          <Icon name="bi:geo-alt-fill" class="bi bi-geo-alt-fill text-[32px] text-slate-400" aria-hidden="true" />
-          <span class="text-base font-semibold">Показать карту</span>
-        </button>
+        <LazyYandexMap
+          src="https://yandex.ru/map-widget/v1/?ll=37.160000%2C55.500000&z=8&pt=36.724185,55.265643,pm2rdm"
+          title="Расположение АйДаКемп на карте"
+        />
       </div>
 
       <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -111,19 +107,3 @@ const relatedPages = getRelatedPages('/kontakty');
   <Footer />
 </Base>
 
-<script is:inline>
-  (function () {
-    var btn = document.getElementById('map-placeholder');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var iframe = document.createElement('iframe');
-      iframe.src = btn.getAttribute('data-map-src');
-      iframe.width = '100%';
-      iframe.height = '360';
-      iframe.className = 'block w-full';
-      iframe.setAttribute('frameborder', '0');
-      iframe.title = 'Расположение АйДаКемп на карте';
-      btn.replaceWith(iframe);
-    }, { once: true });
-  })();
-</script>
