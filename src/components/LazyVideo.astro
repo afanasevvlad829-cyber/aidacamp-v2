@@ -1,0 +1,48 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  src: string;
+  title: string;
+  /** Классы контейнера-кнопки и iframe (размер/позиционирование, как у прежнего iframe) */
+  class?: string;
+  label?: string;
+}
+
+const { src, title, class: className = 'w-full h-full', label = 'Смотреть видео' } = Astro.props;
+const btnClass = className.replace(/\bblock\b/, '').trim();
+---
+
+<!-- Плеер Kinescope тянет сотни KB скриптов сразу — iframe создаём по клику, с autoplay. -->
+<button
+  type="button"
+  class:list={['flex flex-col items-center justify-center gap-3 border-0 bg-slate-900 text-white transition-colors hover:bg-slate-800', btnClass]}
+  data-lazy-video={src}
+  data-lazy-video-title={title}
+  data-lazy-video-class={className}
+  aria-label={`${label}: ${title}`}
+>
+  <Icon name="bi:play-circle-fill" class="bi bi-play-circle-fill text-[48px]" aria-hidden="true" />
+  <span class="px-3 text-center text-base font-semibold">{label}</span>
+</button>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('button[data-lazy-video]').forEach((btn) => {
+    btn.addEventListener(
+      'click',
+      () => {
+        const url = new URL(btn.dataset.lazyVideo!);
+        url.searchParams.set('autoplay', '1');
+        const iframe = document.createElement('iframe');
+        iframe.src = url.toString();
+        iframe.title = btn.dataset.lazyVideoTitle || '';
+        iframe.className = (btn.dataset.lazyVideoClass || 'w-full h-full') + ' block border-0';
+        iframe.setAttribute('frameborder', '0');
+        iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer; clipboard-write';
+        iframe.allowFullscreen = true;
+        btn.replaceWith(iframe);
+      },
+      { once: true },
+    );
+  });
+</script>
