@@ -1,0 +1,31 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  /** базовое имя файлов в /images/maps/ (без расширения) */
+  image: string;
+  href: string;
+  alt: string;
+  width: number;
+  height: number;
+  label?: string;
+  class?: string;
+  /** растянуть картинку на всю высоту ссылки (когда высоту задаёт родитель, а не картинка) */
+  fill?: boolean;
+}
+
+const { image, href, alt, width, height, label = 'Открыть в Яндекс.Картах', class: cls = '', fill = false } = Astro.props;
+const base = `/images/maps/${image}`;
+---
+
+<a href={href} target="_blank" rel="noopener" class={`group relative block overflow-hidden ${cls}`} data-analytics-goal="map_click">
+  <picture class={fill ? 'absolute inset-0' : 'block'}>
+    <source type="image/avif" srcset={`${base}.avif`} />
+    <source type="image/webp" srcset={`${base}.webp`} />
+    <img src={`${base}.png`} alt={alt} width={width} height={height} loading="lazy" decoding="async" class="block h-full w-full object-cover" />
+  </picture>
+  <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[14px] font-semibold text-slate-800 shadow-md transition-colors group-hover:text-orange-600">
+    <Icon name="bi:geo-alt-fill" class="bi bi-geo-alt-fill text-orange-500" aria-hidden="true" />
+    {label}
+  </span>
+</a>
