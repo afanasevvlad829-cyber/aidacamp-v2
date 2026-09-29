@@ -34,7 +34,7 @@ An agent must STOP and ask in plain text. "The task seems to require it" is NOT 
    - NEVER run `rm -rf` outside a clearly scoped build/temp dir
    - Deploy ONLY via `./scripts/deploy.sh [dev|prod]`. NEVER call `rsync` by hand.
    - Manual `rsync --delete` against live web-root wipes `current/`, `.env`, `node_modules` (incident 2026-05-22)
-   - NEVER deploy `prod` locally on the user's behalf (`deploy.sh prod` is in `permissions.deny`)
+   - NEVER deploy `prod` locally on the user's behalf (`./scripts/deploy.sh prod` is in `permissions.deny`)
    - Prod ships ONLY through CI: merge a PR into `dev` → `.github/workflows/deploy.yml`
      (quality-gate on Forgejo → merge into `dev` → `./scripts/release.sh`: build → smoke → auto-rollback; `dev` is the only production branch since 09.09.2026).
      Agents may run `tea pr merge`, `./scripts/release.sh` and `./scripts/rollback.sh prod`.
@@ -61,7 +61,7 @@ run(service="ssh", command="/opt/restic-snapshot.sh")
 ```
 
 - **Репозиторий: на Яндекс.Диске** — `rclone:yadisk:aidacamp-snapshots/restic` (off-server, на сервере НЕ хранится). Пароль: `/root/.restic-pass`. rclone-remote `yadisk` настроен на сервере.
-- Прод-деплой (`deploy.sh prod`) делает снапшот **автоматически** перед выкаткой.
+- Прод-деплой (`./scripts/deploy.sh prod`) делает снапшот **автоматически** перед выкаткой.
 - Откат: `restic -r rclone:yadisk:aidacamp-snapshots/restic --password-file /root/.restic-pass restore latest --target /tmp/restore --include <путь>`.
 - Ротация: 3 суточных снапшота (`--keep-daily 3`), cron 03:33. Шифрование restic (пароль сохранён владельцем вне сервера).
 - Инцидент-первопричина: пропажа `gallery-additions.json` (2026-06) — фото исчезли с /foto/, бэкапа не было. Снапшоты закрывают этот класс.
