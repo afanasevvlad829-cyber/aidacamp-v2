@@ -1,0 +1,276 @@
+---
+// Площадка межсезонных смен (осень, зима, весна) — пансионат «Воробьи».
+// Все факты о месте и фото — из src/data/locations.ts, здесь только вёрстка и текст.
+import { Icon } from 'astro-icon/components';
+import LandingLayout from '../layouts/LandingLayout.astro';
+import FAQSchema from '../components/FAQSchema.astro';
+import LazyYandexMap from '../components/LazyYandexMap.astro';
+import { VOROBI, VOROBI_GALLERY, VOROBI_PLAN, VOROBI_PLAN_LEGEND } from '../data/locations';
+import { TRANSFER_POINT } from '../data/shifts';
+import { AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON } from '../data/seasons';
+
+const title = 'Пансионат «Воробьи» — где проходят осенние, зимние и весенние смены АйДаКемп';
+const description = `Осенью, зимой и весной АйДаКемп живёт в пансионате «Воробьи»: тёплые корпуса в сосновом лесу, пруд, горка, столовая в стеклянном павильоне. ${VOROBI.distance} по Киевскому шоссе. Фото, план территории и карта проезда.`;
+const h1 = 'Пансионат «Воробьи»';
+const canonical = `https://aidacamp.ru${VOROBI.path}`;
+
+const facts = [
+  { icon: 'bi-car-front', title: VOROBI.distance, text: `${VOROBI.road}, ${VOROBI.driveTime}` },
+  { icon: 'bi-thermometer-half', title: 'Тёплые корпуса', text: 'Отопление всю зиму, занятия в светлых залах' },
+  { icon: 'bi-tree-fill', title: 'Сосновый лес', text: 'Закрытая территория с КПП, пруд и аллеи' },
+  { icon: 'bi-wifi', title: 'Wi-Fi', text: 'В корпусах и на территории' },
+];
+
+const outdoors = [
+  { icon: 'bi-snow', title: 'Горка и тюбинг', text: 'Зимой ребята катаются с горки на ватрушках — это главный хит после занятий.' },
+  { icon: 'bi-person-arms-up', title: 'Лыжи и прогулки', text: 'Лыжи дают в прокате пансионата. Аллеи расчищают от снега, гуляем каждый день.' },
+  { icon: 'bi-dribbble', title: 'Футбол и волейбол', text: 'Свои поля и спортплощадка с резиновым покрытием — осенью и весной там проходят игры отрядов.' },
+  { icon: 'bi-signpost-2', title: 'Пруд, мостики, беседки', text: 'Ручей с водопадом, три мостика, беседки и кострище — территорию хочется обойти всю.' },
+];
+
+const seasons = [AUTUMN_SEASON, WINTER_SEASON, SPRING_SEASON].map((s) => ({
+  name: s.breadcrumb,
+  dates: s.seasonMeta.dates,
+  href: `${s.path}/`,
+}));
+
+const faqs = [
+  { q: 'Где проходят осенние, зимние и весенние смены АйДаКемп?', a: `В пансионате «Воробьи» в Калужской области: ${VOROBI.distance}, ${VOROBI.driveTime} по Киевскому шоссе. Адрес: ${VOROBI.address}.` },
+  { q: 'Не будет холодно зимой?', a: 'Корпуса отапливаются, занятия, столовая и вечерние события — в тёплых помещениях. На улицу выходим гулять, кататься с горки и на лыжах, поэтому нужны тёплая куртка, шапка, варежки и непромокаемая обувь.' },
+  { q: 'Как ребята живут?', a: 'В двух- и трёхместных комнатах, в каждой свой санузел с душем. Мальчики и девочки живут в разных комнатах. Постельное бельё и полотенца выдаёт пансионат.' },
+  { q: 'Где и как кормят?', a: 'В столовой пансионата — стеклянном павильоне среди сосен. Пять приёмов пищи в день: завтрак, обед, полдник, ужин и вечерний перекус.' },
+  { q: 'Как добраться?', a: `На машине — по Киевскому шоссе, ${VOROBI.driveTime}. Можно заказать трансфер от ${TRANSFER_POINT} с сопровождающим, это отдельная опция при бронировании.` },
+];
+---
+
+<LandingLayout title={title} description={description} h1={h1} canonical={canonical} breadcrumb="Пансионат «Воробьи»" hideAgeBar={true}>
+  <Fragment slot="head">
+    <FAQSchema items={faqs} />
+  </Fragment>
+
+  <Fragment slot="hero">
+    <section class="relative bg-navy-950 text-white overflow-hidden">
+      <img src="/images/hero/vorobi-lokaciya.avif" alt="Деревянный корпус пансионата «Воробьи» зимой" class="absolute inset-0 h-full w-full object-cover" loading="eager" fetchpriority="high" width="1448" height="1086" />
+      <div class="absolute inset-0 hidden md:block bg-[linear-gradient(90deg,rgba(5,9,18,0.92)_0%,rgba(5,9,18,0.78)_30%,rgba(5,9,18,0.40)_55%,rgba(5,9,18,0.05)_78%)]"></div>
+      <div class="absolute inset-0 md:hidden" style="background: rgba(5,9,18,0.62);"></div>
+      <div class="relative mx-auto max-w-[1312px] px-4 pt-20 pb-14 md:pt-28 md:pb-20">
+        <nav class="mb-4 flex items-center gap-2 text-base text-white/60" aria-label="Хлебные крошки">
+          <a href="/" class="hover:text-white">Главная</a>
+          <Icon name="bi:chevron-right" class="bi bi-chevron-right text-[10px]" aria-hidden="true" />
+          <span class="text-white/85">Пансионат «Воробьи»</span>
+        </nav>
+        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Осень · зима · весна</p>
+        <h1 class="mt-3 text-[34px] md:text-[52px] font-extrabold leading-[1.05] tracking-[-0.03em] text-white max-w-[700px]">
+          Пансионат «Воробьи»<br /><span class="hero-outline">в сосновом лесу</span>
+        </h1>
+        <p class="mt-4 max-w-[580px] text-[17px] md:text-[18px] leading-[1.55] text-white/80">
+          Здесь проходят все наши смены на каникулах в учебном году. Тёплые корпуса, пруд с мостиками, горка для тюбинга и тишина — полтора часа от Москвы.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="#foto" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-bold text-white hover:bg-primary-hover transition-colors">
+            <Icon name="bi:images" class="bi bi-images text-base" aria-hidden="true" />
+            Смотреть фото
+          </a>
+          <a href="#doroga" class="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-3 text-base font-medium text-white hover:bg-white/10 transition-colors">
+            <Icon name="bi:geo-alt-fill" class="bi bi-geo-alt-fill text-base" aria-hidden="true" />
+            Как добраться
+          </a>
+        </div>
+      </div>
+    </section>
+  </Fragment>
+
+  <!-- О МЕСТЕ -->
+  <section class="mx-auto max-w-[1312px] px-4 py-12 md:py-16">
+    <div class="grid gap-8 md:grid-cols-[1.1fr_1fr] md:gap-12 items-start">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[24px] md:text-[30px] font-bold leading-[1.1] tracking-[-0.02em] text-body">Место, где неделя пролетает</h2>
+        </div>
+        <div class="space-y-4 text-[17px] leading-[1.65] text-body-muted max-w-[62ch]">
+          <p>«Воробьи» стоят посреди соснового леса на берегу пруда. Ручей с маленьким водопадом, деревянные мостики, беседки, аллеи, по которым утром идут на завтрак, а вечером — на защиту проектов. Зимой всё в снегу, и первым делом ребята просятся на горку.</p>
+          <p>Жилые корпуса и столовая отапливаются, занятия идут в просторных светлых залах. Территория закрытая, на въезде КПП, вокруг только лес — ни трассы, ни города за забором.</p>
+          <p>Вы отправляете ребёнка не «куда-нибудь на каникулы», а в место, где тепло, сытно, красиво и каждый час чем-то занят. А сами получаете свободную неделю и спокойные вечерние звонки.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 min-w-0">
+        {facts.map((f) => (
+          <div class="rounded-[16px] bg-card border border-border-light p-4">
+            <Icon name={`bi:${f.icon.replace('bi-', '')}`} class={`bi ${f.icon} text-[20px] text-primary`} aria-hidden="true" />
+            <p class="mt-2 text-base font-bold text-body leading-tight">{f.title}</p>
+            <p class="mt-1 text-[14px] leading-[1.45] text-body-muted">{f.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ФОТО ПО РАЗДЕЛАМ — карточки как в блоке «Размещение», клик открывает лайтбокс -->
+  <div id="foto" class="mx-auto max-w-[1312px] px-[2px] md:px-4" data-vorobi-gallery>
+    {VOROBI_GALLERY.map((group) => (
+      <section id={group.id} class="p-[18px] pt-6">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="list-accent-dot"></div>
+          <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">{group.title}</h2>
+        </div>
+        <p class="text-base text-body-muted max-w-[62ch]">{group.note}</p>
+        <div class="-mx-[2px] px-[2px] mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pt-2 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-4 md:overflow-visible">
+          {group.photos.map((ph) => (
+            <button type="button" data-vorobi-open data-src={ph.src} data-alt={ph.alt} class="group min-w-[78%] snap-start overflow-hidden rounded-[22px] border border-border-light bg-card text-left card-shadow md:min-w-0 cursor-zoom-in">
+              <img src={ph.thumb} alt={ph.alt} width="720" height="540" loading="lazy" decoding="async" class="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+              <span class="block px-4 py-3 text-[15px] font-semibold text-body">{ph.alt}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  <!-- ПЛАН ТЕРРИТОРИИ -->
+  <section id="plan" class="mx-auto max-w-[1312px] px-4 py-10 md:py-14">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">План территории</h2>
+    </div>
+    <div class="grid gap-6 md:grid-cols-[1.4fr_1fr] items-start">
+      <button type="button" data-vorobi-open data-src={VOROBI_PLAN.src} data-alt={VOROBI_PLAN.alt} class="overflow-hidden rounded-[18px] border border-border-light bg-white cursor-zoom-in">
+        <img src={VOROBI_PLAN.src} alt={VOROBI_PLAN.alt} width="1600" height="1152" loading="lazy" class="w-full" />
+      </button>
+      <ol class="columns-2 gap-6 text-[14px] leading-[1.7] text-body-muted list-decimal pl-5">
+        {VOROBI_PLAN_LEGEND.map((item) => <li class="break-inside-avoid">{item}</li>)}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ЧЕМ ЗАНЯТЬСЯ НА УЛИЦЕ -->
+  <section class="mx-auto max-w-[1312px] px-4 pb-10 md:pb-14">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Между занятиями — на улицу</h2>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {outdoors.map((o) => (
+        <div class="rounded-[16px] bg-card border border-border-light p-5">
+          <div class="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <Icon name={`bi:${o.icon.replace('bi-', '')}`} class={`bi ${o.icon} text-[18px] text-primary`} aria-hidden="true" />
+          </div>
+          <h3 class="text-base font-bold text-body mb-1">{o.title}</h3>
+          <p class="text-base text-body-muted leading-[1.55]">{o.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ДОРОГА -->
+  <section id="doroga" class="mx-auto max-w-[1312px] px-4 pb-10 md:pb-14">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Как добраться</h2>
+    </div>
+    <div class="grid gap-6 md:grid-cols-[1fr_1.4fr] items-start">
+      <div class="min-w-0 space-y-4 text-[17px] leading-[1.6] text-body-muted">
+        <p class="text-body font-semibold">{VOROBI.address}</p>
+        <p><Icon name="bi:car-front" class="bi bi-car-front text-primary mr-1.5" aria-hidden="true" />На машине — по Киевскому шоссе, {VOROBI.distance}, {VOROBI.driveTime}. На территории бесплатная парковка.</p>
+        <p><Icon name="bi:bus-front" class="bi bi-bus-front text-primary mr-1.5" aria-hidden="true" />Трансфер от {TRANSFER_POINT} с сопровождающим — отдельная опция, отмечается при бронировании.</p>
+        <a href={VOROBI.routeUrl} target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-bold text-white hover:bg-primary-hover transition-colors no-underline">
+          Построить маршрут
+          <Icon name="bi:arrow-right" class="bi bi-arrow-right text-base" aria-hidden="true" />
+        </a>
+      </div>
+      <div class="overflow-hidden rounded-[18px] border border-border-light">
+        <LazyYandexMap src={VOROBI.mapWidgetUrl} title="Пансионат «Воробьи» на карте" height={380} label="Показать карту" />
+      </div>
+    </div>
+  </section>
+
+  <!-- СМЕНЫ ЗДЕСЬ -->
+  <section class="mx-auto max-w-[1312px] px-4 pb-10 md:pb-14">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="list-accent-dot"></div>
+      <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Смены в «Воробьях»</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {seasons.map((s) => (
+        <a href={s.href} class="group rounded-[18px] border border-border-light bg-card p-5 no-underline hover:border-primary/40 transition-colors">
+          <p class="text-[19px] font-bold text-body">{s.name}</p>
+          <p class="mt-1 text-base text-body-muted">{s.dates}</p>
+          <span class="mt-3 inline-flex items-center gap-1.5 text-base font-semibold text-primary">
+            Программа и запись
+            <Icon name="bi:arrow-right" class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true" />
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="mx-auto max-w-[860px] px-4 pb-16">
+    <h2 class="text-[24px] md:text-[30px] font-bold tracking-[-0.02em] text-body mb-4">Вопросы о месте</h2>
+    <div class="divide-y divide-border-light border-y border-border-light">
+      {faqs.map((f) => (
+        <details class="group py-4">
+          <summary class="flex cursor-pointer list-none items-start justify-between gap-4 text-[17px] font-semibold text-body">
+            {f.q}
+            <Icon name="bi:chevron-right" class="bi bi-chevron-right mt-1 shrink-0 transition-transform group-open:rotate-90" aria-hidden="true" />
+          </summary>
+          <p class="mt-2 text-base leading-[1.6] text-body-muted">{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+
+  <dialog id="vorobiLightbox" class="m-0 h-full w-full max-w-none border-0 bg-black/90 p-4 backdrop:bg-black/90">
+    <div class="flex h-full items-center justify-center">
+      <button type="button" data-vorobi-close aria-label="Закрыть" class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+        <Icon name="bi:x-lg" class="bi bi-x-lg text-[18px]" aria-hidden="true" />
+      </button>
+      <button type="button" data-vorobi-prev aria-label="Назад" class="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+        <Icon name="bi:chevron-left" class="bi bi-chevron-left text-[18px]" aria-hidden="true" />
+      </button>
+      <button type="button" data-vorobi-next aria-label="Вперёд" class="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white">
+        <Icon name="bi:chevron-right" class="bi bi-chevron-right text-[18px]" aria-hidden="true" />
+      </button>
+      <figure class="flex flex-col items-center">
+        <img id="vorobiLightboxImg" alt="" class="max-h-[80vh] max-w-full rounded-[18px] object-contain" />
+        <figcaption id="vorobiLightboxCaption" class="mt-3 text-center text-base text-white/80"></figcaption>
+      </figure>
+    </div>
+  </dialog>
+</LandingLayout>
+
+<script>
+  function initVorobi() {
+    const dialog = document.getElementById('vorobiLightbox') as HTMLDialogElement | null;
+    const img = document.getElementById('vorobiLightboxImg') as HTMLImageElement | null;
+    const cap = document.getElementById('vorobiLightboxCaption');
+    if (!dialog || !img || dialog.dataset.ready) return;
+    dialog.dataset.ready = '1';
+    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-vorobi-open]'));
+    let cur = 0;
+    const show = (i: number) => {
+      cur = (i + items.length) % items.length;
+      img.src = items[cur].dataset.src || '';
+      img.alt = items[cur].dataset.alt || '';
+      if (cap) cap.textContent = img.alt;
+    };
+    items.forEach((el, i) => el.addEventListener('click', () => { show(i); dialog.showModal(); }));
+    const close = () => { img.src = ''; dialog.close(); };
+    dialog.querySelector('[data-vorobi-close]')?.addEventListener('click', close);
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+    dialog.querySelector('[data-vorobi-prev]')?.addEventListener('click', () => show(cur - 1));
+    dialog.querySelector('[data-vorobi-next]')?.addEventListener('click', () => show(cur + 1));
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(cur - 1);
+      if (e.key === 'ArrowRight') show(cur + 1);
+    });
+    let x0 = 0;
+    dialog.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    dialog.addEventListener('touchend', (e) => {
+      const d = x0 - e.changedTouches[0].clientX;
+      if (Math.abs(d) > 50) show(d > 0 ? cur + 1 : cur - 1);
+    });
+  }
+  document.addEventListener('astro:page-load', initVorobi);
+  initVorobi();
+</script>

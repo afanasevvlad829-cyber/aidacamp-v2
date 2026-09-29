@@ -6,6 +6,7 @@ import { renderCard, PEER_COUNTS, getAvailabilityLevel, getBookingCta, getShiftB
 import { pluralDays } from '../../utils/plural';
 import { getTaxDeduction, getCurrentPrice, getNextDayPrice, getDays, fmtPrice } from '../../data/dynamicPrices';
 import WaitlistInfoIcon from './WaitlistInfoIcon.astro';
+import { getShiftLocation } from '../../data/locations';
 
 interface Props {
   shift: Shift;
@@ -28,6 +29,9 @@ const bookingCta = getBookingCta(shift);
 
 // Значок в кружке: номер у летних смен, иконка сезона у осенних/зимних (см. getShiftBadge)
 const badge = getShiftBadge(shift);
+
+// Где проходит смена: у межсезонных — ссылка на страницу пансионата «Воробьи»
+const location = getShiftLocation(shift);
 
 // Eyebrow с месяцами по диапазону дат
 const monthsRu: Record<string, string> = {
@@ -174,6 +178,13 @@ const filledSegments = Math.round((pct / 100) * SEGMENTS);
     </div>
     <p class="text-base text-body-muted whitespace-nowrap shrink-0">{shift.duration}</p>
   </div>
+
+  {location && (
+    <a href={location.path} class="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-body-muted hover:text-primary transition-colors no-underline">
+      <Icon name="bi:geo-alt-fill" class="bi bi-geo-alt-fill text-[12px] text-primary" aria-hidden="true" />
+      <span class="underline decoration-dotted underline-offset-2">{location.name}</span>
+    </a>
+  )}
 
   <!-- OCCUPANCY BAR — видна сразу (сегменты), статус справа над баром -->
   {isSoldOut ? (

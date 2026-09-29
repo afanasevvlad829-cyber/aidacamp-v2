@@ -1,6 +1,15 @@
 ---
 import { Icon } from 'astro-icon/components';
-const rooms = [
+
+interface StayItem { title: string; image: string; description: string }
+interface Props {
+  /** Свои карточки (межсезонье — «Воробьи»). По умолчанию — летнее размещение. */
+  items?: StayItem[];
+  heading?: string;
+  moreHref?: string;
+}
+
+const defaultRooms: StayItem[] = [
   {
     title: 'Комнаты размещения',
     image: '/images/stay/stay-room-01.avif',
@@ -17,6 +26,8 @@ const rooms = [
     description: 'Холлы для настолок, комната для занятий, бассейн рядом.',
   },
 ];
+const { items, heading = 'Размещение', moreHref = '/razmeshchenie/' } = Astro.props;
+const rooms = items ?? defaultRooms;
 ---
 
 <section id="stay" class="mx-auto max-w-[1312px] px-[2px] pt-6 md:px-4">
@@ -24,9 +35,9 @@ const rooms = [
     <div class="flex items-center justify-between gap-3 mb-1">
       <div class="flex items-center gap-2">
         <div class="list-accent-dot"></div>
-        <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">Размещение</h2>
+        <h2 class="text-[24px] font-bold leading-[1.1] tracking-[-0.02em] text-body md:text-[30px]">{heading}</h2>
       </div>
-      <a href="/razmeshchenie/" aria-label="Подробнее о размещении" class="group inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
+      <a href={moreHref} aria-label={`Подробнее: ${heading}`} class="group inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:text-primary-hover">
         Подробнее
         <Icon name="bi:arrow-right" class="bi bi-arrow-right icon-arrow-right-hover" aria-hidden="true" />
       </a>
@@ -35,7 +46,7 @@ const rooms = [
     <div class="-mx-[2px] px-[2px] mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pt-3 pb-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:overflow-visible md:pt-1 md:pb-2" data-stay-carousel>
       {rooms.map((room, i) => (
         <article class="reveal min-w-[84%] snap-start overflow-hidden rounded-[22px] border border-border-light bg-card md:min-w-0 card-shadow">
-          <div role="button" tabindex="0" data-stay-open data-stay-index={i} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
+          <div role="button" tabindex="0" data-stay-open data-stay-index={i} data-stay-src={room.image} data-stay-alt={room.title} class="block w-full text-left cursor-pointer active:scale-[0.98] transition-transform duration-150">
             <img src={room.image} alt={room.title} title={room.description} width="640" height="220" class="h-[220px] w-full object-cover" loading="lazy" />
             <div class="p-4">
               <h3 class="text-[19px] font-semibold text-body">{room.title}</h3>
@@ -118,11 +129,11 @@ const rooms = [
     const dialog = modal;
     const lightboxImage = img;
 
-    const photos = [
-      { src: '/images/stay/stay-room-01.avif', alt: 'Комнаты размещения' },
-      { src: '/images/stay/stay-bathroom-01.avif', alt: 'Санузлы и бытовые зоны' },
-      { src: '/images/stay/stay-lounge-01.avif', alt: 'Общие пространства' },
-    ];
+    // Фото берём из самих карточек — у блока бывают разные наборы (лето / «Воробьи»).
+    const photos = Array.from(document.querySelectorAll<HTMLElement>('[data-stay-open]')).map((el) => ({
+      src: el.dataset.staySrc || '',
+      alt: el.dataset.stayAlt || '',
+    }));
 
     let current = 0;
 
