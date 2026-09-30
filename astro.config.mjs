@@ -5,6 +5,7 @@ import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 import compress from '@playform/compress';
 import htmlMinifyCached from './scripts/html-minify-cached.mjs';
+import pruneInlineCss from './scripts/prune-inline-css.mjs';
 import icon from 'astro-icon';
 
 // SKIP_COMPRESS=1 выключает минификацию. Нужен первому проходу build.sh: тот проход
@@ -175,6 +176,9 @@ export default defineConfig({
     // у compress это 74с на КАЖДУЮ сборку по всем 344 страницам, хотя типичная правка
     // задевает единицы. CSS/JS оставлены ему — там 32 и 110 файлов и экономия 5.28 КБ
     // и 7.7 КБ, отдельный кэш не окупается.
+    // Сначала вырезаем из встроенного <style> правила, которым на странице нечего
+    // стилизовать (scripts/prune-inline-css.mjs), потом минифицируем уже урезанное.
+    pruneInlineCss(),
     htmlMinifyCached(),
     ...(SKIP_COMPRESS ? [] : [compress({
       CSS: true,
