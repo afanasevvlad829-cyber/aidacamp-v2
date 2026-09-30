@@ -36,7 +36,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь в Подмосковье', description: 'Загородный, с бассейном', url: '/lager-v-podmoskove/', icon: 'bi-tree' },
   { title: `Лагерь на лето ${SUMMER_2027[0].startDate.slice(0, 4)}`, description: `${SUMMER_2027.length} смен по ${SUMMER_2027[0].duration}, идёт предзапись`, url: '/lager-na-leto/', icon: 'bi-calendar-heart' },
   { title: 'Лагерь в Москве', description: 'Ближнее Подмосковье, 66 км от МКАД', url: '/lager-v-moskve/', icon: 'bi-geo-alt' },
-  { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от Москвы, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
+  { title: 'Московские летние лагеря', description: 'IT-лагерь в 66 км от МКАД, трансфер', url: '/moskovskie-letnie-lagerya/', icon: 'bi-geo-alt' },
 
   // 🎯 Тематические IT
   { title: 'IT Camp', description: 'Лагерь программирования в Подмосковье', url: '/it-camp/', icon: 'bi-laptop' },
@@ -405,14 +405,14 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
     { title: 'Лагерь в Наро-Фоминском районе', description: 'Маршруты, как добраться, инфраструктура', url: '/stati/lager-naro-fominsk/', icon: 'file-earmark-text' },
   ],
   '/nalogovyj-vychet': [
-    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
+    { title: 'Как оплатить лагерь', description: 'Способы оплаты, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
     { title: 'Вычет за лагерь: пошаговая инструкция', description: 'Через Госуслуги за 15 минут', url: '/stati/nalogovyj-vychet-za-lager-poshagovaya-instrukciya/', icon: 'clipboard-check' },
   ],
   '/ceny': [
-    { title: 'Как оплатить лагерь', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
+    { title: 'Как оплатить лагерь', description: 'Способы оплаты, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/putevka-v-lager': [
-    { title: 'Как оплатить смену', description: 'Рассрочка 50/50, способы, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
+    { title: 'Как оплатить смену', description: 'Способы оплаты, документы', url: '/stati/oplata-detskogo-lagerya/', icon: 'cash-coin' },
   ],
   '/lager-dlya-podrostkov': [
     { title: 'Ребёнок не хочет в лагерь', description: 'Разбираемся без скандалов', url: '/stati/rebenok-ne-hochet-v-lager/', icon: 'chat-dots' },
