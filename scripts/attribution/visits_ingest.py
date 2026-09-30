@@ -14,7 +14,7 @@ import re
 
 # Шум: краулеры (по User-Agent) и не-страницы (ассеты по расширению URL).
 # Отсекаем В МОМЕНТ ЗАПИСИ, чтобы сырая visits не копила ~59% мусора.
-_BOT_RE = re.compile(r"bot|crawl|spider|scrapy|externalagent|amazonbot|ahrefs|semrush|duckduck|preview|monitor|uptime|python|curl|wget|go-http|go\.d\.plugin|netdata|prometheus|zabbix|pingdom|statuscake|java/|okhttp|headless|phantom|slurp|bingpreview|facebookexternalhit", re.I)
+_BOT_RE = re.compile(r"bot|crawl|spider|externalagent|amazonbot|ahrefs|semrush|duckduck|preview|monitor|uptime|python|curl|wget|go-http|scrapy|go\.d\.plugin|prometheus|zabbix|pingdom|statuscake|java/|okhttp|headless|phantom|slurp|bingpreview|facebookexternalhit|netdata|google", re.I)
 _ASSET_RE = re.compile(r"\.(json|webmanifest|xml|txt|ico|css|js|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|map|mp4|webm|pdf)(\?|$)", re.I)
 
 def is_noise(ua: str, uri: str) -> bool:
@@ -45,6 +45,7 @@ def parse_line(line: str):
         "yclid": g("yclid"), "gclid": g("gclid"), "ysclid": g("ysclid"),
         "ip": d.get("ip") or None, "user_agent": d.get("ua") or None,
         "accept_lang": d.get("lang") or None, "ym_uid": d.get("ym_uid") or None,
+        "site": d.get("host") or "aidacamp.ru",
     }
 
 
@@ -61,11 +62,12 @@ def insert(cur, r):
         """
         INSERT INTO visits (visitor_id, ts, is_first, landing_url, referer,
           utm_source, utm_medium, utm_campaign, utm_content, utm_term,
-          yclid, gclid, ysclid, ip, user_agent, accept_lang, ym_uid, source)
+          yclid, gclid, ysclid, ip, user_agent, accept_lang, ym_uid, source, site)
         VALUES (%(visitor_id)s, %(ts)s, %(is_first)s, %(landing_url)s, %(referer)s,
           %(utm_source)s,%(utm_medium)s,%(utm_campaign)s,%(utm_content)s,%(utm_term)s,
           %(yclid)s,%(gclid)s,%(ysclid)s,%(ip)s,%(user_agent)s,%(accept_lang)s,%(ym_uid)s,
-          fn_classify_source(%(yclid)s,%(gclid)s,%(ysclid)s,%(utm_source)s,%(referer)s,%(landing_url)s))
+          fn_classify_source(%(yclid)s,%(gclid)s,%(ysclid)s,%(utm_source)s,%(referer)s,%(landing_url)s),
+          %(site)s)
         """,
         r,
     )
@@ -83,7 +85,9 @@ def main():
         off = 0  # лог ротировался
     conn = psycopg2.connect(DSN)
     cur = conn.cursor()
-    with open(LOG) as f:
+    # errors="replace": 26.09.2026 в attribution-icepartners.log пришёл запрос с байтом не в UTF-8,
+    # скрипт падал на каждой строке и ICE не писал визиты 3.5 дня.
+    with open(LOG, encoding="utf-8", errors="replace") as f:
         f.seek(off)
         for line in f:
             r = parse_line(line)
