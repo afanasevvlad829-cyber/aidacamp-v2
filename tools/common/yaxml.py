@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 XMLSTOCK_BASE = "https://xmlstock.com/yandex/xml/"
 
 _DEFAULT_USER = "14181"
-_DEFAULT_KEY  = "d4711d0959e735ab1e460b37f97a1e1f"
+_DEFAULT_KEY  = ""  # ключ только из окружения XMLSTOCK_KEY (30.09.2026: вынесен из кода)
 
 
 def _user() -> str:

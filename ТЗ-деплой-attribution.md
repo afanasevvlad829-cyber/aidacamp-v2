@@ -78,7 +78,7 @@ certbot --nginx -d attribution.aidacamp.ru --non-interactive --agree-tos -m hell
 
 ### 7. Обновить CRM
 ```
-ALFA_EMAIL=pbalgoritmika@gmail.com ALFA_KEY=8db19d5a-837e-11e9-9333-0cc47a6ca50e ATTR_HOST=attribution.aidacamp.ru node update-crm.js
+ALFA_EMAIL=pbalgoritmika@gmail.com ALFA_KEY=   # AlfaCRM отключена, ключ удалён 30.09.2026 ATTR_HOST=attribution.aidacamp.ru node update-crm.js
 ```
 Добавит в каждую карточку: [АТРИБУЦИЯ] Источник (100%) | https://attribution.aidacamp.ru/XXXX
 AlfaCRM API: host codim.s20.online, branch=5, заголовок X-ALFACRM-TOKEN.
