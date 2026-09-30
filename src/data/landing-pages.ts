@@ -121,7 +121,7 @@ export const landingPages: LandingPage[] = [
   // 💰 Коммерческие
   { title: 'Записаться в лагерь', description: 'Как записать ребёнка в IT-лагерь', url: '/zapisatsya/', icon: 'bi-calendar-check' },
   { title: `Цены на смены ${SEASON_YEAR}`, description: 'Стоимость всех смен, что входит', url: '/ceny/', icon: 'bi-coin' },
-  { title: 'Путёвка в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 3 нед.', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
+  { title: 'Путёвка в лагерь', description: 'Оплата, договор, 50% сейчас + 50% за 14 дн. до смены', url: '/putevka-v-lager/', icon: 'bi-credit-card' },
   { title: 'Сколько стоит лагерь', description: 'Разбор цен по типам лагерей', url: '/stati/skolko-stoit-detskiy-lager/', icon: 'bi-coin' },
   { title: 'Налоговый вычет 13%', description: 'Калькулятор возврата с путёвки', url: '/nalogovyj-vychet/', icon: 'bi-receipt' },
   { title: 'Лагерь недорого', description: 'От 74 900 ₽ за смену, оплата частями', url: '/lager-nedorogo/', icon: 'bi-tag' },
