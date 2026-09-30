@@ -27,12 +27,13 @@ export const YANDEX_MAPS_URL = 'https://yandex.ru/maps/?ll=36.724185,55.265643&z
 // (цель maps_route_click: initContactTracking ловит rtext= в href).
 export const YANDEX_MAPS_ROUTE_URL = 'https://yandex.ru/maps/?rtext=~55.265643%2C36.724185&rtt=auto';
 
-export const STAT_FOUNDED_YEAR = '2022'; // год основания, синхронно с SchemaOrg foundingDate
+export const STAT_FOUNDED_YEAR = '2021'; // год основания (решение владельца 30.09.2026; синхронно с SchemaOrg foundingDate)
 export const STAT_YEARS = String(SEASON_YEAR - Number(STAT_FOUNDED_YEAR)); // лет работы — производная, не хардкодить
 export const STAT_KIDS = '1200+';        // детей
 export const STAT_RATING = '5.0';        // рейтинг на Яндекс.Картах
 export const STAT_RATING_INCAMP = '4.8'; // рейтинг на incamp.ru — ДРУГАЯ площадка, не путать с STAT_RATING (Яндекс.Карты)
-export const STAT_DISTANCE = '66 км';    // от Москвы
+export const STAT_DISTANCE = '66 км';    // от МКАД (решение владельца 30.09.2026)
+export const STAT_DISTANCE_FULL = `${STAT_DISTANCE} от МКАД`; // летняя база; «от Москвы» — ошибка, ловит check:facts
 export const STAT_RETURN = '60%';        // возвращаются снова (по рекомендации/повторно)
 export const STAT_INSURED = 'Застрахована ответственность туроператора (Росгосстрах)';
 export const STAT_IT_CONTINUE = '78%';   // детей продолжают заниматься IT после лагеря (опрос выпускников)
