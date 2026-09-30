@@ -24,7 +24,7 @@ import { displayShifts, shiftInfo, type Shift, getAvailabilityLevel, getBookingC
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import { getShiftPhase } from '../../data/dynamicPrices';
 import { getNextSeason } from '../../data/seasons';
-import { getShiftLocation } from '../../data/locations';
+import { getShiftLocation, VOROBI_GALLERY } from '../../data/locations';
 
 export async function getStaticPaths() {
   return displayShifts.map((shift) => ({
@@ -83,6 +83,17 @@ const ssrVychet   = getTaxDeduction(shift.id);
 const season = getShiftSeason(shift);
 // Площадка смены: межсезонье — пансионат «Воробьи», лето — своя (null).
 const loc = getShiftLocation(shift);
+// Фото площадки на странице межсезонной смены (решение владельца 30.09.2026): по одному-два
+// кадра из каждой группы галереи «Воробьёв»; полная галерея и план — на странице пансионата.
+const LOC_PHOTO_SLUGS = ['korpus-derevyannyy-osen', 'sosnovyy-les', 'prud-domik', 'alleya', 'nomer-2-mestnyy-1', 'nomer-3-mestnyy-2', 'stolovaya-pavilon', 'zal-bolshoy'];
+const locPhotos = loc
+  ? LOC_PHOTO_SLUGS.map((slug) => {
+      const group = VOROBI_GALLERY.find((g) => g.photos.some((ph) => ph.src.includes(`/${slug}.`)));
+      const photo = group?.photos.find((ph) => ph.src.includes(`/${slug}.`));
+      return photo && group ? { ...photo, groupId: group.id } : null;
+    }).filter((x): x is NonNullable<typeof x> => x !== null)
+  : [];
+const isAutumnShift = shift.id === 'shift-autumn-1' || shift.id === 'shift-autumn-2';
 const seasonAdj = season.adj;                    // «летняя» / «осенняя» / «зимняя»
 const seasonAdjCap = seasonAdj.charAt(0).toUpperCase() + seasonAdj.slice(1);
 const shiftYear = shiftYearLabel(shift);         // «2026» или «2026/2027»
@@ -487,6 +498,35 @@ const shiftJsonLd = {
             <h3 class="text-[18px] font-bold text-body mb-2">Кто отвечал за смену</h3>
             <p>Смену провели по лицензии на образовательную деятельность № Л035-01298-77/01082973, туроператор — ООО «ВОИП Коннект» (реестровый номер РТО 025773), с ответственностью, застрахованной на 500 000 ₽ в Росгосстрахе. Лагерь работает седьмой год, через него прошло больше 1 200 ребят, а на Яндекс.Картах у него рейтинг 5,0★.</p>
           </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ═══════ ПРОГРАММА — осенние заезды: по дням, хакатон, экономика (shiftInfo) ═══════ -->
+    {isAutumnShift && info && (
+      <section class="mx-auto max-w-[760px] px-5 pb-10 md:px-8" data-shift-below-fold>
+        <h2 class="text-[22px] md:text-[26px] font-bold text-body mb-4">Программа смены по дням</h2>
+        <div set:html={info.html} />
+      </section>
+    )}
+
+    <!-- ═══════ ЛОКАЦИЯ — фото площадки межсезонной смены ═══════ -->
+    {loc && locPhotos.length > 0 && (
+      <section class="border-t border-border-light" data-shift-below-fold>
+        <div class="mx-auto max-w-[1200px] px-5 py-12 md:px-8 md:py-16">
+          <h2 class="text-[22px] md:text-[26px] font-bold text-body">Где пройдёт смена — {loc.name}</h2>
+          <p class="mt-2 text-base leading-[1.6] text-body-muted">{loc.distance}, {loc.driveTime}. Тёплые корпуса в сосновом лесу, комнаты на 2–3 человека со своим душем, столовая в стеклянном павильоне.</p>
+          <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {locPhotos.map((ph) => (
+              <a href={`${loc.path}#${ph.groupId}`} class="block overflow-hidden rounded-[12px] bg-surface">
+                <img src={ph.thumb} alt={ph.alt} loading="lazy" decoding="async" width="400" height="300" class="aspect-[4/3] h-full w-full object-cover transition-transform duration-300 hover:scale-[1.03]" />
+              </a>
+            ))}
+          </div>
+          <a href={loc.path} class="mt-5 inline-flex items-center gap-1.5 text-base font-semibold text-primary hover:underline">
+            Все фото, план территории и дорога
+            <Icon name="bi:arrow-right" class="bi bi-arrow-right" aria-hidden="true" />
+          </a>
         </div>
       </section>
     )}
