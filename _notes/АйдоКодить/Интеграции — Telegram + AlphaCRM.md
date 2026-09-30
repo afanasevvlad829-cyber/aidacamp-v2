@@ -21,7 +21,7 @@ POST /api/lead  (src/pages/api/lead.ts)
 
 ### Конфиг (`.env` на сервере)
 ```
-TELEGRAM_BOT_TOKEN=8663835446:AAEJAemhHYPlVTc2RiLP3sBtsqCF9fBdhZ4
+TELEGRAM_BOT_TOKEN=   # значение — в .env на сервере (TELEGRAM_BOT_TOKEN), вынесено 30.09.2026
 TELEGRAM_CHAT_ID=-1003827680494
 ```
 
@@ -50,7 +50,7 @@ TELEGRAM_CHAT_ID=-1003827680494
 ```
 ALPHACRM_URL=https://codim.s20.online
 ALPHACRM_EMAIL=pbalgoritmika@gmail.com
-ALPHACRM_TOKEN=8db19d5a-837e-11e9-9333-0cc47a6ca50e
+ALPHACRM_TOKEN=   # AlfaCRM отключена, ключ удалён 30.09.2026
 ALPHACRM_BRANCH=1
 ```
 
