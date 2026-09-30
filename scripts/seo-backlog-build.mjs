@@ -44,6 +44,29 @@ const SITES = [
   { site: 'vlad-a',      project: 29041803 },
 ];
 
+// Сайты, где целевые страницы Топвизора сверены с выдачей (кластеризация + relevant_url
+// за месяц) и считаются решением «какая страница должна ранжироваться». Для них
+// cluster_page = целевая, а не последний relevant_url. Почему (29.09.2026, codims):
+// Яндекс прыгал между 2-3 нашими страницами по 48% ключей, и конвейер вслед за
+// последним замером правил то одну, то другую — 25 волн ушли не в ту страницу.
+// Сайт добавлять сюда только после такой же сверки его целевых.
+const TARGET_SITES = new Set(['codims']);
+
+// Целевые страницы ключей проекта (keywords_2 с полем target), страницами по 200.
+async function fetchTargets(sid, project) {
+  const out = new Map();
+  for (let offset = 0; offset < 20000; offset += 200) {
+    const d = await callTool(sid, 'run', {
+      service: 'topvisor', action: 'keywords',
+      params: { project_id: project, fields: ['target'], limit: 200, offset },
+    });
+    const list = d.result || [];
+    for (const k of list) if (k.target) out.set(k.name, k.target);
+    if (list.length < 200) break;
+  }
+  return out;
+}
+
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
 // ── Топвизор: свежие позиции (через MCP, НЕ прямым API) ─────────────────────
@@ -180,6 +203,12 @@ ON CONFLICT (site, keyword) DO UPDATE SET
       log(`  ✗ позиции не получены: ${e.message}`); continue;
     }
     log(`  ключей в проекте: ${keys.length}`);
+    let targets = new Map();
+    if (TARGET_SITES.has(site)) {
+      try { targets = await fetchTargets(sid, project); log(`  целевых страниц: ${targets.size}`); }
+      catch (e) { log(`  ✗ целевые не получены, беру relevant_url: ${e.message}`); }
+    }
+    for (const k of keys) k.target = targets.get(k.keyword) || null;
 
     // Кандидаты: НЕ ТОП-10 (правило владельца: топ-10 не трогаем)
     const candidates = keys.filter(k => k.position == null || k.position > 10);
@@ -191,7 +220,7 @@ ON CONFLICT (site, keyword) DO UPDATE SET
 
     // Кластеры: сколько ключей ведут на одну и ту же страницу
     const perPage = new Map();
-    for (const k of candidates) if (k.url) perPage.set(k.url, (perPage.get(k.url) || 0) + 1);
+    for (const k of candidates) { const pg = k.target || k.url; if (pg) perPage.set(pg, (perPage.get(pg) || 0) + 1); }
 
     // Каннибализация: один ключ — несколько наших URL в истории замеров
     // (здесь по последнему снимку видно только один URL; флаг ставим, если одна и та же
@@ -205,7 +234,8 @@ ON CONFLICT (site, keyword) DO UPDATE SET
 
     const rows = candidates.map(k => {
       const volume = vols.get(k.keyword) ?? null;
-      const cluster_size = k.url ? perPage.get(k.url) : null;
+      const page = k.target || k.url;
+      const cluster_size = page ? perPage.get(page) : null;
       // фронт: A — есть своя страница и позиция в пределах 100; D — страницы/позиции нет вовсе
       const front = k.position != null && k.position <= 100 && k.url ? 'A' : 'D';
       // приоритет: спрос × близость к ТОП-10 × размер кластера (одна правка закроет N ключей)
@@ -215,7 +245,9 @@ ON CONFLICT (site, keyword) DO UPDATE SET
         : null;
       return {
         site, keyword: k.keyword, position: k.position, url: k.url, volume,
-        cluster_page: k.url, cluster_size, cannibal: (urlsByKw.get(k.keyword)?.size || 0) > 1,
+        cluster_page: page, cluster_size,
+        // каннибал: Яндекс показывает не ту страницу, что назначена целевой, или фраза дважды с разными URL
+        cannibal: (k.target && k.url && k.target !== k.url) || (urlsByKw.get(k.keyword)?.size || 0) > 1,
         front, priority, date: k.date,
       };
     });
