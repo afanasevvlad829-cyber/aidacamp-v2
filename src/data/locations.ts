@@ -38,9 +38,9 @@ export const VOROBI_GALLERY: LocationGroup[] = [
     title: 'Корпуса',
     note: 'Двухэтажные корпуса в сосновом лесу, отапливаются всю зиму.',
     photos: [
-      p('korpus-svetlyy', 'Светлый двухэтажный корпус пансионата «Воробьи»'),
+      p('korpus-derevyannyy-osen', 'Деревянный корпус пансионата «Воробьи» осенью'),
+      p('korpus-svetlyy-osen', 'Светлый двухэтажный корпус осенью'),
       p('korpus-svetlyy-zima', 'Светлый корпус зимой'),
-      p('korpus-derevyannyy', 'Деревянный корпус пансионата'),
       p('korpus-derevyannyy-zima', 'Деревянный корпус зимой'),
       p('pavilon-zima', 'Стеклянный павильон столовой зимой'),
       p('vezd-ukazateli', 'Въезд на территорию и указатели'),
@@ -100,7 +100,7 @@ export const VOROBI_GALLERY: LocationGroup[] = [
 
 // Три карточки для блока «Размещение» на сезонных лендингах (компонент Stay).
 export const VOROBI_STAY = [
-  { title: 'Тёплые корпуса', image: '/images/vorobi/sm/korpus-derevyannyy-zima.avif', description: 'Двухэтажные корпуса в сосновом лесу, отопление всю зиму.' },
+  { title: 'Тёплые корпуса', image: '/images/vorobi/sm/korpus-derevyannyy-osen.avif', description: 'Двухэтажные корпуса в сосновом лесу, отопление всю зиму.' },
   { title: 'Комнаты на 2–3 человека', image: '/images/vorobi/sm/nomer-2-mestnyy-3.avif', description: 'Своя кровать и тумбочка у каждого, санузел с душем в комнате.' },
   { title: 'Столовая в павильоне', image: '/images/vorobi/sm/stolovaya-pavilon.avif', description: 'Пять приёмов пищи в стеклянном павильоне среди сосен.' },
 ];
