@@ -81,7 +81,7 @@ export function getShiftBadge(shift: Pick<Shift, 'id' | 'startDate'>): ShiftBadg
   if (/^\d+(\.\d+)?$/.test(num)) return { kind: 'num', text: num };
   const month = parseInt(shift.startDate?.split('-')[1] ?? '', 10);
   if (month === 12 || month === 1 || month === 2) return { kind: 'icon', icon: 'bi-snow', label: 'Зимняя смена' };
-  if (month >= 9 && month <= 11) return { kind: 'icon', icon: 'bi-tree', label: 'Осенняя смена' };
+  if (month >= 9 && month <= 11) return { kind: 'icon', icon: 'maple-leaf', label: 'Осенняя смена' };
   if (month >= 3 && month <= 5) return { kind: 'icon', icon: 'bi-flower1', label: 'Весенняя смена' };
   return { kind: 'icon', icon: 'bi-sun', label: 'Летняя смена' };
 }
