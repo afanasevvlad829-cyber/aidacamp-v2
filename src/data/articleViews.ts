@@ -95,7 +95,6 @@ export const ARTICLE_VIEWS: Record<string, number> = {
   "game-dev-skills": 1,
   "it-lager-dlya-devochki-podrostka": 1,
   "kak-zainteresovat-rebenka-programmirovaniem": 1,
-  "lager-na-10-dney-otzyvy-mam": 1,
   "letnyaya-shkola-programmirovaniya": 1,
   "navyki-kotorye-ne-ustareut": 1,
   "nedorogoy-lager": 1,
