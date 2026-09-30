@@ -130,7 +130,6 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь летом', description: `IT-лагерь летом ${SEASON_YEAR} для детей 7–15 лет`, url: '/lager-letom/', icon: 'bi-sun-fill' },
   { title: 'Лагерь на каникулы', description: `Июнь, июль, август ${SEASON_YEAR}`, url: '/lager-na-kanikuly/', icon: 'bi-sun' },
   { title: 'Лагерь на неделю', description: 'Короткие смены 7–10 дней круглый год', url: '/lager-na-nedelyu/', icon: 'bi-calendar2-check' },
-  { title: 'Лагерь на июнь', description: `Смены июня ${SEASON_YEAR}, с 30 мая`, url: '/lager-na-iyun/', icon: 'bi-calendar-event' },
   { title: 'Лагерь на июль', description: `Июльские смены ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-iyul/', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: `Смены августа ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
   { title: 'Лагерь на осенние каникулы', description: `IT-смена в октябре ${SEASON_YEAR}, предзапись открыта`, url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },
@@ -365,7 +364,6 @@ const SEASON_URLS = new Set([
   '/lager-letom',
   '/lager-na-kanikuly',
   '/lager-na-iyul',
-  '/lager-na-iyun',
   '/lager-na-vesennie-kanikuly',
   '/lager-na-zimnie-kanikuly',
 ]);
@@ -427,7 +425,7 @@ const ARTICLE_MAP: Record<string, LandingPage[]> = {
     { title: 'Ребёнок заболел в лагере', description: 'Что делать, медпункт, родителям', url: '/stati/rebenok-zabolel-v-lagere/', icon: 'heart-pulse-fill' },
   ],
   '/lager-bez-telefonov': [
-    { title: 'Зависимость от компьютерных игр', description: 'Признаки, причины, что поможет', url: '/stati/zavisimost-ot-kompyuternyh-igr/', icon: 'phone-x' },
+    { title: 'Зависимость от компьютерных игр', description: 'Признаки, причины, что поможет', url: '/stati/kak-izbavitsya-ot-zavisimosti-ot-igr/', icon: 'phone-x' },
   ],
   '/it-lager': [
     { title: 'Чем IT-лагерь отличается от кружка', description: 'Сравнение форматов, что лучше для вашего', url: '/stati/it-lager-vs-kruzhok/', icon: 'list-check' },
