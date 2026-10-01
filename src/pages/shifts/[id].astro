@@ -94,6 +94,29 @@ const locPhotos = loc
     }).filter((x): x is NonNullable<typeof x> => x !== null)
   : [];
 const isAutumnShift = shift.id === 'shift-autumn-1' || shift.id === 'shift-autumn-2';
+const shiftHeroImage = isAutumnShift
+  ? '/images/vorobi/korpus-svetlyy-osen.avif'
+  : shift.id === 'shift-winter-1'
+    ? '/images/vorobi/korpus-svetlyy-zima-sun.avif'
+    : '/images/hero-desktop.avif';
+const shiftHeroMobileImage = isAutumnShift
+  ? '/images/vorobi/sm/korpus-svetlyy-osen.avif'
+  : shift.id === 'shift-winter-1'
+    ? '/images/vorobi/sm/korpus-svetlyy-zima-sun.avif'
+    : null;
+const shiftTimelinePhoto = isAutumnShift
+  ? '/images/vorobi/sm/korpus-svetlyy-osen.avif'
+  : shift.id === 'shift-winter-1'
+    ? '/images/vorobi/sm/korpus-svetlyy-zima-sun.avif'
+    : undefined;
+const shiftTimelinePhotoAlt = isAutumnShift
+  ? 'Осенний корпус пансионата «Воробьи»'
+  : shift.id === 'shift-winter-1'
+    ? 'Зимний корпус пансионата «Воробьи»'
+    : undefined;
+const heroOverlay = loc
+  ? 'linear-gradient(180deg,rgba(5,9,18,0.36) 0%,rgba(5,9,18,0.18) 48%,rgba(5,9,18,0.44) 100%)'
+  : 'linear-gradient(180deg,rgba(5,9,18,0.85) 0%,rgba(5,9,18,0.55) 50%,rgba(5,9,18,0.75) 100%)';
 const seasonAdj = season.adj;                    // «летняя» / «осенняя» / «зимняя»
 const seasonAdjCap = seasonAdj.charAt(0).toUpperCase() + seasonAdj.slice(1);
 const shiftYear = shiftYearLabel(shift);         // «2026» или «2026/2027»
@@ -181,9 +204,9 @@ const shiftJsonLd = {
 <Base
   title={seoTitle}
   description={seoDescription}
-  heroPreloadMobile="/optimized-media/hero-mobile-optimized-414.avif"
-  heroPreloadMobileSrcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w"
-  heroPreloadDesktop="/images/hero-desktop.avif"
+  heroPreloadMobile={shiftHeroMobileImage ?? '/optimized-media/hero-mobile-optimized-414.avif'}
+  heroPreloadMobileSrcset={shiftHeroMobileImage ? undefined : '/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w'}
+  heroPreloadDesktop={shiftHeroImage}
   hideGlobalShiftModal
   hideSiteSearch
   hideNudgeBanner
@@ -224,11 +247,15 @@ const shiftJsonLd = {
              (было hero-mobile-bean-v3-600.avif, 95 КБ, без preload/fetchpriority: LCP смены 5–7 с
              против 3 с на главной, замер 25.09.2026). srcset/sizes совпадают с preload в Base.astro,
              иначе браузер не переиспользует предзагрузку. -->
-        <source media="(max-width: 768px)" srcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w" sizes="(max-width: 768px) 100vw, 828px" type="image/avif" />
-        <img src="/images/hero-desktop.avif" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-55" style="object-position: center 30%;" loading="eager" fetchpriority="high" />
+        {shiftHeroMobileImage ? (
+          <source media="(max-width: 768px)" srcset={shiftHeroMobileImage} type="image/avif" />
+        ) : (
+          <source media="(max-width: 768px)" srcset="/optimized-media/hero-mobile-optimized-390.avif 390w, /optimized-media/hero-mobile-optimized-414.avif 414w, /optimized-media/hero-mobile-optimized-600.avif 600w, /optimized-media/hero-mobile-optimized-744.avif 744w, /optimized-media/hero-mobile-optimized-828.avif 828w" sizes="(max-width: 768px) 100vw, 828px" type="image/avif" />
+        )}
+        <img src={shiftHeroImage} alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover" style="object-position: center 30%;" loading="eager" fetchpriority="high" />
       </picture>
       <!-- Затемняющий градиент -->
-      <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,9,18,0.85)_0%,rgba(5,9,18,0.55)_50%,rgba(5,9,18,0.75)_100%)]" aria-hidden="true"></div>
+      <div class="absolute inset-0" style={`background: ${heroOverlay};`} aria-hidden="true"></div>
       <!-- Top header overlay -->
       <div class="absolute top-0 left-0 right-0 h-[100px] bg-[linear-gradient(180deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0)_100%)] pointer-events-none" aria-hidden="true"></div>
       <!-- Brand orange ambient -->
@@ -295,7 +322,7 @@ const shiftJsonLd = {
           <!-- Price -->
           <div class="flex flex-col">
             <span class="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/65">Стоимость</span>
-            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
+            <span class="text-[36px] md:text-[44px] font-extrabold tracking-[-0.02em] text-white leading-none mt-1 whitespace-nowrap" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
             <span class="text-base text-white/70 mt-1">всё включено</span>
             <span class="hidden text-[12px] font-semibold text-orange-300 mt-0.5" data-price-stage={shift.id}></span>
             <span class="hidden text-[11px] font-semibold text-orange-300 mt-0.5" data-price-urgency={shift.id}></span>
@@ -372,7 +399,7 @@ const shiftJsonLd = {
     </section>
 
     <!-- ═══════ TIMELINE — фоточки + 5 этапов смены ═══════ -->
-    <ShiftTimeline durationDays={durationDays} />
+    <ShiftTimeline durationDays={durationDays} locationPhoto={shiftTimelinePhoto} locationPhotoAlt={shiftTimelinePhotoAlt} />
 
     <!-- ═══════ STRIP — мета (возраст/группы/опыт/ноутбук) ═══════ -->
     <section class="border-b border-border-light" data-shift-below-fold>
@@ -549,7 +576,7 @@ const shiftJsonLd = {
           )}
 
           <div class="flex items-baseline gap-3 mb-2">
-            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
+            <span class="text-[36px] font-extrabold tracking-[-0.02em] text-body whitespace-nowrap" data-dynamic-price={shift.id}>{ssrPriceFmt}</span>
             <span class="text-base md:text-base text-body-muted">всё включено · проживание, питание, программа</span>
           </div>
           <p class="hidden text-[13px] font-semibold text-orange-600 mb-3" data-price-stage={shift.id}></p>
