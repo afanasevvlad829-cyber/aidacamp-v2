@@ -1,0 +1,55 @@
+---
+import { geography } from '../data/student-geography';
+interface Props { standalone?: boolean }
+const { standalone = false } = Astro.props;
+---
+<section class:list={['student-geography', { standalone }]} id="student-geography" aria-labelledby="geography-title">
+  <div class="geo-inner">
+    <p class="geo-eyebrow">НАША ГЕОГРАФИЯ</p>
+    <h2 id="geography-title">Откуда приезжают ребята в AIDACAMP</h2>
+    <p class="geo-intro">Москва, Подмосковье и другие регионы России — встречаемся на одной смене.</p>
+    <div class="geo-card" data-geography>
+      <div class="geo-map" aria-hidden="true">
+        <img src="/images/geography/map.svg" width="1000" height="440" loading="lazy" alt="" />
+        {geography.map((place, index) => <span class:list={['geo-pin', { active: index === 0 }]} data-pin={index} data-label={place.label} style={`left:${place.x}%;top:${place.y}%`}></span>)}
+      </div>
+      <div class="geo-details">
+        <div class="geo-choices" aria-label="Выберите место">
+          {geography.map((place, index) => <button type="button" data-place={index} aria-pressed={index === 0}>{place.label}</button>)}
+        </div>
+        <div class="geo-description" aria-live="polite" aria-atomic="true">
+          <strong data-geo-label>{geography[0].label}</strong>
+          <p data-geo-description>{geography[0].description}</p>
+        </div>
+      </div>
+    </div>
+    <aside class="geo-support" aria-labelledby="geo-support-title">
+      <h3 id="geo-support-title">Бесплатное сопровождение для групп от 5 детей</h3>
+      <p>Наш сотрудник приедет в ваш город и по доверенности примет детей для поездки на поезде или автобусе. Сопроводит их до лагеря и обратно. Вы оплачиваете только билеты.</p>
+      <a href="/#shifts" target="_top">Выбрать смену и обсудить поездку →</a>
+    </aside>
+    <p class="geo-footnote">На карте — часть городов проживания участников, которые посетили лагерь за разные годы.</p>
+    <details class="geo-text-list"><summary>Все места на карте</summary><ul>{geography.map(place => <li><strong>{place.label}</strong> — {place.description}</li>)}</ul></details>
+  </div>
+</section>
+<script>
+  import { geography } from '../data/student-geography';
+  document.querySelectorAll<HTMLElement>('[data-geography]').forEach(widget => {
+    widget.querySelectorAll<HTMLButtonElement>('[data-place]').forEach(button => {
+      button.addEventListener('click', () => {
+        const index = Number(button.dataset.place);
+        const place = geography[index];
+        if (!place) return;
+        widget.querySelectorAll('[data-place]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        widget.querySelectorAll<HTMLElement>('[data-pin]').forEach(pin => pin.classList.toggle('active', Number(pin.dataset.pin) === index));
+        const label = widget.querySelector('[data-geo-label]');
+        const description = widget.querySelector('[data-geo-description]');
+        if (label) label.textContent = place.label;
+        if (description) description.textContent = place.description;
+      });
+    });
+  });
+</script>
+<style>
+.student-geography{max-width:1312px;margin:0 auto;padding:32px 16px;color:var(--color-body,var(--color-text,#1a2535));font-family:inherit}.geo-inner{padding:18px;background:var(--color-surface-warm,#f7f5f2);border-radius:22px}.geo-eyebrow{font-size:14px;font-weight:800;letter-spacing:.12em;color:var(--color-body-muted,#4b5263);margin:0 0 12px}h2{font-size:clamp(22px,3vw,28px);font-weight:800;line-height:1.15;max-width:850px;margin:0 0 16px}.geo-intro{font-size:18px;line-height:1.6;margin:0 0 28px;max-width:720px}.geo-card{border:1px solid #dce4df;border-radius:24px;overflow:hidden;background:var(--color-card,#fff);box-shadow:0 4px 16px #18322808}.geo-map{position:relative;overflow:hidden;background:#edf4f7;aspect-ratio:25/11}.geo-map img{display:block;width:100%;height:100%}.geo-pin{position:absolute;width:12px;height:12px;border-radius:50%;background:#b05600;border:2px solid white;transform:translate(-50%,-50%);box-shadow:0 0 0 4px #b0560020}.geo-pin.active::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#fff;color:var(--color-navy-950,#0d1a2b);padding:4px 8px;border-radius:6px;font-size:14px;font-weight:700;box-shadow:0 2px 8px #18322818}.geo-pin.active{z-index:1;background:var(--color-navy-950,#0d1a2b);width:18px;height:18px;box-shadow:0 0 0 8px #0d1a2b28}.geo-details{padding:24px}.geo-choices{display:flex;flex-wrap:wrap;gap:8px}.geo-choices button{font:inherit;font-size:16px;min-height:44px;padding:10px 16px;border:1px solid #c8d5ce;border-radius:100px;color:var(--color-body,var(--color-text,#1a2535));background:var(--color-card,#fff);cursor:pointer}.geo-choices button[aria-pressed=true]{background:var(--color-navy-950,#0d1a2b);color:white;border-color:var(--color-navy-950,#0d1a2b)}.geo-choices button:focus-visible{outline:3px solid #b05600;outline-offset:3px}.geo-description{margin-top:24px;padding-top:20px;border-top:1px solid #e5ebe7;min-height:110px;font-size:16px;line-height:1.6}.geo-description strong{font-size:20px}.geo-description p{margin:6px 0 0;max-width:900px}.geo-footnote,.geo-text-list{font-size:14px;line-height:1.6;color:var(--color-body-muted,var(--color-muted,#526058))}.geo-footnote{margin:16px 0 8px}.geo-text-list summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline}.geo-text-list li{margin-bottom:8px}.geo-support{margin-top:24px;padding:28px;background:var(--color-navy-950,#0d1a2b);color:#fff;border-radius:20px}.geo-support h3{font-size:24px;font-weight:800;line-height:1.3;margin:0 0 12px}.geo-support p{font-size:16px;line-height:1.7;max-width:850px;margin:0 0 18px}.geo-support a{display:inline-flex;align-items:center;min-height:44px;font-size:16px;font-weight:700;color:#fff;text-decoration:underline;text-underline-offset:4px}.geo-support a:focus-visible{outline:3px solid #fff;outline-offset:5px}.standalone{padding:28px 16px}@media(max-width:600px){.student-geography{padding:24px 2px}.geo-inner{padding:18px}.geo-card{border-radius:16px}.geo-details{padding:16px}.geo-choices button{padding:10px 13px}.geo-description{min-height:150px}}
+</style>

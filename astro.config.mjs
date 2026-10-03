@@ -70,6 +70,7 @@ export default defineConfig({
       // Исключаем служебные и тестовые страницы из sitemap.xml
       // /admin/* — админка загрузки фото, /попробовать/ — внутренняя страница
       filter: (page) =>
+        !page.includes('/widgets/') &&
         !page.includes('/admin/') &&
         !page.includes('/portal/') && // приватный портал (302→login) — не в публичной карте
         !page.includes('/попробовать/') &&
