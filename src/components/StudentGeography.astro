@@ -61,7 +61,7 @@ const routes = geography.slice(1).map((place, offset) => {
       traveller: group.querySelector<SVGGElement>('.geo-traveller')!,
       trails: Array.from(group.querySelectorAll<SVGCircleElement>('.geo-trail')),
       index: Number(group.dataset.route), mode: group.dataset.mode,
-    }));
+    })).map(route => ({ ...route, length: route.path.getTotalLength() }));
     let chosen = 0, paused = false, visible = false, frame = 0, last = 0, elapsed = 0;
     const chosenRoutes = () => {
       const selected = routes.find(route => route.index === chosen);
@@ -74,12 +74,13 @@ const routes = geography.slice(1).map((place, offset) => {
         const enabled = active.includes(route.index) && !reduced.matches;
         route.group.classList.toggle('selected', route.index === chosen);
         route.traveller.setAttribute('visibility', enabled ? 'visible' : 'hidden');
+        if (!enabled) { route.trails.forEach(trail => trail.setAttribute('visibility', 'hidden')); return; }
         const duration = route.mode === 'plane' ? 14000 : 18000;
         const raw = (elapsed / duration + (route.mode === 'plane' ? .15 : .6)) % 1;
         const progress = .5 - Math.cos(Math.PI * raw) / 2;
         const opacity = Math.min(1, raw * 10, (1 - raw) * 10);
         route.traveller.setAttribute("opacity", String(opacity));
-        const length = route.path.getTotalLength();
+        const length = route.length;
         const point = route.path.getPointAtLength(progress * length);
         const next = route.path.getPointAtLength(Math.min(length, progress * length + 1));
         const angle = route.mode === 'plane' ? Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI : 0;
