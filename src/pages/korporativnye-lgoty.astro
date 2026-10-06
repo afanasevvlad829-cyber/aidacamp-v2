@@ -13,9 +13,9 @@ import { EMAIL_HREF, PHONE_MAIN_HREF, PHONE_MAIN } from '../data/contacts';
     <form id="company-search" class="search-panel">
       <label for="company-query">Название компании</label>
       <div class="search-row"><input id="company-query" name="q" required minlength="2" maxlength="120" placeholder="Например, Сибур, Ozon или Т-Банк" aria-describedby="search-help" /><button type="submit">Проверить компанию</button></div>
-      <p id="search-help">Поиск по списку компаний от BestBenefits. Совпадение подсказывает возможное подключение — доступ и условия уточните у HR.</p>
+      <p id="search-help">Поиск по справочнику компаний и брендов. У вашей компании может быть программа льгот — уточните у HR-отдела, доступна ли компенсация детского лагеря.</p>
     </form>
-    <p class="coverage">В поиске {corporateCompanies.length} названная компания из предоставленного списка. Перечень неполный — у других работодателей тоже могут быть программы.</p>
+    <p class="coverage">В справочнике {corporateCompanies.length} компаний и брендов. Наличие компании в поиске не подтверждает подключение к программе или право на компенсацию.</p>
     <div id="company-result" role="status" aria-live="polite" aria-atomic="true"></div>
     <noscript><p>Для поиска включите JavaScript или обратитесь к нам за проверкой компании.</p></noscript>
     <h2>Проверьте корпоративную программу</h2>
@@ -30,8 +30,9 @@ import { EMAIL_HREF, PHONE_MAIN_HREF, PHONE_MAIN } from '../data/contacts';
     <div class="help-panel"><h2>Поможем разобраться</h2><p>Сообщите название компании и доступную вам программу. Уточним доступные условия и порядок оформления.</p><a id="company-contact" href={`${EMAIL_HREF}?subject=${encodeURIComponent('Проверка корпоративных льгот')}`}>Запросить проверку</a> · <a href={PHONE_MAIN_HREF}>{PHONE_MAIN}</a></div>
     <p>Вы представляете HR или закупки? <a href="/dlya-kompaniy/">Корпоративные путёвки для детей сотрудников →</a></p>
     <aside class="reference-note" aria-label="О справочной информации">
-      <p>Данные на этой странице — исключительно справочные. У нас нет доступа к внутренним программам льгот вашей компании, поэтому мы не знаем всех нюансов и не можем проверить её текущий статус подключения. По имеющемуся списку мы можем лишь предположить, что программа вам доступна.</p>
+      <p>Данные на этой странице — исключительно справочные. У нас нет доступа к внутренним программам льгот вашей компании, поэтому мы не знаем всех нюансов и не можем проверить её текущий статус подключения. Справочник помогает найти название работодателя и подсказывает, что уточнить у HR. Он не подтверждает наличие программы или доступность льгот.</p>
       <p>Если предложение оказалось недоступно, пожалуйста, уточните условия у своего HR-отдела. Мы хотим помочь вам найти возможную выгоду, но подтвердить её может только ваша компания или оператор программы. Спасибо за понимание.</p>
+      <p>Названия крупных компаний дополнены из <a href="https://raex-rr.com/largest/RAEX-600/biggest_companies/2022/" target="_blank" rel="noopener noreferrer">исторического рейтинга RAEX-600 (2022)</a> и справочником известных брендов. Названия и структура компаний могли измениться. Часть сведений о BestBenefits — из <a href="https://career.habr.com/companies/bestbenefits" target="_blank" rel="noopener noreferrer">публичной страницы программы</a>. Эти источники не позволяют проверить текущий статус подключения.</p>
     </aside>
   </section>
 </LandingLayout>
@@ -62,6 +63,11 @@ import { EMAIL_HREF, PHONE_MAIN_HREF, PHONE_MAIN } from '../data/contacts';
           const heading = document.createElement('h3');
           heading.textContent = company.name;
           card.append(heading);
+          if (!company.programs.length) {
+            const line = document.createElement('p');
+            line.textContent = 'У вашей компании может быть программа корпоративных льгот. Уточните у HR-отдела, доступна ли компенсация детского лагеря, скидки или кафетерий льгот. У нас нет сведений о подключении этой компании к конкретной программе.';
+            card.append(line);
+          }
           for (const program of company.programs) {
             const line = document.createElement('p');
             line.textContent = `Возможно, ваша компания подключена к ${program.name}. Проверьте доступ и условия у HR-отдела. Подключение может различаться у предприятий одной группы.`;
