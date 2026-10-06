@@ -61,6 +61,11 @@ export const corporateCompanies: CorporateCompany[] = [
         "name": "BestBenefits",
         "sourceAsOf": "2026-10-02",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      },
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
       }
     ]
   },
@@ -114,6 +119,11 @@ export const corporateCompanies: CorporateCompany[] = [
         "name": "BestBenefits",
         "sourceAsOf": "2026-10-02",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      },
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
       }
     ]
   },
@@ -212,6 +222,11 @@ export const corporateCompanies: CorporateCompany[] = [
         "name": "BestBenefits",
         "sourceAsOf": "2026-10-02",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      },
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://vc.ru/insidevk/3127074-kod-zaboty-vk-sistema-lgot"
       }
     ]
   },
@@ -322,6 +337,11 @@ export const corporateCompanies: CorporateCompany[] = [
         "name": "BestBenefits",
         "sourceAsOf": "2026-10-02",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      },
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
       }
     ]
   },
@@ -762,6 +782,11 @@ export const corporateCompanies: CorporateCompany[] = [
         "name": "BestBenefits",
         "sourceAsOf": "2026-10-02",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      },
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
       }
     ]
   },
@@ -1003,6 +1028,117 @@ export const corporateCompanies: CorporateCompany[] = [
         "sourceAsOf": "2026-10-06",
         "sourceUrl": "https://career.habr.com/companies/bestbenefits",
         "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Россети",
+    "aliases": [
+      "Rosseti"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Глобал Портс",
+    "aliases": [
+      "Global Ports",
+      "Globalports"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Технониколь",
+    "aliases": [
+      "ТехноНИКОЛЬ",
+      "Technonikol"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Башкирэнерго",
+    "aliases": [
+      "Bashkirenergo"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "IFCM",
+    "aliases": [
+      "АйЭфСиЭм"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Nordgold",
+    "aliases": [
+      "Нордголд",
+      "Норд Голд"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "А Деньги",
+    "aliases": [
+      "А-Деньги",
+      "АДеньги"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Корпорация Кошелев",
+    "aliases": [
+      "Кошелев",
+      "Кошелёв",
+      "Кошелев-Проект",
+      "Koshelev"
+    ],
+    "programs": [
+      {
+        "name": "PremiumCode",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://hh.ru/employer/140494"
       }
     ]
   }

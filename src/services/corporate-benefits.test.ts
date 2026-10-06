@@ -52,3 +52,15 @@ describe('directory evidence', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 });
+
+describe('additional platform evidence', () => {
+  it('keeps multiple possible programs for a sourced employer', () => {
+    const programs = searchCorporateBenefits('VK').companies[0].programs;
+    expect(programs.map(p => p.name)).toEqual(['BestBenefits', 'Aladdin']);
+    expect(programs.find(p => p.name === 'Aladdin')?.sourceUrl).toBe('https://vc.ru/insidevk/3127074-kod-zaboty-vk-sistema-lgot');
+  });
+  it('adds PremiumCode for an employer without inferring it for discount suppliers', () => {
+    expect(searchCorporateBenefits('Кошелёв').companies[0].programs).toEqual([{ name: 'PremiumCode', sourceAsOf: '2026-10-06', sourceUrl: 'https://hh.ru/employer/140494' }]);
+    for (const q of ['Hoff', 'Медси', 'Lamoda', 'World Class']) expect(searchCorporateBenefits(q).companies.every(c => !c.programs.some(p => p.name === 'PremiumCode'))).toBe(true);
+  });
+});
