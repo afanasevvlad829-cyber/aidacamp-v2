@@ -1,0 +1,103 @@
+---
+import LandingLayout from '../layouts/LandingLayout.astro';
+import { BESTBENEFITS_OFFER_URL, corporateCompanies } from '../data/corporate-benefits';
+import { EMAIL_HREF, PHONE_MAIN_HREF, PHONE_MAIN } from '../data/contacts';
+
+---
+<LandingLayout title="Корпоративные льготы на путёвку в АйДаКемп" description="Найдите работодателя по названию: возможно, вам доступна корпоративная программа. Уточните условия у HR и посмотрите оффер АйДаКемп в BestBenefits." h1="Корпоративные льготы на путёвку" breadcrumb="Корпоративные льготы" canonical="https://aidacamp.ru/korporativnye-lgoty/" hideAgeBar>
+  <section class="benefits-page">
+    <a href="/">← На главную</a>
+    <p class="eyebrow">Для сотрудников компаний</p>
+    <h1>Ваша работа может помочь оплатить ребёнку лагерь</h1>
+    <p class="intro">У работодателя могут быть программы компенсации детского отдыха, корпоративные скидки и бонусы. Проверьте компанию и узнайте, с чего начать.</p>
+    <form id="company-search" class="search-panel">
+      <label for="company-query">Название компании</label>
+      <div class="search-row"><input id="company-query" name="q" required minlength="2" maxlength="120" placeholder="Например, Сибур, Ozon или Т-Банк" aria-describedby="search-help" /><button type="submit">Проверить компанию</button></div>
+      <p id="search-help">Поиск по списку компаний от BestBenefits. Совпадение подсказывает возможное подключение — доступ и условия уточните у HR.</p>
+    </form>
+    <p class="coverage">В поиске {corporateCompanies.length} названная компания из предоставленного списка. Перечень неполный — у других работодателей тоже могут быть программы.</p>
+    <div id="company-result" role="status" aria-live="polite" aria-atomic="true"></div>
+    <noscript><p>Для поиска включите JavaScript или обратитесь к нам за проверкой компании.</p></noscript>
+    <h2>Проверьте корпоративную программу</h2>
+    <div class="partner-grid">
+      <article><h3>BestBenefits</h3><p>Возможно, ваша компания подключена к сервису. Уточните у HR, как получить доступ, и посмотрите актуальные условия нашего предложения.</p><a href={BESTBENEFITS_OFFER_URL} target="_blank" rel="noopener noreferrer">Открыть оффер АйДаКемп →</a></article>
+      <article><h3>PremiumCode</h3><p>Если у вас есть доступ к PremiumCode, проверьте предложение АйДаКемп в корпоративном кабинете. Как подключиться и какие условия доступны, подскажет HR-отдел.</p></article>
+    </div>
+    <article class="aladdin"><h3>Aladdin / «Аладдин»</h3><p>Проверьте в корпоративном кабинете, доступна ли оплата детского отдыха за счёт льгот. Возможность использовать программу для АйДаКемп нужно уточнить отдельно.</p></article>
+    <h2>Как воспользоваться льготой</h2>
+    <ol><li>Найдите компанию по названию. Для филиалов и отдельных предприятий группы условия могут различаться.</li><li>Проверьте доступ и условия в кабинете программы или у HR.</li><li>До оплаты согласуйте с нами оформление путёвки и необходимые документы.</li></ol>
+    <p>Компенсация зависит от правил работодателя. Подключение к платформе само по себе не гарантирует оплату путёвки; возможность совмещать скидки уточняется отдельно.</p>
+    <div class="help-panel"><h2>Поможем разобраться</h2><p>Сообщите название компании и доступную вам программу. Уточним доступные условия и порядок оформления.</p><a id="company-contact" href={`${EMAIL_HREF}?subject=${encodeURIComponent('Проверка корпоративных льгот')}`}>Запросить проверку</a> · <a href={PHONE_MAIN_HREF}>{PHONE_MAIN}</a></div>
+    <p>Вы представляете HR или закупки? <a href="/dlya-kompaniy/">Корпоративные путёвки для детей сотрудников →</a></p>
+    <aside class="reference-note" aria-label="О справочной информации">
+      <p>Данные на этой странице — исключительно справочные. У нас нет доступа к внутренним программам льгот вашей компании, поэтому мы не знаем всех нюансов и не можем проверить её текущий статус подключения. По имеющемуся списку мы можем лишь предположить, что программа вам доступна.</p>
+      <p>Если предложение оказалось недоступно, пожалуйста, уточните условия у своего HR-отдела. Мы хотим помочь вам найти возможную выгоду, но подтвердить её может только ваша компания или оператор программы. Спасибо за понимание.</p>
+    </aside>
+  </section>
+</LandingLayout>
+<script>
+  const form = document.querySelector<HTMLFormElement>('#company-search');
+  const input = document.querySelector<HTMLInputElement>('#company-query');
+  const result = document.querySelector<HTMLDivElement>('#company-result');
+  const contact = document.querySelector<HTMLAnchorElement>('#company-contact');
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!input || !result) return;
+    const query = input.value.trim();
+    const button = form.querySelector<HTMLButtonElement>('button');
+    if (button) button.disabled = true;
+    result.textContent = 'Проверяем компанию…';
+    result.setAttribute('aria-busy', 'true');
+    if (contact) contact.href = `mailto:${contact.href.split(':')[1].split('?')[0]}?subject=${encodeURIComponent('Проверка корпоративных льгот')}&body=${encodeURIComponent('Компания: ' + query)}`;
+    try {
+      const response = await fetch(`/api/corporate-benefits?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(10000) });
+      const data = await response.json();
+      result.replaceChildren();
+      if (data.status === 'invalid') result.textContent = data.message;
+      else if (!response.ok) throw new Error('Search unavailable');
+      else if (data.status === 'unknown') result.textContent = 'Не нашли компанию в нашем списке. Возможно, она подключена к другой программе или пока не добавлена. Уточните у HR-отдела, есть ли корпоративные льготы на детский отдых.';
+      else {
+        for (const company of data.companies) {
+          const card = document.createElement('article');
+          const heading = document.createElement('h3');
+          heading.textContent = company.name;
+          card.append(heading);
+          for (const program of company.programs) {
+            const line = document.createElement('p');
+            line.textContent = `Возможно, ваша компания подключена к ${program.name}. Проверьте доступ и условия у HR-отдела. Подключение может различаться у предприятий одной группы.`;
+            card.append(line);
+            if (program.offerUrl) {
+              const offer = document.createElement('a');
+              const url = new URL(program.offerUrl);
+              if (url.protocol === 'https:' && url.hostname === 'bestbenefits.ru') {
+                offer.href = url.href;
+                offer.target = '_blank';
+                offer.rel = 'noopener noreferrer';
+                offer.textContent = 'Посмотреть оффер АйДаКемп в BestBenefits →';
+                card.append(offer);
+              }
+            }
+          }
+          result.append(card);
+        }
+        if (data.truncated) result.append(document.createTextNode('Показаны первые 20 компаний. Уточните название для более точного поиска.'));
+      }
+    } catch { result.textContent = 'Не удалось выполнить проверку. Попробуйте ещё раз или свяжитесь с нами.'; }
+    finally { if (button) button.disabled = false; result.removeAttribute('aria-busy'); }
+  });
+</script>
+<style>
+  :global(body:has(.benefits-page) header.absolute){background:#17233c}
+  .reference-note{margin-top:36px;padding-top:24px;border-top:1px solid #d3dce9;color:#536078;font-size:.95rem}
+  .benefits-page{max-width:1050px;margin:auto;padding:110px 24px 64px;color:#17233c}
+  h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;max-width:850px;margin:16px 0 24px;font-weight:800}
+  h2{font-size:1.6rem;font-weight:700;margin:36px 0 18px}h3{font-size:1.2rem;font-weight:700;margin-bottom:12px}
+  p,li{line-height:1.65;margin-bottom:12px}.intro{font-size:1.2rem;max-width:780px}.eyebrow{margin-top:28px;color:#9a4511;font-weight:700}
+  a{color:#1746a2;text-decoration:underline;text-underline-offset:3px}.search-panel,.help-panel{padding:28px;background:#edf3ff;border-radius:20px;margin:28px 0}
+  label{display:block;font-weight:700;margin-bottom:12px}.search-row{display:flex;gap:12px}input{flex:1;min-width:0;background:white;border:1px solid #748199;border-radius:10px;padding:14px;font-size:1rem}
+  button{background:#1746a2;color:white;border-radius:10px;padding:14px 22px;font-weight:700;cursor:pointer}button:disabled{opacity:.65}
+  input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #b45c16;outline-offset:3px}#search-help{font-size:.9rem;margin:14px 0 0}
+  #company-result:not(:empty){padding:24px;border:1px solid #b4c6e2;border-radius:16px}.partner-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  article{padding:24px;border:1px solid #d3dce9;border-radius:16px}.aladdin{margin-top:18px}ol{list-style:decimal;padding-left:24px}
+  @media(max-width:640px){.search-row{flex-direction:column}.partner-grid{grid-template-columns:1fr}.search-panel,.help-panel{padding:20px}.benefits-page{padding:100px 18px 48px}}
+</style>
