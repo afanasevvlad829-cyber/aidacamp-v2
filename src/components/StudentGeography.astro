@@ -3,11 +3,13 @@ import { geography } from '../data/student-geography';
 interface Props { standalone?: boolean }
 const { standalone = false } = Astro.props;
 const destination = geography[0];
+// Приближаем карту к подтверждённым городам, убирая пустую восточную часть.
+const mapBox = { x: 45, y: 165, width: 400, height: 176 };
 const routes = geography.slice(1).map((place, offset) => {
   const x = place.x * 10, y = place.y * 4.4;
   const endX = destination.x * 10, endY = destination.y * 4.4;
   const lift = Math.min(64, Math.max(8, Math.abs(x - endX) * .22));
-  return { index: offset + 1, mode: offset >= 4 ? 'plane' : 'train', path: `M ${x} ${y} Q ${(x + endX) / 2} ${Math.min(y, endY) - lift} ${endX} ${endY}` };
+  return { index: offset + 1, mode: offset < 2 ? 'car' : offset < 4 ? 'train' : 'plane', path: `M ${x} ${y} Q ${(x + endX) / 2} ${Math.min(y, endY) - lift} ${endX} ${endY}` };
 });
 ---
 <section class:list={['student-geography', { standalone }]} id="student-geography" aria-labelledby="geography-title">
@@ -16,19 +18,19 @@ const routes = geography.slice(1).map((place, offset) => {
     <h2 id="geography-title">Откуда приезжают в AIDACAMP</h2>
     <p class="geo-intro">Москва, Подмосковье и другие регионы России — встречаемся на одной смене.</p>
     <div class="geo-card" data-geography>
-      <div class="geo-map" aria-hidden="true">
+      <div class="geo-map" data-map-width={mapBox.width} aria-hidden="true">
         <img src="/images/geography/map.svg" width="1000" height="440" loading="lazy" alt="" />
-        <svg class="geo-routes" viewBox="0 0 1000 440" aria-hidden="true">
+        <svg class="geo-routes" viewBox={`${mapBox.x} ${mapBox.y} ${mapBox.width} ${mapBox.height}`} aria-hidden="true">
           {routes.map(route => <g class:list={["geo-journey", { selected: route.index === 6 }]} data-route={route.index} data-mode={route.mode}>
             <path class="geo-route" d={route.path} />
             <g class="geo-traveller" visibility="hidden">
-              {route.mode === 'plane' ? <path d="M-10-2H-2L-5-9H-2L3-2H9Q13 0 9 2H3L-2 9H-5L-2 2H-10Z" /> : <g><rect x="-11" y="-7" width="22" height="12" rx="3"/><path class="geo-train-window" d="M-7-4H-2V0H-7Z M2-4H7V0H2Z"/><circle cx="-6" cy="7" r="2"/><circle cx="6" cy="7" r="2"/></g>}
+              {route.mode === 'plane' ? <path d={route.index === 6 ? "M-12-2H-3L-7-11H-3L4-2H10Q15 0 10 2H4L-3 11H-7L-3 2H-12L-15 5H-17L-15 0L-17-5H-15Z" : "M-10-2H-2L-5-9H-2L3-2H9Q13 0 9 2H3L-2 9H-5L-2 2H-10Z"} /> : route.mode === 'train' ? <g><rect x="-17" y="-7" width="14" height="12" rx="2"/><path d="M-1-7H9L15-2V5H-1Z"/><path class="geo-train-window" d="M-13-4H-8V0H-13Z M3-4H8L11-1H3Z"/><circle cx="-12" cy="7" r="2"/><circle cx="-6" cy="7" r="2"/><circle cx="4" cy="7" r="2"/><circle cx="11" cy="7" r="2"/></g> : <g><path d="M-13 4V-2L-7-3L-3-9H5L10-3L14-1V4Z"/><path class="geo-train-window" d="M-5-3L-2-7H4L7-3Z"/><circle cx="-8" cy="5" r="3"/><circle cx="9" cy="5" r="3"/></g>}
             </g>
             <circle class="geo-trail" r="2.5" visibility="hidden" />
             <circle class="geo-trail" r="1.8" visibility="hidden" />
           </g>)}
         </svg>
-        {geography.map((place, index) => <span class:list={['geo-pin', { active: index === 0 }]} data-pin={index} data-label={place.label} style={`left:${place.x}%;top:${place.y}%`}></span>)}
+        {geography.map((place, index) => <span class:list={['geo-pin', { active: index === 0 }]} data-pin={index} data-label={place.label} data-east={place.x * 10 > mapBox.x + mapBox.width * .65} style={`left:${(place.x * 10 - mapBox.x) / mapBox.width * 100}%;top:${(place.y * 4.4 - mapBox.y) / mapBox.height * 100}%`}></span>)}
       </div>
       <div class="geo-details">
         <div class="geo-motion-controls"><span>Встречаемся в Подмосковье</span><button type="button" data-motion-toggle aria-pressed="false">Приостановить движение</button></div>
@@ -41,17 +43,12 @@ const routes = geography.slice(1).map((place, offset) => {
         </div>
       </div>
     </div>
-    <aside class="geo-support" aria-labelledby="geo-promo-title">
-      <h3 id="geo-promo-title">Скидка 10% по промокоду AIDAVIP</h3>
-      <p>Укажите промокод <strong>AIDAVIP</strong> при бронировании смены AIDACAMP.</p>
-      <a href="/#shifts" target="_top">Выбрать смену со скидкой →</a>
-    </aside>
     <aside class="geo-support" aria-labelledby="geo-support-title">
       <h3 id="geo-support-title">Бесплатное сопровождение для групп от 5 детей</h3>
       <p>Наш сотрудник приедет в ваш город и по доверенности примет детей для поездки на поезде или автобусе. Сопроводит их до лагеря и обратно. Вы оплачиваете только билеты.</p>
       <a href="/#shifts" target="_top">Выбрать смену и обсудить поездку →</a>
     </aside>
-    <p class="geo-footnote">На карте — часть городов проживания участников, которые посетили лагерь за разные годы. Самолёты и поезда — условная иллюстрация маршрутов.</p>
+    <p class="geo-footnote">На карте — часть городов проживания участников, которые посетили лагерь за разные годы. Самолёты, поезда и машины — условная иллюстрация маршрутов.</p>
     <details class="geo-text-list"><summary>Все места на карте</summary><ul>{geography.map(place => <li><strong>{place.label}</strong> — {place.description}</li>)}</ul></details>
   </div>
 </section>
@@ -70,32 +67,36 @@ const routes = geography.slice(1).map((place, offset) => {
     let chosen = 0, paused = false, visible = false, frame = 0, last = 0, elapsed = 0;
     const chosenRoutes = () => {
       const selected = routes.find(route => route.index === chosen);
-      return selected ? [selected.index, selected.mode === 'plane' ? 3 : 6] : [6, 3];
+      const defaults = [1, 3, 6];
+      return selected ? [selected.index, ...defaults.filter(index => routes.find(route => route.index === index)?.mode !== selected.mode)] : defaults;
     };
     const paint = () => {
       const active = chosenRoutes();
-      const scale = map ? 1000 / Math.max(map.clientWidth, 1) * .75 : 1;
+      const scale = map ? Number(map.dataset.mapWidth) / Math.max(map.clientWidth, 1) * .9 : 1;
       routes.forEach(route => {
         const enabled = active.includes(route.index) && !reduced.matches;
         route.group.classList.toggle('selected', route.index === chosen);
         route.traveller.setAttribute('visibility', enabled ? 'visible' : 'hidden');
         if (!enabled) { route.trails.forEach(trail => trail.setAttribute('visibility', 'hidden')); return; }
-        const duration = route.mode === 'plane' ? 14000 : 18000;
+        const duration = route.mode === 'plane' ? 14000 : route.mode === 'train' ? 18000 : 12000;
         const raw = (elapsed / duration + (route.mode === 'plane' ? .15 : .6)) % 1;
         const progress = .5 - Math.cos(Math.PI * raw) / 2;
-        const opacity = Math.min(1, raw * 10, (1 - raw) * 10);
+        const arrived = progress >= .985;
+        const opacity = arrived ? 0 : Math.min(1, raw * 10, (1 - progress) / .08);
+        route.traveller.setAttribute('visibility', arrived ? 'hidden' : 'visible');
         route.traveller.setAttribute("opacity", String(opacity));
         const length = route.length;
         const point = route.path.getPointAtLength(progress * length);
         const next = route.path.getPointAtLength(Math.min(length, progress * length + 1));
         const angle = route.mode === 'plane' ? Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI : 0;
-        route.traveller.setAttribute('transform', `translate(${point.x} ${point.y}) rotate(${angle}) scale(${scale})`);
+        const facing = route.mode !== 'plane' && next.x < point.x ? -1 : 1;
+        route.traveller.setAttribute('transform', `translate(${point.x} ${point.y}) rotate(${angle}) scale(${scale * facing} ${scale})`);
         route.trails.forEach((trail, index) => {
           const t = progress - (index + 1) * .06;
           const position = route.path.getPointAtLength(Math.max(0, t) * length);
           trail.setAttribute('cx', String(position.x)); trail.setAttribute('cy', String(position.y));
           trail.setAttribute('r', String((index === 0 ? 2.5 : 1.8) * scale));
-          trail.setAttribute('visibility', enabled && t > 0 ? 'visible' : 'hidden');
+          trail.setAttribute('visibility', enabled && !arrived && t > 0 ? 'visible' : 'hidden');
           trail.setAttribute('opacity', String(opacity));
         });
       });
@@ -136,4 +137,11 @@ const routes = geography.slice(1).map((place, offset) => {
 <style>
 .geo-routes{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.geo-route{fill:none;stroke:#8eacbf;stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke;opacity:.45}.selected .geo-route{stroke:#b05600;opacity:.85}.geo-traveller{fill:#0d1a2b;stroke:#fff;stroke-width:1;paint-order:stroke fill}.geo-train-window{fill:#fff;stroke:none}.geo-trail{fill:#b05600;opacity:.65}.geo-motion-controls{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;font-size:14px;color:var(--color-body-muted,#4b5263)}.geo-motion-controls button{font:inherit;min-height:44px;padding:8px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:10px;background:var(--color-card,#fff);color:inherit;cursor:pointer}.geo-motion-controls button:focus-visible{outline:3px solid #b05600;outline-offset:3px}.geo-motion-controls button:disabled{cursor:default}@media(prefers-reduced-motion:reduce){.geo-traveller,.geo-trail{display:none}}
 .student-geography{max-width:1312px;margin:0 auto;padding:32px 16px;color:var(--color-body,var(--color-text,#1a2535));font-family:inherit}.geo-inner{padding:18px;background:var(--color-surface-warm,#f7f5f2);border-radius:22px}.geo-eyebrow{font-size:14px;font-weight:800;letter-spacing:.12em;color:var(--color-body-muted,#4b5263);margin:0 0 12px}h2{font-size:clamp(22px,3vw,28px);font-weight:800;line-height:1.15;max-width:850px;margin:0 0 16px}.geo-intro{font-size:18px;line-height:1.6;margin:0 0 28px;max-width:720px}.geo-card{border:1px solid #dce4df;border-radius:24px;overflow:hidden;background:var(--color-card,#fff);box-shadow:0 4px 16px #18322808}.geo-map{position:relative;overflow:hidden;background:#edf4f7;aspect-ratio:25/11}.geo-map img{display:block;width:100%;height:100%}.geo-pin{position:absolute;width:12px;height:12px;border-radius:50%;background:#b05600;border:2px solid white;transform:translate(-50%,-50%);box-shadow:0 0 0 4px #b0560020}.geo-pin.active::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#fff;color:var(--color-navy-950,#0d1a2b);padding:4px 8px;border-radius:6px;font-size:14px;font-weight:700;box-shadow:0 2px 8px #18322818}.geo-pin.active{z-index:1;background:var(--color-navy-950,#0d1a2b);width:18px;height:18px;box-shadow:0 0 0 8px #0d1a2b28}.geo-details{padding:24px}.geo-choices{display:flex;flex-wrap:wrap;gap:8px}.geo-choices button{font:inherit;font-size:16px;min-height:44px;padding:10px 16px;border:1px solid #c8d5ce;border-radius:100px;color:var(--color-body,var(--color-text,#1a2535));background:var(--color-card,#fff);cursor:pointer}.geo-choices button[aria-pressed=true]{background:var(--color-navy-950,#0d1a2b);color:white;border-color:var(--color-navy-950,#0d1a2b)}.geo-choices button:focus-visible{outline:3px solid #b05600;outline-offset:3px}.geo-description{margin-top:24px;padding-top:20px;border-top:1px solid #e5ebe7;min-height:110px;font-size:16px;line-height:1.6}.geo-description strong{font-size:20px}.geo-description p{margin:6px 0 0;max-width:900px}.geo-footnote,.geo-text-list{font-size:14px;line-height:1.6;color:var(--color-body-muted,var(--color-muted,#526058))}.geo-footnote{margin:16px 0 8px}.geo-text-list summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline}.geo-text-list li{margin-bottom:8px}.geo-support{margin-top:24px;padding:28px;background:var(--color-navy-950,#0d1a2b);color:#fff;border-radius:20px}.geo-support h3{font-size:24px;font-weight:800;line-height:1.3;margin:0 0 12px}.geo-support p{font-size:16px;line-height:1.7;max-width:850px;margin:0 0 18px}.geo-support a{display:inline-flex;align-items:center;min-height:44px;font-size:16px;font-weight:700;color:#fff;text-decoration:underline;text-underline-offset:4px}.geo-support a:focus-visible{outline:3px solid #fff;outline-offset:5px}.standalone{padding:28px 16px}@media(max-width:600px){.student-geography{padding:24px 2px}.geo-inner{padding:18px}.geo-card{border-radius:16px}.geo-details{padding:16px}.geo-choices button{padding:10px 13px}.geo-description{min-height:150px}}
+</style>
+
+<style>
+  @media(min-width:900px){.geo-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}.geo-map{width:100%}.geo-details{padding:20px}.geo-description{min-height:0}}
+  .geo-pin[data-east="true"].active::after{left:auto;right:calc(100% + 8px)}
+  .geo-journey[data-mode="car"] .geo-traveller{fill:#237058}
+  .geo-journey[data-mode="train"] .geo-traveller{fill:#b05600}
 </style>
