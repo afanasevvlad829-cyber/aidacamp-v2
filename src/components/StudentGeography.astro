@@ -81,7 +81,9 @@ const routes = geography.slice(1).map((place, offset) => {
         const duration = route.mode === 'plane' ? 14000 : route.mode === 'train' ? 18000 : 12000;
         const raw = (elapsed / duration + (route.mode === 'plane' ? .15 : .6)) % 1;
         const progress = .5 - Math.cos(Math.PI * raw) / 2;
-        const opacity = Math.min(1, raw * 10, (1 - raw) * 10);
+        const arrived = progress >= .985;
+        const opacity = arrived ? 0 : Math.min(1, raw * 10, (1 - progress) / .08);
+        route.traveller.setAttribute('visibility', arrived ? 'hidden' : 'visible');
         route.traveller.setAttribute("opacity", String(opacity));
         const length = route.length;
         const point = route.path.getPointAtLength(progress * length);
@@ -94,7 +96,7 @@ const routes = geography.slice(1).map((place, offset) => {
           const position = route.path.getPointAtLength(Math.max(0, t) * length);
           trail.setAttribute('cx', String(position.x)); trail.setAttribute('cy', String(position.y));
           trail.setAttribute('r', String((index === 0 ? 2.5 : 1.8) * scale));
-          trail.setAttribute('visibility', enabled && t > 0 ? 'visible' : 'hidden');
+          trail.setAttribute('visibility', enabled && !arrived && t > 0 ? 'visible' : 'hidden');
           trail.setAttribute('opacity', String(opacity));
         });
       });
