@@ -1,15 +1,14 @@
-/** Информационный список брендов от BestBenefits, полученный 02.10.2026.
- * Совпадение означает возможное подключение, а не подтверждение доступа или льгот.
- * ИНН и соответствия юридическим лицам в этом сервисе не используются.
+/** Справочник названий работодателей. Наличие бренда не подтверждает льготы.
+ * BestBenefits указывается только по предоставленному списку и опубликованным источникам.
+ * ИНН не используются; условия всегда уточняются у HR.
  */
+import directoryCompanies from './corporate-company-directory.json';
 export interface CorporateCompany {
   name: string;
   aliases: string[];
-  programs: { name: string; sourceAsOf: string; offerUrl?: string }[];
+  programs: { name: string; sourceAsOf: string; offerUrl?: string; sourceUrl?: string }[];
 }
 export const BESTBENEFITS_OFFER_URL = 'https://bestbenefits.ru/product/8024';
-// Это 61 названный бренд; исходный список не раскрывает все 350 IT-компаний и 38 банков.
-// Партнёры-поставщики PremiumCode не являются списком подключённых работодателей.
 export const corporateCompanies: CorporateCompany[] = [
   {
     "name": "Highland Gold",
@@ -865,5 +864,148 @@ export const corporateCompanies: CorporateCompany[] = [
         "offerUrl": "https://bestbenefits.ru/product/8024"
       }
     ]
+  },
+  {
+    "name": "Ситроникс",
+    "aliases": [
+      "Sitronics"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Positive Technologies",
+    "aliases": [
+      "Позитив Текнолоджиз",
+      "Позитив"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Русский Стандарт",
+    "aliases": [
+      "Банк Русский Стандарт"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Мангазея Девелопмент",
+    "aliases": [
+      "Mangazeya"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Coldy",
+    "aliases": [
+      "Колди"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Галс",
+    "aliases": [
+      "Галс-Девелопмент"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Азбука Вкуса",
+    "aliases": [
+      "Azbuka Vkusa"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Barilla",
+    "aliases": [
+      "Барилла"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Биокад",
+    "aliases": [
+      "Biocad"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
+  },
+  {
+    "name": "Генериум",
+    "aliases": [
+      "Generium"
+    ],
+    "programs": [
+      {
+        "name": "BestBenefits",
+        "sourceAsOf": "2026-10-06",
+        "sourceUrl": "https://career.habr.com/companies/bestbenefits",
+        "offerUrl": "https://bestbenefits.ru/product/8024"
+      }
+    ]
   }
+,
+  ...directoryCompanies.map(company => ({ ...company, programs: [] })),
 ];
