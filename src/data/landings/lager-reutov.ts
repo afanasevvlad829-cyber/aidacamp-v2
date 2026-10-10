@@ -61,7 +61,7 @@ const landing: LandingData = {
         'Scratch — первое программирование для ребят 7–10 лет',
         'Minecraft Education — создание модов, механики игры',
         'AI и нейросети — ChatGPT API, обучение моделей',
-        '3D-моделирование — Blender и финальная 3D-печать',
+        "<a href='/3d-modelirovanie-lager/'>3D-моделирование</a> — Blender и финальная 3D-печать",
       ],
     },
     {
