@@ -60,7 +60,7 @@ const landing: LandingData = {
       list: [
         'Python и нейросети — для 12–17 лет: бот с ChatGPT или скрипт к концу смены',
         'Minecraft Education и Roblox — для 8–12 лет: свой мир, свои моды, мини-игра',
-        '3D-моделирование в Blender — для тех, кто рисует',
+        "<a href='/3d-modelirovanie-lager/'>3D-моделирование</a> в Blender — для тех, кто рисует",
         'AI для творчества — Midjourney, Stable Diffusion, своя серия артов',
         'Группы до 8 человек, занятия дважды в день по 90 минут',
       ],

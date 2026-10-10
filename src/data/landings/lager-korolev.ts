@@ -64,7 +64,7 @@ const landing: LandingData = {
         'Scratch — первый код для ребят 7–10 лет',
         'Minecraft Education — программирование в любимой игре',
         'AI и нейросети — ChatGPT API, собственный AI-помощник',
-        'Roblox Studio и 3D-моделирование — свои 3D-игры на Lua и печать модели в Blender',
+        "Roblox Studio и <a href='/3d-modelirovanie-lager/'>3D-моделирование</a> — свои 3D-игры на Lua и печать модели в Blender",
       ],
     },
     {
