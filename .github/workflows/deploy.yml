@@ -149,8 +149,11 @@ jobs:
 
       # SKIP_ASTRO_CHECK=1: astro check по всем 385 страницам (~2.5 мин) уже
       # прошёл как required quality-gate проверка на этом SHA — не дублируем.
+      # Лимит кучи 2 ГБ, не 5: раннер (eu-runner) — 3.9 ГБ RAM на всех, с прод-сервисами.
+      # Процесс, выросший за 3 ГБ, ядро убивает без сообщения (exit 137) — так падали
+      # сборки dev с 10.10. Пик сборки по замеру ~0.9 ГБ, запас есть.
       - name: Сборка (один раз на весь пуш)
-        run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=5120" npm run build --silent
+        run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=2048" npm run build --silent
 
       - name: Загрузка dist как artifact
         uses: https://code.forgejo.org/forgejo/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3, Forgejo-compatible
@@ -178,7 +181,7 @@ jobs:
       - run: npm ci
 
       - name: Строгий astro check (единственный прод-гейт)
-        run: NODE_OPTIONS="--max-old-space-size=6144" npm run check:public
+        run: NODE_OPTIONS="--max-old-space-size=2048" npm run check:public
 
   deploy-dev:
     if: ${{ !inputs.release_sha }}
