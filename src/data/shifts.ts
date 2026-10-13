@@ -3,6 +3,8 @@
  * Используется в Shifts.astro (frontmatter) и в client-side script (через JSON script tag).
  */
 
+import { pluralDays } from '../utils/plural';
+
 /**
  * Год текущего сезона — используется в маркетинговой прозе (заголовки, meta, FAQ:
  * «летний лагерь ${SEASON_YEAR}», «цены на ${SEASON_YEAR} год»).
@@ -385,6 +387,18 @@ export function daysNum(src: Shift | string): number {
   const n = parseInt(typeof src === 'string' ? src : src.duration, 10);
   if (!Number.isFinite(n)) throw new Error(`daysNum: не разобрал длительность «${String(src)}»`);
   return n;
+}
+
+/**
+ * Срок открытых для записи смен для хиро-текста: «7 дней» или «7–14 дней».
+ * Берётся из mainShifts (актуальные, идёт запись), не из текста на странице.
+ */
+export function openShiftsDaysLabel(shifts: Shift[] = mainShifts): string {
+  const days = [...new Set(shifts.map(s => daysNum(s)))].sort((a, b) => a - b);
+  if (!days.length) return '';
+  const max = days[days.length - 1];
+  const range = days.length > 1 ? `${days[0]}–${max}` : `${max}`;
+  return `${range} ${pluralDays(max)}`;
 }
 
 export type DaysAdjCase = 'nom' | 'acc' | 'gen';
