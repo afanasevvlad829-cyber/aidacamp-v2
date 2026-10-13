@@ -1143,5 +1143,155 @@ export const corporateCompanies: CorporateCompany[] = [
     ]
   }
 ,
+  {
+    "name": "Норникель",
+    "aliases": [
+      "Норильский никель",
+      "Nornickel"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "START",
+    "aliases": [
+      "Старт"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Точка",
+    "aliases": [
+      "Банк Точка"
+    ],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "КОР",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "ИННО",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "НУТРИЦИЯ",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Россети Урал",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "INFLAVE",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "АЙЭФСИЭМ ГРУПП",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Траектория Технологий",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Юрент байк",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Селекти",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
+  {
+    "name": "Лаборатория измерительных систем",
+    "aliases": [],
+    "programs": [
+      {
+        "name": "Aladdin",
+        "sourceAsOf": "2026-10-13",
+        "sourceUrl": "https://aladdin.store/"
+      }
+    ]
+  },
   ...directoryCompanies.map(company => ({ ...company, programs: [] })),
 ];
