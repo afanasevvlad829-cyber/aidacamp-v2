@@ -35,7 +35,7 @@ const excluded = [
 const result = spawnSync(
   process.execPath,
   [
-    '--max-old-space-size=6144',
+    '--max-old-space-size=2048',
     './node_modules/.bin/astro',
     'check',
     '--tsconfig',
