@@ -6,6 +6,7 @@ import { portalCookieOptions } from '../../../lib/portalCookie';
 import { findKidByCode, markKidLoggedIn } from '../../../lib/portalKid';
 import { findStaffByCode, markStaffCodeLogin } from '../../../lib/portalStaff';
 import { logAuth, logAction } from '../../../lib/portalLog';
+import { safeLoginDestination } from '../../../lib/portalRedirect';
 
 const ROLE_PRIORITY = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'] as const;
 
@@ -71,15 +72,5 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const token = signSession(role as any, process.env.PORTAL_SESSION_SECRET ?? '', Date.now(), sub, sid);
   cookies.set('portal_session', token, portalCookieOptions());
 
-  // Куда отправлять после логина:
-  //  - student → ai.aidacamp.ru (учебная среда)
-  //  - staff   → ВСЕГДА на главную /portal/ (никаких next-параметров — иначе попадают
-  //              на /portal/smena, /portal/rooms и т.д., а пользователь хочет хаб)
-  let dest: string;
-  if (role === 'student') {
-    dest = 'https://ai.aidacamp.ru/';
-  } else {
-    dest = '/portal/';
-  }
-  return redirect(dest, 303);
+  return redirect(safeLoginDestination(rawNext, role), 303);
 };
