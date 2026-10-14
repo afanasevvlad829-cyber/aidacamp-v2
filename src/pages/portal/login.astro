@@ -108,7 +108,20 @@ const tgMsg =
                   // Сервер делает 303 redirect — браузер не следует ему в fetch с redirect:manual.
                   // Считаем: если статус opaqueredirect / 0 / 303 / 200 — успех.
                   if (r.type === 'opaqueredirect' || r.status === 0 || r.status === 303 || (r.status >= 200 && r.status < 400)) {
-                    window.location.href = '/portal/';
+                    var requestedNext = new URLSearchParams(location.search).get('next');
+                    var destination = '/portal/';
+                    if (requestedNext) {
+                      try {
+                        var target = new URL(requestedNext, location.origin);
+                        if (
+                          (target.origin === location.origin && target.pathname.startsWith('/portal')) ||
+                          target.origin === 'https://ai.aidacamp.ru'
+                        ) {
+                          destination = target.href;
+                        }
+                      } catch (_) {}
+                    }
+                    window.location.href = destination;
                   } else {
                     if (status) status.textContent = 'Не удалось войти (HTTP ' + r.status + ').';
                   }
