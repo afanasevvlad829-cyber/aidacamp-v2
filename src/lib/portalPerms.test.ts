@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tierOf, isStaff, can, ROLE_LABELS } from './portalPerms';
+import { tierOf, isStaff, can, ROLE_LABELS, requireSession } from './portalPerms';
 
 describe('tierOf', () => {
   it('admin → admin', () => expect(tierOf('admin')).toBe('admin'));
@@ -41,5 +41,27 @@ describe('ROLE_LABELS', () => {
     expect(ROLE_LABELS.teacher).toBe('Преподаватель');
     expect(ROLE_LABELS.vozhaty).toBe('Вожатый');
     expect(ROLE_LABELS.student).toBe('Ученик');
+  });
+});
+
+describe('requireSession', () => {
+  it('accepts a shared session without a personal sub', () => {
+    expect(requireSession({ portalRole: 'admin' } as App.Locals)).toEqual({
+      role: 'admin',
+      sub: undefined,
+    });
+  });
+
+  it('preserves a personal sub', () => {
+    expect(requireSession({ portalRole: 'teacher', portalSub: 42 } as App.Locals)).toEqual({
+      role: 'teacher',
+      sub: 42,
+    });
+  });
+
+  it('rejects a request without a validated role', () => {
+    const result = requireSession({} as App.Locals);
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(401);
   });
 });

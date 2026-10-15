@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { requireAuth } from '../../../lib/portalPerms';
+import { requireSession } from '../../../lib/portalPerms';
 import { query } from '../../../lib/db';
 
 /**
@@ -37,7 +37,7 @@ function authEmail(role: string, sub?: number | string): string {
 }
 
 export const GET: APIRoute = async ({ locals }) => {
-  const _a = requireAuth(locals);
+  const _a = requireSession(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
   const email = authEmail(role, sub);
