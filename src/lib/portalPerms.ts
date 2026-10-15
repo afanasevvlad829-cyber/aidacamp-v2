@@ -69,3 +69,15 @@ export function requireAuth(locals: App.Locals): { role: string; sub: number } |
   }
   return { role, sub };
 }
+
+/**
+ * Любая валидированная middleware portal-сессия, включая общий пароль без sub.
+ * Использовать только там, где персональная идентификация не требуется.
+ */
+export function requireSession(locals: App.Locals): { role: string; sub?: number } | Response {
+  const role = locals.portalRole;
+  if (!role) {
+    return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+  return { role, sub: locals.portalSub };
+}
