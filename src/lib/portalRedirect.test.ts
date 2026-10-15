@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { safeLoginDestination } from './portalRedirect';
 
 describe('safeLoginDestination', () => {
-  it('returns Open WebUI after an authenticated staff login', () => {
+  it('returns the AidaPlus Open WebUI after an authenticated staff login', () => {
+    expect(safeLoginDestination('https://ai.aidaplus.ru/', 'admin'))
+      .toBe('https://ai.aidaplus.ru/');
+  });
+
+  it('keeps the previous Open WebUI origin during migration', () => {
     expect(safeLoginDestination('https://ai.aidacamp.ru/', 'admin'))
       .toBe('https://ai.aidacamp.ru/');
   });
@@ -15,6 +20,6 @@ describe('safeLoginDestination', () => {
     expect(safeLoginDestination('https://ai.aidacamp.ru.evil.example/', 'admin'))
       .toBe('/portal/');
     expect(safeLoginDestination('https://example.com/', 'student'))
-      .toBe('https://ai.aidacamp.ru/');
+      .toBe('https://ai.aidaplus.ru/');
   });
 });
