@@ -27,11 +27,10 @@ if [ "$TARGET" = "prod" ] && [ "${MASTER_AGENT:-0}" != "1" ] && [ "${SKIP_GIT_GU
   exit 1
 fi
 
-# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из dev ──────────
-# С 09.09.2026 dev — единственная боевая ветка (решение владельца после переезда
-# на Forgejo: промоут dev→main делал GitHub Actions, на своём CI его нет, main
-# перестал быть зеркалом прода). Требуем: текущая ветка dev ИЛИ HEAD равен
-# origin/dev (release.sh катит из detached worktree). Эта проверка не обходится
+# ── 0a. BRANCH GUARD: прод деплоится ТОЛЬКО из main ─────────
+# main — единственный источник production для публичного сайта. dev служит
+# staging-веткой. Требуем: текущая ветка main ИЛИ HEAD равен origin/main
+# (release.sh может катить из detached worktree). Эта проверка не обходится
 # SKIP_GIT_GUARD — только явный FORCE_BRANCH=1.
 # Инцидент 2026-06-25: деплой из fix/video-player-import → сломанный прод.
 cd "$PROJECT_DIR"
@@ -43,22 +42,22 @@ if [ -n "${ISOLATED_RELEASE_SHA:-}" ]; then
     [ "${GITHUB_EVENT_NAME:-}" = workflow_dispatch ] &&
     [ "${GITHUB_REF:-}" = refs/heads/dev ] || { echo 'Invalid isolated CI context'; exit 1; }
   printf '%s' "$ISOLATED_RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$' || exit 1
-  git fetch origin main dev
+  git fetch origin main
   [ "$(git rev-parse HEAD)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
   [ "$(git rev-parse origin/main)" = "$ISOLATED_RELEASE_SHA" ] || exit 1
-  git merge-base --is-ancestor "$ISOLATED_RELEASE_SHA" origin/dev || exit 1
+  git merge-base --is-ancestor "$ISOLATED_RELEASE_SHA" origin/main || exit 1
   ISOLATED_RELEASE_VALIDATED=1
 fi
 if [ "$TARGET" = "prod" ] && [ "${FORCE_BRANCH:-0}" != "1" ] && [ "$ISOLATED_RELEASE_VALIDATED" != 1 ]; then
   CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached")
   git fetch origin --quiet 2>/dev/null || true
-  ORIGIN_DEV_SHA=$(git rev-parse origin/dev 2>/dev/null || echo "")
+  ORIGIN_MAIN_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
   HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
-  if [ "$CURRENT_BRANCH" != "dev" ] && [ -z "$ORIGIN_DEV_SHA" -o "$HEAD_SHA" != "$ORIGIN_DEV_SHA" ]; then
-    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки dev (или HEAD == origin/dev)"
-    echo "   Текущая ветка: $CURRENT_BRANCH, HEAD: ${HEAD_SHA:0:8}, origin/dev: ${ORIGIN_DEV_SHA:0:8}"
+  if [ "$CURRENT_BRANCH" != "main" ] && [ -z "$ORIGIN_MAIN_SHA" -o "$HEAD_SHA" != "$ORIGIN_MAIN_SHA" ]; then
+    echo "❌ DEPLOY BLOCKED: прод деплоится только из ветки main (или HEAD == origin/main)"
+    echo "   Текущая ветка: $CURRENT_BRANCH, HEAD: ${HEAD_SHA:0:8}, origin/main: ${ORIGIN_MAIN_SHA:0:8}"
     echo ""
-    echo "→ git checkout dev && git pull origin dev"
+    echo "→ git checkout main && git pull origin main"
     echo "   ./scripts/release.sh"
     echo ""
     echo "Исключение (хотфикс прямо из этой ветки): FORCE_BRANCH=1 ./scripts/deploy.sh prod"
@@ -72,7 +71,7 @@ fi
 if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
   case "$TARGET" in
     dev)  GUARD_BRANCH="dev" ;;
-    prod) if [ "$ISOLATED_RELEASE_VALIDATED" = 1 ]; then GUARD_BRANCH="main"; else GUARD_BRANCH="dev"; fi ;;   # dev — единственная боевая ветка (09.09.2026)
+    prod) GUARD_BRANCH="main" ;;
     *)    GUARD_BRANCH="" ;;
   esac
 
@@ -82,9 +81,9 @@ if [ "${SKIP_GIT_GUARD:-0}" != "1" ]; then
     git status --short | head -20
     echo ""
     echo "→ Положи изменения в git через PR:"
-    echo "   git checkout -b agent/<task> origin/dev"
+    echo "   git checkout -b agent/<task> origin/main"
     echo "   git add -A && git commit -m '...' && git push origin agent/<task>"
-    echo "   tea pr create --base dev   # PR в Forgejo (git.aidaplus.ru)"
+    echo "   tea pr create --base main   # PR в Forgejo (git.aidaplus.ru)"
     echo ""
     echo "Hotfix владельцем — SKIP_GIT_GUARD=1 ./scripts/deploy.sh $TARGET"
     exit 1
