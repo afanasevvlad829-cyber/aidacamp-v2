@@ -28,7 +28,7 @@ export interface Promo {
 export const PROMOS: Record<string, Promo> = {
   AIDA2027: {
     code: 'AIDA2027',
-    partner: 'Алладин Стор',
+    partner: 'aladdin.store',
     discountPct: 8,
     freeTransfer: false,
   },
