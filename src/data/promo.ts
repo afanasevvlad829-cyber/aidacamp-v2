@@ -26,6 +26,12 @@ export interface Promo {
  * Новый партнёр = новая запись здесь, правок в компонентах не требуется.
  */
 export const PROMOS: Record<string, Promo> = {
+  AIDA2027: {
+    code: 'AIDA2027',
+    partner: 'Алладин Стор',
+    discountPct: 8,
+    freeTransfer: false,
+  },
   AIDAVIP: {
     code: 'AIDAVIP',
     partner: 'AIDACAMP',
