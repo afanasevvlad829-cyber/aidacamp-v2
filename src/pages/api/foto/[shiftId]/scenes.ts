@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { fetchWithTimeout } from '../../../../lib/fetchWithTimeout';
 import { getAlbumIdForShift } from '../../../../lib/immich';
+import { searchImmichAssets } from '../../../../lib/immichAssets';
 
 const IMMICH_BASE =
   process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
@@ -37,14 +38,12 @@ export const GET: APIRoute = async ({ params }) => {
     for (const key of SCENE_KEYS) {
       const tagId = tagByKey.get(key);
       if (!tagId) continue;
-      const searchRes = await fetchWithTimeout(`${IMMICH_BASE}/api/search/metadata`, {
-        method: 'POST',
-        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumIds: [albumId], tagIds: [tagId] }),
-      });
-      if (!searchRes.ok) continue;
-      const searchData = await searchRes.json();
-      const count = searchData.assets?.total ?? 0;
+      let count = 0;
+      try {
+        count = (await searchImmichAssets({ albumIds: [albumId], tagIds: [tagId] })).length;
+      } catch {
+        continue;
+      }
       if (count > 0) scenes.push({ key, count });
     }
 

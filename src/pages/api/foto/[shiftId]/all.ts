@@ -2,12 +2,10 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { fetchWithTimeout } from '../../../../lib/fetchWithTimeout';
 import { getAlbumIdForShift } from '../../../../lib/immich';
+import { getAlbumAssets, searchImmichAssets, type ImmichAsset } from '../../../../lib/immichAssets';
 
 const IMMICH_BASE =
   process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
-
-type RawAsset = { id: string; type: 'IMAGE' | 'VIDEO'; fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
-type RawAssetWithType = { id: string; type: 'IMAGE' | 'VIDEO'; fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
 
 const BURST_WINDOW_MS = 3000;
 
@@ -36,7 +34,7 @@ function groupBursts(
   return result;
 }
 
-function toTimedAssets(items: RawAssetWithType[]): { id: string; type: 'IMAGE' | 'VIDEO'; ts: number }[] {
+function toTimedAssets(items: ImmichAsset[]): { id: string; type: 'IMAGE' | 'VIDEO'; ts: number }[] {
   return items
     .map((a) => {
       const raw = a.fileCreatedAt ?? a.fileModifiedAt ?? a.createdAt;
@@ -83,29 +81,24 @@ export const GET: APIRoute = async ({ params, url }) => {
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      const searchRes = await fetchWithTimeout(`${IMMICH_BASE}/api/search/metadata`, {
-        method: 'POST',
-        headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumIds: [albumId], tagIds: [tagId] }),
-      });
-      if (!searchRes.ok) {
+      let items: ImmichAsset[];
+      try {
+        items = await searchImmichAssets({ albumIds: [albumId], tagIds: [tagId] });
+      } catch {
         return new Response(JSON.stringify({ ok: false, error: 'Immich search failed' }), { status: 502 });
       }
-      const searchData = await searchRes.json();
-      const items: RawAssetWithType[] = searchData.assets?.items ?? [];
       return new Response(
         JSON.stringify({ ok: true, assets: groupBursts(toTimedAssets(items)) }),
         { headers: { 'Content-Type': 'application/json' } },
       );
     }
-    const res = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
-      headers: { 'x-api-key': apiKey },
-    });
-    if (!res.ok) return new Response(JSON.stringify({ ok: false, error: 'Immich fetch failed' }), { status: 502 });
-    const album: { assets: RawAsset[] } = await res.json();
-
     const dateParam = url.searchParams.get('date');
-    let assets = album.assets;
+    let assets: ImmichAsset[];
+    try {
+      assets = await getAlbumAssets(albumId);
+    } catch {
+      return new Response(JSON.stringify({ ok: false, error: 'Immich fetch failed' }), { status: 502 });
+    }
     if (dateParam) {
       const targetDate = dateParam === 'today' ? moscowDateString(new Date()) : dateParam;
       assets = assets.filter((a) => {

@@ -1,12 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { fetchWithTimeout } from '../../../../lib/fetchWithTimeout';
 import { getAlbumIdForShift } from '../../../../lib/immich';
-
-const IMMICH_BASE =
-  process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
-
-type RawAsset = { fileCreatedAt?: string; fileModifiedAt?: string; createdAt?: string };
+import { getAlbumAssets } from '../../../../lib/immichAssets';
 
 /** YYYY-MM-DD по московскому времени (лагерь в Подмосковье). */
 function moscowDateString(d: Date): string {
@@ -28,14 +23,14 @@ export const GET: APIRoute = async ({ params }) => {
     if (!albumId) {
       return new Response(JSON.stringify({ ok: false, error: 'Альбом для этой смены не найден в Immich' }), { status: 404 });
     }
-    const res = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
-      headers: { 'x-api-key': apiKey },
-    });
-    if (!res.ok) return new Response(JSON.stringify({ ok: false, error: 'Immich fetch failed' }), { status: 502 });
-    const album: { assets: RawAsset[] } = await res.json();
-
+    let assets;
+    try {
+      assets = await getAlbumAssets(albumId);
+    } catch {
+      return new Response(JSON.stringify({ ok: false, error: 'Immich fetch failed' }), { status: 502 });
+    }
     const days = new Set<string>();
-    for (const a of album.assets) {
+    for (const a of assets) {
       const raw = a.fileCreatedAt ?? a.fileModifiedAt ?? a.createdAt;
       if (raw) days.add(moscowDateString(new Date(raw)));
     }

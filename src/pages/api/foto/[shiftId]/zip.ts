@@ -4,7 +4,8 @@ import archiver from 'archiver';
 import { Readable } from 'node:stream';
 import { fetchWithTimeout } from '../../../../lib/fetchWithTimeout';
 import { getAlbumIdForShift } from '../../../../lib/immich';
-import { clampIds, safeZipFilename } from '../../../../lib/fotoZip';
+import { getAlbumAssets } from '../../../../lib/immichAssets';
+import { clampIds, filterAlbumAssetIds, safeZipFilename } from '../../../../lib/fotoZip';
 import { allShiftsIncludingArchived } from '../../../../data/shifts';
 
 const IMMICH_BASE =
@@ -34,13 +35,13 @@ export const POST: APIRoute = async ({ params, request }) => {
   const albumId = await getAlbumIdForShift(shiftId);
   if (!albumId) return new Response('Album not found', { status: 404 });
 
-  const albumRes = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
-    headers: { 'x-api-key': apiKey },
-  });
-  if (!albumRes.ok) return new Response('Immich album fetch failed', { status: 502 });
-  const album: { assets: { id: string }[] } = await albumRes.json();
-  const inAlbum = new Set(album.assets.map((a) => a.id));
-  const ids = requestedIds.filter((id) => inAlbum.has(id));
+  let albumAssets;
+  try {
+    albumAssets = await getAlbumAssets(albumId);
+  } catch {
+    return new Response('Immich album fetch failed', { status: 502 });
+  }
+  const ids = filterAlbumAssetIds(requestedIds, albumAssets.map((a) => a.id));
   if (!ids.length) return new Response('No valid ids in this album', { status: 403 });
 
   const shift = allShiftsIncludingArchived.find((s) => s.id === shiftId);

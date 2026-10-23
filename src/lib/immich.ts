@@ -1,5 +1,6 @@
 import { fetchWithTimeout } from './fetchWithTimeout';
 import { allShiftsIncludingArchived } from '../data/shifts';
+import { getAlbumAssets } from './immichAssets';
 
 const IMMICH_BASE =
   process.env.IMMICH_BASE_URL || import.meta.env.IMMICH_BASE_URL || 'http://127.0.0.1:2283';
@@ -111,17 +112,13 @@ export async function getAlbumFaceIndex(albumId: string): Promise<FaceIndex> {
   const cached = faceIndexCache.get(albumId);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-  const albumRes = await fetchWithTimeout(`${IMMICH_BASE}/api/albums/${albumId}`, {
-    headers: immichHeaders(),
-  });
-  if (!albumRes.ok) throw new Error(`Immich album ${albumId}: ${albumRes.status}`);
-  const album: { assets: { id: string; type: 'IMAGE' | 'VIDEO' }[] } = await albumRes.json();
+  const assets = await getAlbumAssets(albumId);
 
   const peopleMap = new Map<string, NamedPerson>();
   const groupsMap = new Map<string, UnsortedAssetGroup>();
   const assetTypeMap = new Map<string, 'IMAGE' | 'VIDEO'>();
-  for (const a of album.assets) assetTypeMap.set(a.id, a.type);
-  const assetIds = album.assets.map((a) => a.id);
+  for (const a of assets) assetTypeMap.set(a.id, a.type);
+  const assetIds = assets.map((a) => a.id);
 
   for (let i = 0; i < assetIds.length; i += FACE_FETCH_CONCURRENCY) {
     const batch = assetIds.slice(i, i + FACE_FETCH_CONCURRENCY);
