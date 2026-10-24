@@ -15,13 +15,9 @@ else
   MSG="РОЛЬ: ВОРКЕР. Ветка не назначена. Сначала запусти: ./scripts/register-branch.sh <задача>"
 fi
 
-python3 << PYEOF
-import json
-msg = """$MSG"""
-print(json.dumps({
-  "hookSpecificOutput": {
-    "hookEventName": "PreCompact",
-    "additionalContext": msg
-  }
-}))
+# PreCompact не поддерживает hookSpecificOutput.additionalContext (падает на схеме).
+# Используем валидное top-level поле systemMessage.
+python3 - "$MSG" <<'PYEOF'
+import json, sys
+print(json.dumps({"systemMessage": sys.argv[1]}))
 PYEOF
