@@ -137,7 +137,7 @@ export function initShiftModal() {
       document.dispatchEvent(new CustomEvent('age-personalize', { detail: { age } }));
       sessionStorage.setItem('age_bar_shown', '1');
       sessionStorage.setItem(STORAGE_KEYS.ageBarDismissed, '1');
-      trackGoal('age_select');
+      trackGoal('age_select', { age });
     });
   });
 
