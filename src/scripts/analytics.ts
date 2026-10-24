@@ -81,6 +81,36 @@ export function initScrollTracking() {
 }
 
 /**
+ * Просмотр секций: каждая [data-track-section], показавшаяся на экране, шлёт
+ * reachGoal('section_<имя>') и параметр визита {section_view: {<имя>: <путь>}}.
+ * Дедуп — на просмотр страницы, а не на визит, как в trackGoal: одна и та же FAQ
+ * на разных страницах нужна отдельно, чтобы видеть, до какой секции доходят где.
+ * Показалась = видно ≥40% секции или ≥40% экрана занято ею (иначе высокая секция
+ * никогда бы не засчиталась).
+ */
+export function initSectionViews() {
+  if (!('IntersectionObserver' in window)) return;
+  const page = location.pathname;
+  const seen = new Set<string>();
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const viewportH = e.rootBounds?.height || window.innerHeight;
+      if (Math.max(e.intersectionRatio, e.intersectionRect.height / viewportH) < 0.4) continue;
+      const el = e.target as HTMLElement;
+      io.unobserve(el);
+      const name = el.dataset.trackSection;
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      try {
+        (window as any).ym?.(YANDEX_METRIKA_ID, 'reachGoal', `section_${name}`, { section_view: { [name]: page } });
+      } catch {}
+    }
+  }, { threshold: [0, 0.02, 0.05, 0.1, 0.25, 0.4, 0.6, 1] });
+  document.querySelectorAll<HTMLElement>('[data-track-section]').forEach((el) => io.observe(el));
+}
+
+/**
  * Составная цель "quality_visit": ≥3 мин на сайте И ≥5 просмотренных страниц за визит.
  * Заявок мало (0,19% визитов) — смарт-стратегиям Директа не хватает сигнала для обучения.
  * Анализ пересечений (ball_intersect, 05.08.2026) показал: время и глубина сами по себе
