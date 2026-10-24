@@ -136,3 +136,66 @@ describe('гейт страниц /admin/*', () => {
     expect(res.status).toBe(200);
   });
 });
+
+// ── Гейт альбомов смен (27.08.2026) ───────────────────────────────────────
+// /api/foto/* отдавал фото и распознанные лица детей любому анониму. Доступ
+// теперь даёт подписанная ссылка /foto/<id>?s=<token> → httpOnly-кука foto_s_<id>.
+import { signShiftFoto } from '../lib/fotoLink';
+
+function makeFotoContext(path: string, cookieHeader?: string) {
+  const url = new URL(`http://localhost${path}`);
+  const headers = new Headers();
+  if (cookieHeader) headers.set('cookie', cookieHeader);
+  const jar = new Map<string, string>();
+  if (cookieHeader) {
+    for (const part of cookieHeader.split(';')) {
+      const [k, ...v] = part.trim().split('=');
+      jar.set(k, v.join('='));
+    }
+  }
+  return {
+    request: new Request(url, { headers }),
+    url,
+    locals: {},
+    cookies: { get: (name: string) => (jar.has(name) ? { value: jar.get(name)! } : undefined) },
+  } as any;
+}
+
+describe('гейт /api/foto/* (фото и лица детей)', () => {
+  let prevLead: string | undefined;
+  beforeAll(() => { prevLead = process.env.LEAD_LINK_SECRET; process.env.LEAD_LINK_SECRET = 'test-foto-secret-mw'; });
+  afterAll(() => { if (prevLead === undefined) delete process.env.LEAD_LINK_SECRET; else process.env.LEAD_LINK_SECRET = prevLead; });
+
+  it('аноним → 401 (раньше было 200 с фото детей — дыра)', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/people'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('подписанная ссылка ?s= → проходит', async () => {
+    const token = signShiftFoto('smena-1');
+    const res = await onRequest(makeFotoContext(`/api/foto/smena-1/people?s=${token}`), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('кука альбома → проходит', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/zip', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(res.status).toBe(200);
+  });
+
+  it('кука чужой смены не открывает альбом', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-2/people', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('поддельный токен → 401', async () => {
+    const res = await onRequest(makeFotoContext('/api/foto/smena-1/days?s=deadbeef00'), next);
+    expect(res.status).toBe(401);
+  });
+
+  it('/api/foto/image/<uuid> — любая валидная кука альбома (номера смены в пути нет)', async () => {
+    const ok = await onRequest(makeFotoContext('/api/foto/image/abc-uuid?kind=thumb', `foto_s_smena-1=${signShiftFoto('smena-1')}`), next);
+    expect(ok.status).toBe(200);
+    const anon = await onRequest(makeFotoContext('/api/foto/image/abc-uuid?kind=thumb'), next);
+    expect(anon.status).toBe(401);
+  });
+});
