@@ -5,6 +5,7 @@ import { buildSystemPrompt } from '../../lib/ai/systemPrompt';
 import { ResponseSchema } from '../../lib/ai/responseSchema';
 import { ragSearch } from '../../lib/ai/rag';
 import { findPhotos } from '../../lib/ai/photoSearch';
+import { lastCompletedShift } from '../../data/shifts';
 import { matchEscalation, templateToResponse } from '../../lib/ai/escalation_templates';
 import { classifyIntent, pickRealStory } from '../../lib/ai/intent_router';
 import { validateBotResponse, logGuardFlag } from '../../lib/ai/validator';
@@ -213,12 +214,23 @@ export const POST: APIRoute = async ({ request }) => {
         'Мама беспокоится. Ответь ТЁПЛО, опираясь на тон Дарьи из контекста (видео, публикации). ' +
         'Но без выдуманных историй — общие наблюдения, без «один мальчик».';
     }
+    // Честный ответ на "фото/итоги с последней смены" — называем смену по имени (Task 3:
+    // lastCompletedShift), но НЕ приписываем ей конкретные фото — реальной разметки фото
+    // по сменам пока нет (см. Task 5, docs/superpowers/plans/2026-07-14-ask-bot-shift-photos-and-evals.md).
+    const _today = new Date().toISOString().slice(0, 10);
+    const _lastShift = lastCompletedShift(_today);
+    const shiftContext = _lastShift
+      ? `\n\n=== ПОСЛЕДНЯЯ ПРОШЕДШАЯ СМЕНА ===\nСмена: "${_lastShift.name}" (${_lastShift.dates}).\n` +
+        `ВАЖНО: у нас пока НЕТ фото, размеченных по конкретной смене — если тебя просят "фото с последней смены",\n` +
+        `назови смену по имени (${_lastShift.name}), но честно скажи что показываешь ОБЩИЕ живые фото с лагеря,\n` +
+        `а не фото именно с этой смены. НЕ утверждай "вот фото именно с ${_lastShift.name}" — это неправда.`
+      : '';
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
     const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
     // basePrompt меняется ~раз в день (cron обновляет shifts.json) — кэшируем отдельным блоком.
     // ctxForLLM/intentBoost меняются на каждый запрос — не кэшируем, иначе маркер в конце
     // общего блока делает байты уникальными почти всегда и кэш никогда не читается.
-    const volatileSuffix = ctxForLLM + intentBoost;
+    const volatileSuffix = ctxForLLM + intentBoost + shiftContext;
 
     const messages: Anthropic.MessageParam[] = [
       ...history.slice(-12).map((m: ChatMessage) => ({
