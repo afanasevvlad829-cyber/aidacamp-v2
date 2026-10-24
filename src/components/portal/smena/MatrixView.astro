@@ -1,6 +1,7 @@
 ---
 import type { ShiftEvent } from '../../../lib/portalShift';
 import { eventColorClass } from '../../../lib/portalShift';
+import { fmtDate, fmtTime } from '../../../utils/portalUtils';
 
 interface Props {
   dates: string[];
@@ -22,14 +23,6 @@ function roleLabel(r: string): string {
   return ROLE_LABEL[r] ?? r;
 }
 
-const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-function fmtDate(iso: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  return m ? Number(m[3]) + ' ' + MONTHS_RU[Number(m[2]) - 1] : iso;
-}
-function fmtTime(t: string | null): string {
-  return t ? t.slice(0, 5) : '';
-}
 function eventActor(e: ShiftEvent): string {
   if (!e.staff_keys || e.staff_keys.length === 0) return '';
   const names = e.staff_keys.map((k) => staffNameByKey.get(k)).filter(Boolean) as string[];
