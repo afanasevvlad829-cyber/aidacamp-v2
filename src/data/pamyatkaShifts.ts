@@ -2,8 +2,7 @@
 // TG и Max ссылки берутся динамически из поля note группы в CRM (getGroupLinks).
 // Даты — производные от shifts.ts (SHIFT_META/shiftDatesFull), не хардкодить строками.
 // group_id берётся из CRM → Группы → URL содержит ?id=XXX.
-
-import { allShiftsIncludingArchived, shiftDatesFull, SEASON_YEAR } from './shifts';
+import { allShiftsIncludingArchived, mainShifts, shiftDatesFull, SEASON_YEAR } from './shifts';
 
 export type PamyatkaShift = {
   groupId: number;
@@ -33,18 +32,23 @@ const GROUP_TO_SHIFT: Record<number, string> = {
 
 const MANAGER = { manager: 'Progaschool', phone: '+79688086455', phoneDisplay: '+7 (968) 808-64-55' };
 const _byId = Object.fromEntries(allShiftsIncludingArchived.map((s) => [s.id, s]));
+const _openIds = new Set(mainShifts.map((s) => s.id));
 
 export const PAMYATKA_SHIFTS: Record<number, PamyatkaShift> = Object.fromEntries(
   Object.entries(GROUP_TO_SHIFT).map(([gidStr, shiftId], i) => {
     const gid = Number(gidStr);
     const num = String(i + 1); // номер в CRM-нумерации
+    const shift = _byId[shiftId];
+    // Для открытых смен (сейчас — августовские) родителям привычнее сайтовое имя
+    // «Смена 3»/«Смена 4», а не порядковый номер CRM-группы («5 смена»/«6 смена»).
+    const name = _openIds.has(shiftId) ? shift.name : `${num} смена`;
     return [
       gid,
       {
         groupId: gid,
         num,
-        name: `${num} смена`,
-        dates: `${shiftDatesFull(_byId[shiftId])} ${SEASON_YEAR}`,
+        name,
+        dates: `${shiftDatesFull(shift)} ${SEASON_YEAR}`,
         ...MANAGER,
       },
     ];

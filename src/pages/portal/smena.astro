@@ -159,6 +159,30 @@ const timeline = [...timeMap.entries()]
       </nav>
     )}
 
+    {shift && dates.length > 0 && (() => {
+      // Пять вопросов, которые родитель задаёт себе молча. Подсвечен тот,
+      // который выбранный день закрывает сильнее всего — по индексу дня в смене.
+      const QUESTIONS = [
+        'Мой ребёнок в безопасности?',
+        'Куда он попал, кто его окружает?',
+        'Хорошо ли его кормят, чему он учится?',
+        'Сделала ли я хороший выбор?',
+        'Будет ли о чём поговорить вечером?',
+      ];
+      // День смены (1-based) → индекс главного вопроса дня
+      const KEY_BY_DAY = [0, 2, 1, 1, 2, 4, 4, 2, 3, 1, 4, 3, 3];
+      const dayIdx = dates.indexOf(selectedDate);
+      const keyIdx = dayIdx >= 0 ? (KEY_BY_DAY[dayIdx] ?? 0) : 0;
+      return (
+        <div class="den-questions">
+          <span class="den-questions-lbl">Родитель спрашивает себя:</span>
+          {QUESTIONS.map((q, i) => (
+            <span class={`den-q${i === keyIdx ? ' key' : ''}`}>{q}</span>
+          ))}
+        </div>
+      );
+    })()}
+
     {!shift && <div class="den-empty">Создайте смену в конструкторе, чтобы собрать день.</div>}
 
     {shift && (

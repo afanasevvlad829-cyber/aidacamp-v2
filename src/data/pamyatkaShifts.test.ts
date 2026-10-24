@@ -16,4 +16,11 @@ describe('pamyatkaShifts: даты выводятся из shifts.ts', () => {
     expect(dates).toContain(`${shiftDatesFull(byId['shift-3'])} ${SEASON_YEAR}`);
     expect(dates).toContain(`${shiftDatesFull(byId['shift-4'])} ${SEASON_YEAR}`);
   });
+  it('открытые смены (664/665) показывают сайтовое имя, не CRM-номер', () => {
+    expect(PAMYATKA_SHIFTS[664].name).toBe(byId['shift-3'].name);
+    expect(PAMYATKA_SHIFTS[665].name).toBe(byId['shift-4'].name);
+  });
+  it('завершённые смены (660) показывают CRM-номер, не сайтовое имя', () => {
+    expect(PAMYATKA_SHIFTS[660].name).toBe('1 смена');
+  });
 });

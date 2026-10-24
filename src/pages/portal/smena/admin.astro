@@ -204,13 +204,25 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                       <div class="text-[12px] text-body-muted">
                         #{e.id}{e.activity_type ? ` · ${e.activity_type}` : ''}
                         {e.roles.length > 0 && <span class="ml-1 text-primary">· {e.roles.join(', ')}</span>}
-                        {e.responsible_name
-                          ? <span class="ml-1 text-emerald-700">· отв: {e.responsible_name}</span>
-                          : <span class="ml-1 text-amber-700">· отв: не назначен</span>}
                       </div>
                     </div>
+                    {/* Быстрая смена ответственного — без раскрытия полной формы правки */}
+                    <select class="ev-resp-quick w-[190px] shrink-0 rounded-[8px] border border-border px-2 py-1 text-[12px] outline-none focus:border-primary"
+                            data-id={e.id}
+                            data-shift-id={activeShift?.id ?? ''}
+                            data-prev={(e as any).responsible_staff_id ?? ''}
+                            aria-label={`Ответственный за «${e.title}»`}>
+                      <option value="" selected={!(e as any).responsible_staff_id}>— не назначен —</option>
+                      {activeStaff.map((s) => (
+                        <option value={s.id} selected={String((e as any).responsible_staff_id ?? '') === String(s.id)}>
+                          {s.full_name ?? `id=${s.id}`}
+                        </option>
+                      ))}
+                    </select>
                     <button type="button"
-                            class="ev-edit rounded-[8px] border border-border px-2.5 py-1 text-[12px] font-medium text-body-muted transition hover:border-primary hover:text-primary"
+                            title="Править событие"
+                            aria-label={`Править событие «${e.title}»`}
+                            class="ev-edit shrink-0 rounded-[8px] border border-border px-2 py-1 text-body-muted transition hover:border-primary hover:text-primary"
                             data-id={e.id}
                             data-title={e.title}
                             data-date={e.date}
@@ -221,7 +233,7 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                             data-roles={e.roles.join(',')}
                             data-notes={e.notes ?? ''}
                             data-resp-id={(e as any).responsible_staff_id ?? ''}>
-                      <i class="bi bi-pencil text-[12px]" aria-hidden="true"></i> Править
+                      <i class="bi bi-pencil text-[14px]" aria-hidden="true"></i>
                     </button>
                     <form method="POST" action="/api/portal/shift/admin" onsubmit={`return confirm('Удалить событие «${e.title}» (${e.date})? Также удалятся все привязки чек-листов и галочки.')`}>
                       <input type="hidden" name="action" value="deleteEvent" />
@@ -282,6 +294,49 @@ const cardCls = 'rounded-[16px] border border-border bg-white p-5 card-shadow';
                   reset.classList.remove('hidden');
                   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   titleF.focus();
+                });
+              });
+
+              // Быстрая смена ответственного прямо в списке событий.
+              // Остальные поля события берём из data-* соседней кнопки правки,
+              // чтобы upsertEvent не затёр их пустыми значениями.
+              document.querySelectorAll('.ev-resp-quick').forEach((sel) => {
+                sel.addEventListener('change', async () => {
+                  const row = sel.closest('li');
+                  const src = row?.querySelector('.ev-edit');
+                  if (!src) return;
+                  const prev = sel.dataset.prev ?? '';
+                  sel.disabled = true;
+                  const body = new URLSearchParams();
+                  body.append('action', 'upsertEvent');
+                  body.append('shiftId', sel.dataset.shiftId || '');
+                  body.append('id', src.dataset.id || '');
+                  body.append('title', src.dataset.title || '');
+                  body.append('date', src.dataset.date || '');
+                  body.append('start_time', (src.dataset.start || '').slice(0, 5));
+                  body.append('end_time', (src.dataset.end || '').slice(0, 5));
+                  body.append('activity_type', src.dataset.actype || '');
+                  body.append('sort', src.dataset.sort || '0');
+                  (src.dataset.roles || '').split(',').filter(Boolean).forEach((r) => body.append('roles', r));
+                  body.append('responsible_staff_id', sel.value);
+                  body.append('notes', src.dataset.notes || '');
+                  try {
+                    const res = await fetch('/api/portal/shift/admin', {
+                      method: 'POST', body, credentials: 'same-origin',
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    src.dataset.respId = sel.value;
+                    sel.dataset.prev = sel.value;
+                    sel.classList.add('border-emerald-500');
+                    setTimeout(() => sel.classList.remove('border-emerald-500'), 1200);
+                  } catch (err) {
+                    sel.value = prev;
+                    sel.classList.add('border-red-500');
+                    setTimeout(() => sel.classList.remove('border-red-500'), 2000);
+                    alert('Не удалось сменить ответственного. Попробуйте ещё раз.');
+                  } finally {
+                    sel.disabled = false;
+                  }
                 });
               });
             })();
