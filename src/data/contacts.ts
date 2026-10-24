@@ -1,3 +1,4 @@
+import { SEASON_MONTHS_NOM } from './shifts';
 // Единый источник контактных данных
 import { PRICE_MIN, PRICE_MIN_ID, SEASON_YEAR, SEASON_MONTHS } from './shifts';
 
@@ -35,7 +36,7 @@ export const PAYMENT_SPLIT = 'Оплата в два этапа: 50% при бр
 export const STAT_LICENSE = 'Л035-01298-77/01082973'; // образовательная лицензия Минобрнауки
 export const STAT_RTO = '025773'; // реестровый номер туроператора (РТО)
 // Производная от ОТКРЫТЫХ смен (mainShifts) — не хардкодить месяцы напрямую,
-// иначе строка отстаёт при закрытии ранних смен сезона (было "июнь–август"
+// иначе строка отстаёт при закрытии ранних смен сезона (было `${SEASON_MONTHS_NOM}`
 // уже после того, как июньские смены завершились).
 export const CAMP_SEASON = `${SEASON_MONTHS} ${SEASON_YEAR}`;
 // Якорь «от X» — берётся из минимума ОТКРЫТЫХ смен (PRICE_MIN из shifts.ts),

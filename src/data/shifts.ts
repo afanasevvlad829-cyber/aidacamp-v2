@@ -297,12 +297,49 @@ export const SEASON_RANGE = `${shiftDatesShort(mainShifts[0]).split('–')[0].tr
 
 // Месяцы, которые реально покрывают ОТКРЫТЫЕ смены (mainShifts) — не хардкодить
 // диапазон месяцев отдельно, иначе он отстаёт при закрытии ранних смен сезона
-// (инцидент: "июнь–август" оставался после того, как июньские смены завершились).
+// (инцидент: «июнь–август» оставался после того, как июньские смены завершились).
 const _firstMonthIdx = _d(mainShifts[0].startDate).m - 1;
 const _lastMonthIdx = _d(mainShifts[mainShifts.length - 1].endDate).m - 1;
 export const SEASON_MONTHS = _firstMonthIdx === _lastMonthIdx
   ? _MONTHS_RU[_firstMonthIdx]
   : `${_MONTHS_RU[_firstMonthIdx]}–${_MONTHS_RU[_lastMonthIdx]}`;
+
+// ─── Эвергрин-константы: чтобы тексты не устаревали при смене сезона ───────
+// Правило: НИКОГДА не писать в тексте «июнь–август», «с июня по август» или
+// число открытых смен буквально — брать отсюда. Иначе страница врёт, как только
+// ранние смены закрываются (инциденты: «Три смены впереди» на kak-proshla-smena-1,
+// «июнь–август» после завершения июньских смен).
+const _MONTHS_RU_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const _seasonSorted = [...allShiftsIncludingArchived].sort((a, b) => a.startDate.localeCompare(b.startDate));
+const _seasonFirstIdx = _d(_seasonSorted[0].startDate).m - 1;
+const _seasonLastIdx = _d(_seasonSorted[_seasonSorted.length - 1].endDate).m - 1;
+
+/** Весь сезон в именительном: «май–август». Для «Смены май–август 2026». */
+export const SEASON_MONTHS_NOM = _seasonFirstIdx === _seasonLastIdx
+  ? _MONTHS_RU_NOM[_seasonFirstIdx]
+  : `${_MONTHS_RU_NOM[_seasonFirstIdx]}–${_MONTHS_RU_NOM[_seasonLastIdx]}`;
+
+/** Весь сезон предлогами: «с мая по август». Для «Смены проходят с мая по август». */
+export const SEASON_FROM_TO = _seasonFirstIdx === _seasonLastIdx
+  ? `в ${_MONTHS_RU[_seasonFirstIdx]}`
+  : `с ${_MONTHS_RU[_seasonFirstIdx]} по ${_MONTHS_RU_NOM[_seasonLastIdx]}`;
+
+/** Сколько смен открыто к брони прямо сейчас. */
+export const OPEN_SHIFTS_COUNT = allShifts.length;
+
+/** «одна смена» / «две смены» / «пять смен» — согласованное числительное. */
+export const OPEN_SHIFTS_PHRASE = (() => {
+  const n = OPEN_SHIFTS_COUNT;
+  const words = ['ноль', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
+  const word = words[n] ?? String(n);
+  const noun = n === 1 ? 'смена' : n >= 2 && n <= 4 ? 'смены' : 'смен';
+  return `${word} ${noun}`;
+})();
+
+/** Месяцы открытых смен в именительном: «август» / «июль–август». */
+export const OPEN_MONTHS_NOM = _firstMonthIdx === _lastMonthIdx
+  ? _MONTHS_RU_NOM[_firstMonthIdx]
+  : `${_MONTHS_RU_NOM[_firstMonthIdx]}–${_MONTHS_RU_NOM[_lastMonthIdx]}`;
 
 
 // Единый источник: сколько ровесников едет в каждую смену по возрасту

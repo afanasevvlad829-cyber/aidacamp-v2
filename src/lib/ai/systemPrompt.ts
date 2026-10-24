@@ -1,5 +1,5 @@
 import { campData } from './campData';
-import { lastCompletedShift, shiftDatesShort, EDU_RESID_PER_DAY } from '../../data/shifts';
+import { lastCompletedShift, shiftDatesShort, EDU_RESID_PER_DAY, SEASON_FROM_TO } from '../../data/shifts';
 
 // Тип для смен — может прийти из campData или из живого JSON с сервера
 type LiveShift = {
@@ -391,7 +391,7 @@ ${socialProofByAge}
 
 ФАКТЫ ЛАГЕРЯ (единственный источник правды):
 
-Смены 2026 (ВСЕГДА говори: "6 смен с мая по август, длительностью от 7 до 14 дней"; никогда не округляй до 5; никогда не сокращай диапазон до 10-14):
+Смены 2026 (ВСЕГДА говори: `6 смен ${SEASON_FROM_TO}, длительностью от 7 до 14 дней`; никогда не округляй до 5; никогда не сокращай диапазон до 10-14):
 ${shiftsText}
 
 Направления по возрасту:
