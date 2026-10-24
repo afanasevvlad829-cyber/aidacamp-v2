@@ -8,6 +8,8 @@
  *  • При отправке формы добавляет discount=true в данные заявки
  */
 
+import { fmtPrice } from '../data/dynamicPrices';
+
 const DURATION_MS = 30 * 60 * 1000; // 30 минут
 const LS_START    = 'discount_start_v1';
 const DISCOUNT    = 0.05; // 5%
@@ -47,10 +49,6 @@ function parsePrice(priceStr: string): number {
   return parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
 }
 
-/** Форматирует число → "71 155 ₽" */
-function formatPrice(n: number): string {
-  return n.toLocaleString('ru-RU') + ' ₽';
-}
 
 // ── Modal price patch ─────────────────────────────────────────────────────────
 
