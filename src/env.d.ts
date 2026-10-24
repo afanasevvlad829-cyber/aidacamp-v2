@@ -9,6 +9,7 @@ declare const tailwind: any;
 
 interface Window {
   ym?: (...args: any[]) => void;
+  trackGoal?: (id: string, params?: Record<string, unknown>, value?: number) => void;
   openSnakeOverlay?: () => void;
   closeSnakeOverlay?: () => void;
   tailwind?: any;

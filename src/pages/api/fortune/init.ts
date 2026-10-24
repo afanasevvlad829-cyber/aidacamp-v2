@@ -1,19 +1,9 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
-import { Pool } from 'pg';
+import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
-
-let _pool: Pool | null = null;
-function getPool() {
-  if (!_pool) {
-    const url = process.env.DATABASE_URL;
-    if (!url) return null;
-    _pool = new Pool({ connectionString: url, max: 3, statement_timeout: 5000 });
-  }
-  return _pool;
-}
 
 async function logFortuneEvent(data: {
   event_type: string;

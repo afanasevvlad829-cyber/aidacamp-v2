@@ -1121,6 +1121,35 @@ function addMsg(role,html,onDone){
   return d;
 }
 
+/* ── CSAT: кнопки «полезно / не полезно» под ответом бота ── */
+function addCsat(aiEl,messageId){
+  if(!messageId||!aiEl)return;
+  const row=document.createElement('div');
+  row.className='csat-row';
+  const mk=(val,icon,label)=>{
+    const b=document.createElement('button');
+    b.className='csat-btn';
+    b.title=label;
+    b.setAttribute('aria-label',label);
+    b.innerHTML='<i class="bi bi-hand-thumbs-'+icon+'" aria-hidden="true"></i>';
+    b.onclick=()=>{
+      if(b.classList.contains('on'))return;
+      row.querySelectorAll('.csat-btn').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      // Повторный клик по другой кнопке — просто перезапись оценки (endpoint делает UPDATE)
+      fetch('/api/ask-feedback',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message_id:messageId,csat:val})
+      }).catch(()=>{});
+    };
+    return b;
+  };
+  row.appendChild(mk(1,'up','Полезно'));
+  row.appendChild(mk(-1,'down','Не полезно'));
+  aiEl.insertAdjacentElement('afterend',row);
+}
+
 function addChips(items){
   const row=document.createElement('div');
   row.style.cssText='align-self:flex-start;display:flex;gap:8px;flex-wrap:wrap;animation:up .3s .1s cubic-bezier(.16,1,.3,1) both;padding:2px 0 4px';
@@ -1329,7 +1358,9 @@ async function go(txt){
     aiState='speak';
 
     if(data.state==='error'||!data.text){
-      addMsg('ai',data.text||'Что-то пошло не так. Попробуйте ещё раз.');
+      addMsg('ai',data.text||'Что-то пошло не так. Попробуйте ещё раз.',(aiEl)=>{
+        addCsat(aiEl,data.message_id);
+      });
     } else {
       // Сохраняем в историю сразу — не ждём анимации
       const blockNote=data.block_type?` [показан блок: ${data.block_type}]`:'';
@@ -1347,6 +1378,7 @@ async function go(txt){
 
       // Последовательный показ: текст печатается → блок появляется → чипсы
       addMsg('ai',data.text,(aiEl)=>{
+        addCsat(aiEl,data.message_id);
         if(blockAllowed){
           // После окончания печати — небольшая пауза, потом блок
           setTimeout(()=>{
@@ -1765,7 +1797,7 @@ function closeQR(){
 
 // Expose global functions for HTML event handlers
 Object.assign(window, {
-  addChips, addEl, addMsg, autoGrow, autoLink,
+  addChips, addCsat, addEl, addMsg, autoGrow, autoLink,
   blockCond, blockCourses, blockDay, blockGallery, blockHackathon,
   blockLocation, blockOccupancyChart, blockPhotoCarousel, blockPrices,
   blockPricingBreakdown, blockSmeny, blockTaxCalculator, blockVideoPlayer,

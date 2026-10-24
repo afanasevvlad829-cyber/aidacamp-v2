@@ -13,12 +13,9 @@
  */
 
 import https from 'node:https';
-import pg from 'pg';
-
-const { Pool } = pg;
+import { getPool } from '../db';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const DATABASE_URL   = process.env.DATABASE_URL;
 
 const MIN_SCORE_TRUSTED = 0.42;
 const MIN_SCORE_DIALOG  = 0.45;   // диалоги шумнее — порог выше
@@ -41,15 +38,6 @@ export const TRUSTED_PATTERNS = [
   'accommodation\\_%', // accommodation_detailed_2026 — проживание
   'menu\\_%',          // menu_detailed_2026 — питание
 ];
-
-let _pool: InstanceType<typeof Pool> | null = null;
-
-function getPool() {
-  if (!_pool && DATABASE_URL) {
-    _pool = new Pool({ connectionString: DATABASE_URL, max: 3 });
-  }
-  return _pool;
-}
 
 export function openaiEmbed(text: string): Promise<number[]> {
   return new Promise((resolve) => {

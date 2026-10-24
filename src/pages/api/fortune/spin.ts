@@ -1,16 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
-
-let _pool: Pool | null = null;
-function getPool() {
-  if (!_pool) {
-    const url = process.env.DATABASE_URL;
-    if (!url) return null;
-    _pool = new Pool({ connectionString: url, max: 3, statement_timeout: 5000 });
-  }
-  return _pool;
-}
+import { getPool } from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { discount?: number; shiftId?: string } = {};
