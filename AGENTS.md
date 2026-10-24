@@ -1,67 +1,17 @@
-## Git Safety Rules
+# AGENTS.md
 
-1. Never run `git add` for:
-   - `assets/**`, `reports/**`, `*.tgz`, `*.zip`, `*.mp4`, `*.webp`, `*.jpeg`
-2. Never run `git diff --no-index` for large binary files.
-3. Before any `git add`, first print exact file list and wait for explicit user confirmation.
+Только то, что нельзя откатить и чего не ловит ни хук, ни `permissions.deny`, ни CI.
+Остальное — `CLAUDE.md`, `DEV_PROTOCOL.md`, [`CODING_STANDARDS.md`](CODING_STANDARDS.md).
 
-## Destructive Operations — NEVER without explicit user confirmation
+## Не делай без явного «да» владельца в чате
 
-An agent must STOP and ask in plain text. "The task seems to require it" is NOT confirmation.
+«Задача, похоже, требует» — не «да». Сомневаешься — считай деструктивным и спроси.
 
-1. **History / commit destruction:**
-   - `git reset --hard` (any ref)
-   - `git rebase` on shared branches (`dev`, `main`)
-   - `git commit --amend` on already-pushed commits
-   - `git reflog expire` / `git gc --prune=now`
+1. **Прод-файлы и данные.** Ручной `rsync`/`rm -rf` по живому веб-руту, `.env`, `images/gallery`, БД — нельзя. Деплой — только `./scripts/release.sh`/CI; откат — `./scripts/rollback.sh prod`. `rm -rf` — только внутри явно ограниченного build/temp-каталога.
+2. **Обход защит.** Не снимай и не правь `scripts/git-hooks/**`, защиту веток, `.github/workflows/guard-*.yml`; не ставь `PIPELINE_BYPASS=1` / `MASTER_AGENT=1` от имени владельца.
+3. **Перепись общей истории.** `git rebase` на `dev`/`main`, `git commit --amend` уже запушенного.
+4. **Потеря незакоммиченного.** Жёсткий reset, `git clean -f*`, `git restore .`, `git stash drop|clear`, `git branch -D`, force-push. Глобальный хук ловит это только на Mac владельца, на VPS и в CI — нет.
 
-2. **Working-tree destruction:**
-   - `git clean -f` / `-fd` / `-fdx`
-   - `git checkout -- .` / `git restore .` (discards uncommitted changes)
-   - `git stash drop` / `git stash clear`
+## Перед рискованной правкой прод-данных
 
-3. **Branch / remote destruction:**
-   - `git branch -D` (force-delete unmerged branch)
-   - `git push --delete` / `git push :branch`
-   - `git push --force` / `--force-with-lease`
-
-4. **Bypassing safety:**
-   - NEVER use `--no-verify` to skip hooks
-   - NEVER set `PIPELINE_BYPASS=1` or `MASTER_AGENT=1` on the user's behalf
-   - NEVER edit `scripts/git-hooks/**` or branch protection rules
-
-5. **Filesystem / deploy destruction:**
-   - NEVER run `rm -rf` outside a clearly scoped build/temp dir
-   - Deploy ONLY via `./scripts/deploy.sh [dev|prod]`. NEVER call `rsync` by hand.
-   - Manual `rsync --delete` against live web-root wipes `current/`, `.env`, `node_modules` (incident 2026-05-22)
-   - NEVER deploy `prod` locally on the user's behalf (`./scripts/deploy.sh prod` is in `permissions.deny`)
-   - Prod ships ONLY through CI: merge a PR into `dev` → `.github/workflows/deploy.yml`
-     (quality-gate on Forgejo → merge into `dev` → `./scripts/release.sh`: build → smoke → auto-rollback; `dev` is the only production branch since 09.09.2026).
-     Agents may run `tea pr merge`, `./scripts/release.sh` and `./scripts/rollback.sh prod`.
-
-If unsure — treat as destructive and ask first.
-Prefer: `git revert` over `reset --hard`, `git stash` over `clean`, new branch over force-push.
-
-## UI Architecture Rules
-
-1. Desktop is the single source-of-truth for structure and data flow.
-2. Mobile is a presentation layer — NOT a separate UI branch.
-3. Do not implement feature changes via hardcoded duplicate markup for mobile/desktop.
-4. If change scope is visual, prefer CSS/class/template updates; do not duplicate business/state logic.
-5. Keep one shared state/action pipeline for both views; only rendering differs.
-6. Legacy mode is not used for production changes.
-
-## 📸 Снапшот перед рискованными правками (обязательно)
-
-Перед любой потенциально деструктивной операцией над прод-данными (деплой, массовое удаление/перезапись файлов, миграции, правки `images/gallery`, `.env`, БД) — **сделать restic-снапшот**:
-
-```
-run(service="ssh", command="/opt/restic-snapshot.sh")
-# или напрямую: ssh aidacamp '/opt/restic-snapshot.sh'
-```
-
-- **Репозиторий: на Яндекс.Диске** — `rclone:yadisk:aidacamp-snapshots/restic` (off-server, на сервере НЕ хранится). Пароль: `/root/.restic-pass`. rclone-remote `yadisk` настроен на сервере.
-- Прод-деплой (`./scripts/deploy.sh prod`) делает снапшот **автоматически** перед выкаткой.
-- Откат: `restic -r rclone:yadisk:aidacamp-snapshots/restic --password-file /root/.restic-pass restore latest --target /tmp/restore --include <путь>`.
-- Ротация: 3 суточных снапшота (`--keep-daily 3`), cron 03:33. Шифрование restic (пароль сохранён владельцем вне сервера).
-- Инцидент-первопричина: пропажа `gallery-additions.json` (2026-06) — фото исчезли с /foto/, бэкапа не было. Снапшоты закрывают этот класс.
+Миграция, массовое удаление/перезапись, правка `images/gallery`, `.env`, БД — сначала restic-снапшот: `ssh aidacamp '/opt/restic-snapshot.sh'`. Деплой его сам **не** делает. Подробности, откат, ротация — [`docs/agent/prod-snapshot.md`](docs/agent/prod-snapshot.md), читай при такой правке.

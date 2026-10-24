@@ -37,7 +37,7 @@ claude \
   --no-session-persistence \
   --max-turns "$MAX_TURNS" \
   --permission-mode bypassPermissions \
-  -p "Ты агент. Задача: $TASK. Worktree: $WORKTREE_DIR. Читай AGENTS.md и DEV_PROTOCOL.md. Пингуй каждые 2-3 шага: ./scripts/agent_ping.sh $TASK_SLUG $TASK_SLUG \"step N: описание\". Финал: ./scripts/agent-done.sh $TASK_SLUG \"описание\"." \
+  -p "Ты агент. Задача: $TASK. Worktree: $WORKTREE_DIR. Читай AGENTS.md и DEV_PROTOCOL.md; при правке UI — CODING_STANDARDS.md. Пингуй каждые 2-3 шага: ./scripts/agent_ping.sh $TASK_SLUG $TASK_SLUG \"step N: описание\". Финал: ./scripts/agent-done.sh $TASK_SLUG \"описание\"." \
   2>&1 | tee -a "$LOG_DIR/$TASK_SLUG.log"
 
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Agent finished: $TASK_SLUG" | tee -a "$LOG_DIR/$TASK_SLUG.log"
