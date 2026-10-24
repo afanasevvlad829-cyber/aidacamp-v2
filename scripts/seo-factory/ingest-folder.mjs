@@ -1,5 +1,5 @@
 import fs from 'node:fs'; import path from 'node:path'; import pg from 'pg';
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp', max: 2 });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://aidacamp@localhost:5432/aidacamp', max: 2 });
 const KEY = process.env.OPENAI_API_KEY;
 const ROOT = process.argv[2];
 function walk(d){let r=[];for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())r=r.concat(walk(p));else if(e.name.endsWith('.md'))r.push(p);}return r;}

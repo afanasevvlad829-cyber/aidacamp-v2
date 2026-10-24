@@ -22,7 +22,7 @@ import path from 'node:path';
 
 const DRY = process.argv.includes('--dry');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://aidacamp@localhost:5432/aidacamp';
 
 if (!OPENAI_API_KEY && !DRY) { console.error('❌  OPENAI_API_KEY не задан'); process.exit(1); }
 

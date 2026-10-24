@@ -14,7 +14,7 @@ description: >
 
 - **Репо:** `~/Aidacamp-cloude`, ветка `dev`
 - **Сервер:** `mcp__aidacamp-tools__ssh` (host: `aidacamp`)
-- **БД:** `postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp`
+- **БД:** `postgresql://aidacamp@localhost:5432/aidacamp`
 - **Деплой dev:** `SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev`
 - **Деплой пуш:** `env MASTER_AGENT=1 git -C ~/Aidacamp-cloude push origin dev`
 - **Дашборд:** `node /opt/seo-dashboard/build.js` (на сервере)

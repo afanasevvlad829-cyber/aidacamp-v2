@@ -251,7 +251,7 @@ git commit -m "feat: add RSS feed for Yandex Zen at /rss.xml"
 **Files:**
 - Create: `scripts/migrate-social-fields.sql`
 
-**Подключение к БД:** `postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp` (из `/opt/aidacamp-tools/mcp/.env`)
+**Подключение к БД:** `postgresql://aidacamp@localhost:5432/aidacamp` (из `/opt/aidacamp-tools/mcp/.env`)
 
 **Текущая структура таблицы:**
 ```sql
@@ -285,7 +285,7 @@ CREATE INDEX IF NOT EXISTS idx_article_views_metrika ON article_views(metrika_vi
 
 Выполнить команду через `mcp__aidacamp-tools__ssh`:
 ```bash
-psql "postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp" < /tmp/migrate-social-fields.sql
+psql "postgresql://aidacamp@localhost:5432/aidacamp" < /tmp/migrate-social-fields.sql
 ```
 
 Сначала скопировать файл на сервер:
@@ -295,7 +295,7 @@ psql "postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp" < /tmp/migrate
 
 Альтернатива: передать SQL напрямую через psql:
 ```bash
-psql "postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp" -c "
+psql "postgresql://aidacamp@localhost:5432/aidacamp" -c "
 ALTER TABLE article_views
   ADD COLUMN IF NOT EXISTS metrika_visits INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS metrika_synced_at TIMESTAMPTZ,
@@ -316,7 +316,7 @@ ALTER TABLE article_views
 - [ ] **Шаг 3: Проверить структуру таблицы**
 
 ```bash
-psql "postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp" -c "\d article_views"
+psql "postgresql://aidacamp@localhost:5432/aidacamp" -c "\d article_views"
 ```
 
 Ожидаемый вывод: таблица с 13 полями включая `vk_post_id`, `metrika_visits`, `ok_post_id`.
@@ -339,7 +339,7 @@ git commit -m "feat: add social media fields to article_views table"
 
 **Данные сервера:**
 - Токен ВК: `VK_USER_TOKEN` из `/opt/aidacamp-tools/.env`
-- БД: `postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp`
+- БД: `postgresql://aidacamp@localhost:5432/aidacamp`
 - VK user ID Дарьи: `712299377`
 - VK API: `https://api.vk.com/method/wall.post?v=5.199`
 
@@ -379,7 +379,7 @@ import https from 'https';
 import http from 'http';
 import { FormData } from 'undici';
 
-const DB_URL = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const DB_URL = 'postgresql://aidacamp@localhost:5432/aidacamp';
 const ENV = Object.fromEntries(
   fs.readFileSync('/opt/aidacamp-tools/.env', 'utf-8')
     .split('\n').filter(l => l.includes('=')).map(l => l.split('=').map(s => s.trim()))
@@ -561,7 +561,7 @@ chmod +x /opt/social-poster/run-poster.sh
 import pg from 'pg';
 import fs from 'fs';
 
-const DB_URL = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const DB_URL = 'postgresql://aidacamp@localhost:5432/aidacamp';
 const ENV = Object.fromEntries(
   fs.readFileSync('/opt/aidacamp-tools/.env', 'utf-8')
     .split('\n').filter(l => l.includes('=')).map(l => l.split('=').map(s => s.trim()))
@@ -697,7 +697,7 @@ Posted: https://vk.com/id712299377?w=wall712299377_XXXXX
 - [ ] **Шаг 5: Проверить пост в ВК и в БД**
 
 ```bash
-psql "postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp" \
+psql "postgresql://aidacamp@localhost:5432/aidacamp" \
   -c "SELECT slug, vk_post_id, vk_posted_at FROM article_views WHERE vk_post_id IS NOT NULL"
 ```
 

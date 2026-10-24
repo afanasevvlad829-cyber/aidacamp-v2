@@ -31,7 +31,7 @@ const env = Object.fromEntries(
     .filter(l => l.includes('=')).map(l => [l.split('=')[0].trim(), l.split('=').slice(1).join('=').trim()])
 );
 const MCP_BASE = 'http://127.0.0.1:3457';
-const PG = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const PG = 'postgresql://aidacamp@localhost:5432/aidacamp';
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
 function mcpHeaders(sid) {

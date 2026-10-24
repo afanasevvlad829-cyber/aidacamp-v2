@@ -19,7 +19,7 @@
 //   node seo-semantics-expand.mjs <site> [--limit N] [--min-volume N] [--dry]
 import { execFileSync } from 'node:child_process';
 
-const PG = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const PG = 'postgresql://aidacamp@localhost:5432/aidacamp';
 const SITE = process.argv[2];
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? Number(process.argv[i + 1]) : d; };
 const DRY = process.argv.includes('--dry');

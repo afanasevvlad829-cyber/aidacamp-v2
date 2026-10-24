@@ -1,5 +1,5 @@
 import fs from 'node:fs'; import pg from 'pg';
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp', max: 2 });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://aidacamp@localhost:5432/aidacamp', max: 2 });
 const KEY = process.env.OPENAI_API_KEY;
 const [,, file, srcPrefix] = process.argv;
 const text = fs.readFileSync(file, 'utf8');

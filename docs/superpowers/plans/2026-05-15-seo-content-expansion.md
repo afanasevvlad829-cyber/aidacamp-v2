@@ -13,7 +13,7 @@
 ## Контекст и данные
 
 **Сервер:** root@159.194.223.55, ключ `~/.ssh/aidacamp_prod`
-**БД:** `postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp`
+**БД:** `postgresql://aidacamp@localhost:5432/aidacamp`
 **Webmaster:** USER_ID=19303961, HOST=`https:aidacamp.ru:443`, TOKEN из `/opt/aidacamp-hub/.env` (WEBMASTER_TOKEN)
 **Деплой:** `SKIP_GIT_GUARD=1 npm run build && SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev`
 **Коммит:** `MASTER_AGENT=1 git commit -m "feat(seo): ..."`
@@ -225,7 +225,7 @@ SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev
 
 - [ ] **Шаг 1.9: Логировать в seo_changes**
 ```bash
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp -c \"
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp@localhost:5432/aidacamp -c \"
 INSERT INTO seo_changes (url, change_type, description) VALUES
 ('/stati/kak-vybrat-detskiy-lager', 'new_page', 'Новая статья: 7 критериев выбора лагеря. Закрывает 404.'),
 ('/stati/rebenok-boitsya-lagerya', 'new_page', 'Новая статья: ребёнок боится лагеря. Закрывает 404.'),
@@ -421,7 +421,7 @@ SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev 2>&1 | tail -4
 
 - [ ] **Шаг 2.9: Логировать в seo_changes**
 ```bash
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp -c \"
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp@localhost:5432/aidacamp -c \"
 INSERT INTO seo_changes (url, change_type, description) VALUES
 ('/lager-dlya-malchikov', 'content', '+2 секции: программа дня для мальчиков, причины возврата. ~+380 слов'),
 ('/lager-istra', 'content', '+2 секции: маршрут из Истры, IT vs кружок. ~+350 слов'),
@@ -606,7 +606,7 @@ SKIP_GIT_GUARD=1 npm run build 2>&1 | grep -E "error|Finished" | tail -3
 SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev 2>&1 | tail -4
 
 # seo_changes
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp -c \"
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp@localhost:5432/aidacamp -c \"
 INSERT INTO seo_changes (url, change_type, description) VALUES
 ('/lager-balashiha', 'content', '+2 секции: маршрут + безопасность/связь. ~+360 слов'),
 ('/lager-stupino', 'content', '+2 секции: маршрут + IT-программа. ~+350 слов'),
@@ -757,7 +757,7 @@ description="Сколько времени детям можно проводи�
 SKIP_GIT_GUARD=1 npm run build 2>&1 | grep -E "error|Finished" | tail -3
 SKIP_GIT_GUARD=1 ./scripts/deploy.sh dev 2>&1 | tail -4
 
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp -c \"
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp@localhost:5432/aidacamp -c \"
 INSERT INTO seo_changes (url, change_type, description) VALUES
 ('/stati/zavisimost-u-detej', 'title+content', 'title → «признаки и 5 шагов»; +секция норма vs зависимость'),
 ('/stati/poleznyj-otdyh-dlya-detej', 'title+content', 'title → «7 форматов»; +сравнительная таблица форматов'),
@@ -948,7 +948,7 @@ curl -s -o /dev/null -w "%{http_code}" https://dev.aidacamp.ru/lager-letom
 
 - [ ] **Шаг 5.6: Логировать и вебмастер**
 ```bash
-ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp -c \"
+ssh -i ~/.ssh/aidacamp_prod root@159.194.223.55 "psql postgresql://aidacamp@localhost:5432/aidacamp -c \"
 INSERT INTO seo_changes (url, change_type, description) VALUES
 ('/lager-letom', 'new_page', 'Новый лендинг под ВЧ «лето лагерь» 23820. 6 секций, 1500+ слов.');
 \""

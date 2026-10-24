@@ -18,7 +18,7 @@ function log(m){const t=new Date().toISOString().replace('T',' ').slice(0,19);co
 
 function getDbClient(){
   const env = fs.readFileSync('/opt/aidacamp-tools/mcp/.env','utf8');
-  const conn = env.match(/DATABASE_URL=(.+)/)?.[1]?.trim() || 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+  const conn = env.match(/DATABASE_URL=(.+)/)?.[1]?.trim() || 'postgresql://aidacamp@localhost:5432/aidacamp';
   return new Client({connectionString: conn});
 }
 

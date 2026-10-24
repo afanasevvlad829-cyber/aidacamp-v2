@@ -23,7 +23,7 @@ import pg from 'pg';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) { console.error('❌  OPENAI_API_KEY не задан'); process.exit(1); }
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://aidacamp@localhost:5432/aidacamp';
 const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 2 });
 
 const CHUNK_SIZE    = 400;  // символов на чанк

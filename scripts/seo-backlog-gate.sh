@@ -41,7 +41,7 @@
 
 set -euo pipefail
 
-PG="${SEO_PG:-postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp}"
+PG="${SEO_PG:-postgresql://aidacamp@localhost:5432/aidacamp}"
 MIN_IMPRESSIONS="${MIN_IMPRESSIONS:-10}"
 MIN_VOLUME="${MIN_VOLUME:-100}"
 PAGE_MIN_IMPRESSIONS="${PAGE_MIN_IMPRESSIONS:-20}"
