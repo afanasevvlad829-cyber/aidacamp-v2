@@ -479,21 +479,116 @@ function getArticleCategory(url: string): string {
 
   <Header />
 
-  <section class="relative overflow-hidden bg-slate-50 border-b border-slate-200" data-hero-effect={heroEffect}>
-    <div class="relative z-10 mx-auto max-w-[1120px] px-4 pt-10 pb-10 md:pt-14 md:pb-12">
-      <nav class="mb-4 text-[13px] text-slate-500" aria-label="Хлебные крошки">
-        <a href="/" class="hover:text-slate-800 transition-colors">Главная</a>
-        <span class="mx-1.5 text-slate-300">›</span>
-        <span class="text-slate-700 font-medium">Статьи</span>
-      </nav>
-      <h1 class="text-[28px] font-bold text-slate-900 md:text-[40px] tracking-[-0.02em] leading-[1.1]">
-        Статьи для родителей
-      </h1>
-      <p class="mt-3 text-[16px] md:text-[17px] text-slate-600 max-w-[640px] leading-[1.6]">
-        Честно о подростках, гаджетах и летнем отдыхе — без педагогических терминов и нотаций. {totalCount} материалов от команды АйДаКемп.
-      </p>
+  <!-- Blog Hero -->
+  <section class="stati-hero relative overflow-hidden bg-[#0d1a2b]">
+    <!-- Gradient orbs -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <div class="stati-orb-1 absolute -top-32 right-[-80px] h-[480px] w-[480px] rounded-full bg-primary/25 blur-[110px]"></div>
+      <div class="stati-orb-2 absolute bottom-[-60px] left-[-60px] h-[320px] w-[320px] rounded-full bg-blue-500/10 blur-[90px]"></div>
+      <div class="absolute inset-0" style="background-image:radial-gradient(rgba(255,255,255,0.07) 1px,transparent 1px);background-size:28px 28px;"></div>
+    </div>
+
+    <div class="relative z-10 mx-auto max-w-[1120px] px-4 pt-12 pb-12 md:pt-20 md:pb-16">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
+
+        <!-- Left: content -->
+        <div class="max-w-[620px]">
+          <!-- Breadcrumb -->
+          <nav class="mb-5 text-[13px] text-white/40" aria-label="Хлебные крошки">
+            <a href="/" class="hover:text-white/70 transition-colors">Главная</a>
+            <span class="mx-1.5 text-white/20">›</span>
+            <span class="text-white/60 font-medium">Статьи</span>
+          </nav>
+
+          <!-- Badge -->
+          <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1.5">
+            <i class="bi bi-journal-bookmark text-primary text-[13px]" aria-hidden="true"></i>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-white/60">Блог АйДаКемп</span>
+          </div>
+
+          <!-- H1 -->
+          <h1 class="mb-4 text-[32px] font-bold leading-[1.1] tracking-[-0.03em] text-white md:text-[50px]">
+            Статьи <span class="text-primary">для родителей</span><br class="hidden md:block" />
+            о детях, технологиях<br class="hidden md:block" />и лете
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="mb-8 max-w-[500px] text-[15px] leading-[1.65] text-white/55 md:text-[17px]">
+            Честно — без педагогических терминов и нотаций. {totalCount} материалов от команды АйДаКемп.
+          </p>
+
+          <!-- Stats row -->
+          <div class="flex flex-wrap gap-6">
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
+                <i class="bi bi-file-text text-primary text-[14px]" aria-hidden="true"></i>
+              </div>
+              <div>
+                <div class="text-[22px] font-bold leading-none text-white">{totalCount}</div>
+                <div class="text-[11px] text-white/40 mt-0.5">статей</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
+                <i class="bi bi-book text-primary text-[14px]" aria-hidden="true"></i>
+              </div>
+              <div>
+                <div class="text-[22px] font-bold leading-none text-white">{clusters.length}</div>
+                <div class="text-[11px] text-white/40 mt-0.5">темы</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
+                <i class="bi bi-people text-primary text-[14px]" aria-hidden="true"></i>
+              </div>
+              <div>
+                <div class="text-[22px] font-bold leading-none text-white">8+</div>
+                <div class="text-[11px] text-white/40 mt-0.5">авторов</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: floating topic cards (desktop) -->
+        <div class="hidden lg:flex flex-col gap-3 shrink-0 w-[260px]" aria-hidden="true">
+          {clusters.slice(0, 5).map((c, i) => (
+            <div
+              class="stati-card flex items-center gap-3 rounded-2xl border border-white/8 bg-white/5 px-4 py-3 backdrop-blur-sm"
+              style={`animation-delay:${i * 0.12}s`}
+            >
+              <div class={`h-2 w-2 rounded-full shrink-0 ${
+                c.color === 'emerald' ? 'bg-emerald-400' :
+                c.color === 'blue' ? 'bg-blue-400' :
+                c.color === 'purple' ? 'bg-purple-400' :
+                c.color === 'amber' ? 'bg-amber-400' : 'bg-rose-400'
+              }`}></div>
+              <div>
+                <div class="text-[13px] font-semibold text-white/80">{c.label}</div>
+                <div class="text-[11px] text-white/35">{c.articles.length} статей</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
     </div>
   </section>
+
+  <style>
+    .stati-orb-1 { animation: stati-pulse 6s ease-in-out infinite alternate; }
+    .stati-orb-2 { animation: stati-pulse 8s ease-in-out infinite alternate-reverse; }
+    .stati-card  { animation: stati-float 0.5s ease both; }
+    @keyframes stati-pulse {
+      from { opacity: 0.8; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.08); }
+    }
+    @keyframes stati-float {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .bg-white\/8 { background-color: rgba(255,255,255,0.08); }
+    .border-white\/8 { border-color: rgba(255,255,255,0.08); }
+  </style>
 
   <main class="mx-auto max-w-[1120px] px-4 py-8 pb-20">
 
