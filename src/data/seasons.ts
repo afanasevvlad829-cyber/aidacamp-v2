@@ -31,6 +31,12 @@ export interface SeasonCalWindow {
   primary?: boolean; // основной заезд
 }
 
+/** Что ребёнок этого возраста делает на смене — для возрастного роутинга. */
+export interface SeasonAgeTrack {
+  age: string;    // '7–9' | '10–12' | '13–15' — те же группы, что в AgeBar
+  what: string;   // «Scratch и Minecraft» — коротко, помещается в плашку
+}
+
 export interface SeasonConfig {
   slug: string;                 // slug предзаписи: osen-2026
   path: string;                 // путь страницы: /lager-na-osennie-kanikuly
@@ -50,6 +56,10 @@ export interface SeasonConfig {
     facts: string[];            // список фактов (цена, вычет, оплата...)
   };
   windows?: string[];           // окна заездов для предзаписи (четверти/триместры)
+  // Треки по возрасту. Нужны, чтобы после выбора возраста человек увидел СВОЙ
+  // вариант, а не общую полку. Числа ровесников для сезона предзаписи не
+  // показываем — набора ещё нет, и «N ребят уже едут» было бы выдумкой.
+  ageTracks?: SeasonAgeTrack[];
   windowsBlock?: { heading: string; intro: string; items: string[] };
   calendarWindows?: SeasonCalWindow[];  // те же окна в виде мини-календарей
   schedule: { heading: string; intro: string; days: SeasonDay[] };
@@ -95,6 +105,13 @@ export const AUTUMN_SEASON: SeasonConfig = {
   windows: [
     '25–31 октября — основной заезд',
     '15–21 ноября — для триместровых школ',
+  ],
+  // Разбивка по трекам — из расписания смены (день 2): Scratch и Minecraft для
+  // младших, Python и AI для средних, Roblox Studio для тех, кто делает игры.
+  ageTracks: [
+    { age: '7–9',   what: 'Scratch и Minecraft — первые работающие игры' },
+    { age: '10–12', what: 'Python и Roblox Studio — своя игра к концу смены' },
+    { age: '13–15', what: 'Python и нейросети — проект, который не стыдно показать' },
   ],
   windowsBlock: {
     heading: 'Два заезда — под любой график каникул',
