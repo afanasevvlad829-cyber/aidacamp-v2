@@ -35,7 +35,10 @@ export const GET: APIRoute = async () => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    if (!body || typeof body !== 'object' || !Array.isArray((body as any).days)) {
+    // Принимаем И старый одиночный план (есть .days), И коллекцию смен (есть .shifts)
+    const valid = body && typeof body === 'object' &&
+      (Array.isArray((body as any).days) || Array.isArray((body as any).shifts));
+    if (!valid) {
       return json({ ok: false, error: 'invalid plan' }, 400);
     }
     await mkdir(dirname(DATA_FILE), { recursive: true });
