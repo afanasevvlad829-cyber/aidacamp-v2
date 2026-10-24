@@ -39,7 +39,6 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const _a = requireStaff(locals);
   if (_a instanceof Response) return _a;
   const { role, sub } = _a;
-  const role = role;
 
   const body = await readBody(request);
 
