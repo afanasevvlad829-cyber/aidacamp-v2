@@ -182,12 +182,13 @@
         var YM_ID = 96499295;
         var _fired = new Set(JSON.parse(sessionStorage.getItem('ym_fired') || '[]'));
         function _persist() { try { sessionStorage.setItem('ym_fired', JSON.stringify([..._fired])); } catch(e){} }
-        window.trackGoal = function (id, params) {
+        var TMR_ID = 3755202;
+        window.trackGoal = function (id, params, value) {
           if (_fired.has(id)) return;
           _fired.add(id);
           _persist();
           try { if (typeof window.ym !== 'undefined') window.ym(YM_ID, 'reachGoal', id, params || {}); } catch(e){}
-          try { window.dispatchEvent(new CustomEvent(id, { detail: params || {} })); } catch(e){}
+          try { window._tmr = window._tmr || []; window._tmr.push({ type: 'reachGoal', id: TMR_ID, value: value || 100, goal: id }); } catch(e){}
         };
         window.initScrollTracking = function () {
           var goals = [{p:25,id:'scroll_25'},{p:50,id:'scroll_50'},{p:75,id:'scroll_75'},{p:90,id:'scroll_90'}];
@@ -210,7 +211,7 @@
           });
         };
       })();
-    </script><link rel="preload" href="/_astro/Base.Dc6JBkfZ.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/_astro/Base.Dc6JBkfZ.css"></noscript></head> <body class="font-sans text-[var(--color-text)] bg-white antialiased">  <div class="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center"> <p class="text-[80px] font-bold leading-none text-slate-200">404</p> <h1 class="mt-4 text-[24px] font-bold text-slate-900">Страница не найдена</h1> <p class="mt-2 text-[15px] text-slate-500">Возможно, она была удалена или вы перешли по неверной ссылке</p> <a href="/" class="mt-6 rounded-xl bg-[#ec7c00] px-6 py-3 text-[15px] font-semibold text-[#1e2430] transition hover:shadow-lg">
+    </script><link rel="preload" href="/_astro/Base.x96uiwRH.css" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/_astro/Base.x96uiwRH.css"></noscript></head> <body class="font-sans text-[var(--color-text)] bg-white antialiased">  <div class="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center"> <p class="text-[80px] font-bold leading-none text-slate-200">404</p> <h1 class="mt-4 text-[24px] font-bold text-slate-900">Страница не найдена</h1> <p class="mt-2 text-[15px] text-slate-500">Возможно, она была удалена или вы перешли по неверной ссылке</p> <a href="/" class="mt-6 rounded-xl bg-[#ec7c00] px-6 py-3 text-[15px] font-semibold text-[#1e2430] transition hover:shadow-lg">
 На главную
 </a> </div>  <!-- Nudge toast --> <div id="nudge-toast" class="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-[420px] translate-y-full opacity-0 transition-all duration-300 pointer-events-auto md:bottom-6 md:left-auto md:right-6"> <div class="flex items-start gap-3 rounded-[14px] bg-slate-900/95 px-4 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.25)] backdrop-blur-sm"> <div class="flex-1"> <span id="nudge-text" class="text-[14px] leading-[1.45] text-white/90"></span> <span id="nudge-sub" class="block mt-0.5 text-[12px] leading-[1.4] text-white/60"></span> </div> <button id="nudge-close" class="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:text-white/70 transition-colors" aria-label="Закрыть"> <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg> </button> </div> </div> <script>
       // initNudges отключены
@@ -255,6 +256,7 @@
                  px-4 py-2.5 text-[14px] font-semibold text-[#1e2430]
                  shadow-[0_2px_8px_rgba(236,124,0,0.25)]
                  active:scale-95 transition-all whitespace-nowrap" data-astro-cid-s5dfcfzj>Посмотреть →</button> <button id="age-bar-nudge-close" class="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Закрыть" data-astro-cid-s5dfcfzj> <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" data-astro-cid-s5dfcfzj><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" data-astro-cid-s5dfcfzj></path></svg> </button> </div> </div> </div> </div>  <script type="module">
+  import { trackGoal } from '../scripts/analytics';
   const bar       = document.getElementById('age-bar');
   const AGE_COUNTS = JSON.parse(bar?.dataset.ageCounts || '{}');
   const phase1    = document.getElementById('age-bar-phase1');
@@ -358,9 +360,7 @@
       clearTimeout(awakenTimer);
 
       // Аналитика
-      if (typeof window.ym !== 'undefined') window.ym(96499295, 'reachGoal', 'age_select');
-      window._tmr = window._tmr || [];
-      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_select' });
+      trackGoal('age_select');
 
       // Сохраняем возраст
       sessionStorage.setItem('selected_age', age);
@@ -376,14 +376,8 @@
 
   // Тап на нудж → открыть ShiftModal Смены 1
   nudgeCta?.addEventListener('click', () => {
-    if (typeof window.ym !== 'undefined') {
-      window.ym(96499295, 'reachGoal', 'check_places');
-      window.ym(96499295, 'reachGoal', 'age_bar_nudge_click');
-    }
-    if (typeof window._tmr !== 'undefined') {
-      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'check_places' });
-      window._tmr.push({ type: 'reachGoal', id: 3755202, value: 100, goal: 'age_bar_nudge_click' });
-    }
+    trackGoal('check_places');
+    trackGoal('age_bar_nudge_click');
     hideBar();
     document.dispatchEvent(
       new CustomEvent('shift-modal-open', { detail: { shiftId: 'shift-1', tab: 'description' } })
