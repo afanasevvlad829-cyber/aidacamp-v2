@@ -5,8 +5,8 @@ import type { LandingData } from './types';
 const landing: LandingData = {
   slug: 'lager-balashiha',
   title: `Летний детский лагерь в Балашихе ${SEASON_YEAR} — IT-смены для школьников | АйДаКемп`,
-  description: 'Детский IT-лагерь для школьников из Балашихи: трансфер от м. Солнцево (2 000 ₽), налоговый вычет, бассейн. Python, AI, Minecraft, 7–15 лет.',
-  h1: 'Детский лагерь рядом с Балашихой',
+  description: 'Летний детский IT-лагерь для школьников из Балашихи: трансфер от м. Солнцево (2 000 ₽), налоговый вычет, бассейн. Python, AI, Minecraft, 7–15 лет.',
+  h1: 'Летний детский лагерь рядом с Балашихой',
   canonical: 'https://aidacamp.ru/lager-balashiha',
   heroImage: '/images/hero/lager-v-podmoskove.avif',
   faqItems: [

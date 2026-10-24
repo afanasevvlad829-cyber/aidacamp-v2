@@ -58,6 +58,7 @@ export default defineConfig({
         !page.includes('/staff/') && // внутренний конструктор смен, доступ по cookie, noindex
         !page.includes('/audit-portal') && // внутренние security/audit-дашборды, noindex
         !page.includes('/prototype/') && // черновики-прототипы, noindex
+        !page.includes('/leto-dlya-sebya/') && // noindex-лендинг: карта не должна его звать (Labrika: смешанный сигнал)
         !page.includes('/r/') && // персонализированная страница для возвратников (рассылка), не для органики
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         // Редирект-стабы и битые страницы — НЕ в sitemap (иначе смешанный сигнал
