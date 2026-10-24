@@ -64,7 +64,6 @@ secretctl run -k <ИМЯ_СЕКРЕТА> -- <команда>
 | `green-api-tg` | `GREEN_API_TG_*` | Green API (Telegram через WA-gateway) |
 | `dataforseo` | `DATAFORSEO_LOGIN` / `DATAFORSEO_KEY` | DataForSEO (SEO данные) |
 | `kinescope` | `KINESCOPE_TOKEN` | Kinescope (видеохостинг) |
-| `N8n` | — | n8n (запущен на :5678) |
 | `SSH-PROD` | — | SSH ключ продакшн сервера 159.194.223.55 |
 | `SSH-DEV` | — | SSH ключ dev сервера |
 | `aidacamp-ask` | — | Внутренний Q&A инструмент |
@@ -1054,7 +1053,6 @@ ai_tg_users           — маппинг телефон → TG peer_id
 | `aidacamp-mcp.service` | 3010 | MCP-сервер для агентов |
 | `crm-panel-api.service` | 6300 | CRM панель реактивации |
 | `aidacamp-fasttrack.service` | — | Форма лидов → АльфаCRM |
-| `n8n` (docker) | 5678 | Автоматизация (n8n) |
 | `nginx` | 80/443 | Прокси aidacamp.ru |
 | `postgresql` | 5432 | БД (только localhost) |
 

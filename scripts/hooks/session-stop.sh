@@ -12,6 +12,10 @@ REGISTRY="$REPO_ROOT/.agent-registry.json"
 # Только для agent/* веток, не для main/dev
 [[ "$CURRENT_BRANCH" != agent/* ]] && exit 0
 
+# Heartbeat — сессия закрыта
+AGENT_SLUG="${CURRENT_BRANCH#agent/}"
+bash "$REPO_ROOT/scripts/agent_ping.sh" "$AGENT_SLUG" "$AGENT_SLUG" "session-stop" 2>/dev/null || true
+
 # Проверяем статус PR
 PR_STATE=$(gh pr view "$CURRENT_BRANCH" --json state -q .state 2>/dev/null || echo "NONE")
 

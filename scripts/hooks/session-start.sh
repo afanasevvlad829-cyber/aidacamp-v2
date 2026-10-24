@@ -51,6 +51,13 @@ else
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 fi
 
+# Heartbeat — сессия открыта
+AGENT_SLUG=$(echo "$CURRENT_BRANCH" | sed 's|agent/||')
+if [[ "$AGENT_SLUG" != "$CURRENT_BRANCH" ]]; then
+  # Мы в agent/* ветке — пингуем
+  bash "$REPO_ROOT/scripts/agent_ping.sh" "$AGENT_SLUG" "$AGENT_SLUG" "session-start" 2>/dev/null || true
+fi
+
 python3 - <<PYEOF
 import json
 context = """$CONTEXT"""

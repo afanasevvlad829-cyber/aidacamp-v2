@@ -72,6 +72,9 @@ with open("$REGISTRY", "w") as f:
 print("  ✅ Реестр обновлён")
 PYEOF
 
+# Heartbeat — агент стартовал
+"$REPO_ROOT/scripts/agent_ping.sh" "$TASK_SLUG" "$TASK_SLUG" "started"
+
 echo ""
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}${BOLD}  ✅ ГОТОВО${NC}"

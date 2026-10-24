@@ -47,3 +47,44 @@ Prefer: `git revert` over `reset --hard`, `git stash` over `clean`, new branch o
 4. If change scope is visual, prefer CSS/class/template updates; do not duplicate business/state logic.
 5. Keep one shared state/action pipeline for both views; only rendering differs.
 6. Legacy mode is not used for production changes.
+
+## Agent Heartbeat Protocol
+
+Каждый агент должен сообщать о прогрессе — watchdog детектирует зависание.
+
+### Старт и финиш — автоматически
+`agent-start.sh` и `agent-done.sh` пингуют сами. Ничего делать не нужно.
+
+### В процессе работы — каждые 2-3 tool call
+```bash
+./scripts/agent_ping.sh "<agent-slug>" "<task-id>" "<current step>"
+```
+
+**Примеры:**
+```bash
+./scripts/agent_ping.sh "unify-portal-components" "task-001" "step 3/7: rewriting Card.astro"
+./scripts/agent_ping.sh "fix-seo-placeholders"    "task-002" "step 2/3: replacing 14 files"
+```
+
+### Формат шага
+`"step N/TOTAL: что делаю"` — коротко, понятно человеку.
+
+### Пороги watchdog
+- 🟡 **SLOW**: молчит > 60 сек → предупреждение
+- 🔴 **DEAD**: молчит > 120 сек → уведомление на мак
+
+### Мониторинг (запускать на маке)
+```bash
+./scripts/agent_status.sh                          # разовый статус
+./scripts/agent_watchdog.sh &                      # фоновый watchdog
+./scripts/agent_watchdog.sh --interval 20 --timeout 180  # кастомные пороги
+```
+
+## Agent Heartbeat Protocol
+
+Старт и финиш пингуют автоматически (agent-start.sh / agent-done.sh).
+В процессе — каждые 2-3 tool call:
+
+    ./scripts/agent_ping.sh "<slug>" "<task>" "step N/TOTAL: что делаю"
+
+Пороги: 🟡 > 60с, 🔴 > 120с. Watchdog: ./scripts/agent_watchdog.sh &

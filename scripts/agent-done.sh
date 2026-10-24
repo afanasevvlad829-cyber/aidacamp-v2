@@ -49,6 +49,9 @@ for a in data["agents"]:
 with open("$REGISTRY","w") as f: json.dump(data,f,ensure_ascii=False,indent=2)
 PYEOF
 fi
+
+# Heartbeat — агент завершил работу
+"$REPO_ROOT/scripts/agent_ping.sh" "$TASK_SLUG" "$TASK_SLUG" "done: $DESCRIPTION"
 echo -e "${GREEN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}${BOLD}  ✅ ГОТОВО! PR: $PR_URL${NC}"
 echo ""
