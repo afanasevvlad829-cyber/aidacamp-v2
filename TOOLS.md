@@ -348,10 +348,35 @@ direct_api("bids", "set", {"Bids": [
 ]})
 
 # Модификаторы ставок (устройства, регионы, пол/возраст)
+# ⚠️ ВНИМАНИЕ: add использует PLURAL (множ. число), get возвращает SINGULAR!
+# Подробности: _notes/Библиотека знаний/Яндекс.Директ — основные правила.md → 2026-06-19
+
+# ADD — множественное число для региональных и демографических
 direct_api("bidmodifiers", "add", {"BidModifiers": [{
     "CampaignId": 123456,
-    "MobileAdjustment": {"BidModifier": 80},  # -20% для мобильных
+    "MobileAdjustment": {"BidModifier": 80},          # singular — исключение
+    "RegionalAdjustments": [                           # plural!
+        {"RegionId": 10758, "BidModifier": 125},       # Химки +25%
+        {"RegionId": 10740, "BidModifier": 125},       # Мытищи +25%
+    ],
+    "DemographicsAdjustments": [                       # plural!
+        {"Gender": "GENDER_MALE", "Age": "AGE_35_44", "BidModifier": 130},
+    ],
 }]})
+
+# SET (обновить существующий по Id)
+direct_api("bidmodifiers", "set", {"BidModifiers": [
+    {"Id": 111905698736, "BidModifier": 130},
+]})
+
+# GET — обязательно Levels, и FieldNames для каждого типа
+direct_api("bidmodifiers", "get", {
+    "SelectionCriteria": {"CampaignIds": [123456], "Levels": ["CAMPAIGN"]},
+    "FieldNames": ["Id", "CampaignId", "Type"],
+    "DemographicsAdjustmentFieldNames": ["Gender", "Age", "BidModifier", "Enabled"],
+    "RegionalAdjustmentFieldNames": ["RegionId", "BidModifier", "Enabled"],
+    "MobileAdjustmentFieldNames": ["BidModifier"],
+})
 ```
 
 ---
