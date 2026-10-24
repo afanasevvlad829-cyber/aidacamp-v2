@@ -15,6 +15,8 @@
  *   - title: заголовок над калькулятором (по умолчанию "Калькулятор налогового вычета")
  */
 
+import { mainShifts, shortShifts } from '../data/shifts';
+
 interface Props {
   variant?: 'full' | 'compact';
   title?: string;
@@ -22,14 +24,27 @@ interface Props {
 
 const { variant = 'full', title = 'Калькулятор налогового вычета' } = Astro.props;
 
-const shifts = [
-  { id: 's1',   label: 'Смена 1 — 30 мая – 8 июня, 10 дней',  price: 74900, days: 10 },
-  { id: 's21',  label: 'Смена 2.1 — 10 – 16 июня, 7 дней',    price: 48000, days: 7  },
-  { id: 's2',   label: 'Смена 2 — 10 – 23 июня, 14 дней',     price: 95000, days: 14, popular: true },
-  { id: 's22',  label: 'Смена 2.2 — 16 – 23 июня, 8 дней',    price: 65000, days: 8  },
-  { id: 's3',   label: 'Смена 3 — 3 – 15 августа, 13 дней',   price: 89400, days: 13 },
-  { id: 's4',   label: 'Смена 4 — 17 – 26 августа, 10 дней',  price: 69600, days: 10 },
+// Дни — парсим из shift.duration "10 дней" / "14 дней" (единый источник правды).
+// Цена — из shift.price ("74 900 ₽" → 74900).
+const parsePrice = (s: string) => parseInt(s.replace(/\s/g, '').replace(/[^\d]/g, ''), 10) || 0;
+const parseDays = (s: string) => parseInt(s, 10) || 0;
+
+// Порядок такой же, как в data/shifts.allShifts: смена 1, 2, 2.1, 2.2, 3, 4.
+const orderedShifts = [
+  mainShifts[0],
+  mainShifts[1],
+  ...shortShifts,
+  mainShifts[2],
+  mainShifts[3],
 ];
+
+const shifts = orderedShifts.map((s) => ({
+  id: s.id,  // 'shift-1' / 'shift-2' / 'shift-2-1' / ...
+  label: `${s.name} — ${s.dates}, ${s.duration}`,
+  price: parsePrice(s.price),
+  days: parseDays(s.duration),
+  popular: s.popular ?? false,
+}));
 ---
 
 <section class="tax-calc mx-auto my-8 max-w-[720px] rounded-[16px] border border-orange-100 bg-white p-6 md:p-8 shadow-[0_4px_20px_rgba(249,115,22,0.08)]">
