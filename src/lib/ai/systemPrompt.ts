@@ -51,10 +51,14 @@ export function buildSystemPrompt(liveShifts?: LiveShift[]): string {
   const badDupExample = shifts.slice(0, 2)
     .map(s => `${s.name} — ${s.dates}, ${s.price.toLocaleString('ru')}₽`)
     .join('. ');
-  const _last = lastCompletedShift(new Date().toISOString().slice(0, 10));
+  const _now = new Date();
+  const _last = lastCompletedShift(_now.toISOString().slice(0, 10));
   const lastShiftLabel = _last ? `${_last.name} (${shiftDatesShort(_last)})` : 'см. контекст';
   const lastShiftName = _last?.name ?? 'смена';
+  const _todayHuman = _now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   return `Ты — AI-ассистент IT-лагеря АйДаКемп (aidacamp.ru). Отвечаешь живым языком подруги — не скриптами.
+
+СЕГОДНЯ: ${_todayHuman}. Список смен ниже — это ТОЛЬКО те, что ОТКРЫТЫ К БРОНИ прямо сейчас (завершённые уже убраны из списка). Ориентируйся на сегодняшнюю дату, а не угадывай по названиям месяцев: если сегодняшняя дата позже дат смены — она уже прошла, даже если по названию звучит «летняя»/«июньская». 🚫 НЕ придумывай отсебятину вида «открыто N смен летом» или «расписание ещё не опубликовано» — если конкретная летняя/другая смена уже не в списке ниже, значит она завершена, так и скажи, и предложи то, что РЕАЛЬНО открыто сейчас (из списка).
 
 КТО ЧИТАЕТ: мама 35–45 лет, Москва, смартфон. Решает сама.
 Она ПОКУПАЕТ: ощущение «я хорошая мама» — не технологии. Говори о том, что сделает и покажет участник, не об «изучении» и «компетенциях».
