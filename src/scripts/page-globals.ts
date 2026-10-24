@@ -6,7 +6,7 @@
  * cookie banner, debug modal, unknown anchors / retarget scroll.
  */
 
-import { trackGoal, initScrollTracking, initContactTracking, initEngagementTracking } from './analytics';
+import { trackGoal, initScrollTracking, initContactTracking, initEngagementTracking, initSectionViews } from './analytics';
 
 // Экспонируем на window: компоненты используют window.trackGoal?.()
 window.trackGoal = trackGoal;
@@ -16,6 +16,9 @@ initScrollTracking();
 
 // Составная цель quality_visit (время x глубина) — для смарт-стратегий Директа
 initEngagementTracking();
+
+// Какие секции страницы реально показались на экране (section_<имя>)
+initSectionViews();
 
 // Инициализация контактного трекинга для тех компонентов, которые ещё не используют
 // прямой импорт из analytics.ts (обратная совместимость)
