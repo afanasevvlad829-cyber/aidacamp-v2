@@ -28,8 +28,10 @@ const roomPhotos: { src: string; alt: string }[] = [
   })),
 ];
 
-function jpgSrc(src: string) {
-  return src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+// Фолбэк для браузеров без AVIF — .webp лежит рядом с .avif в /var/www/aidacamp-gallery/.
+// Каталог /images/gallery/jpg/ никогда не существовал на сервере (404, Labrika 15.07).
+function webpSrc(src: string) {
+  return src.replace('.avif', '.webp');
 }
 
 const features = [
@@ -193,7 +195,7 @@ const relatedPages = [
                 class="group relative w-[45%] shrink-0 overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
                 <picture>
                   <source srcset={big.src} type="image/avif" />
-                  <img src={jpgSrc(big.src)} alt={big.alt}
+                  <img src={webpSrc(big.src)} alt={big.alt}
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="eager" />
                 </picture>
@@ -209,7 +211,7 @@ const relatedPages = [
                     class="group relative overflow-hidden rounded-[18px] bg-slate-100 cursor-zoom-in">
                     <picture>
                       <source srcset={p.src} type="image/avif" />
-                      <img src={jpgSrc(p.src)} alt={p.alt}
+                      <img src={webpSrc(p.src)} alt={p.alt}
                         class="aspect-square w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy" />
                     </picture>
@@ -229,7 +231,7 @@ const relatedPages = [
                   class={`group relative overflow-hidden rounded-[12px] bg-slate-100 cursor-zoom-in ${i === 0 ? 'col-span-2' : ''}`}>
                   <picture>
                     <source srcset={p.src} type="image/avif" />
-                    <img src={jpgSrc(p.src)} alt={p.alt}
+                    <img src={webpSrc(p.src)} alt={p.alt}
                       class={`w-full object-cover transition-transform duration-300 group-hover:scale-105 ${i === 0 ? 'aspect-[2/1]' : 'aspect-square'}`}
                       loading={i === 0 ? 'eager' : 'lazy'} />
                   </picture>
@@ -479,7 +481,7 @@ const relatedPages = [
       const photos: { src: string; alt: string }[] = await res.json();
       if (!Array.isArray(photos) || photos.length <= 5) return;
       for (const p of photos) {
-        const jpgSrc = p.src.replace('/images/gallery/', '/images/gallery/jpg/').replace('.avif', '.jpg');
+        const webpFallback = p.src.replace('.avif', '.webp');
         const a = document.createElement('button');
         a.type = 'button';
         a.dataset.lightboxSrc = p.src;
@@ -488,7 +490,7 @@ const relatedPages = [
         a.innerHTML = `
           <picture>
             <source srcset="${p.src}" type="image/avif">
-            <img src="${jpgSrc}" alt="${p.alt}" loading="lazy"
+            <img src="${webpFallback}" alt="${p.alt}" loading="lazy"
               class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
           </picture>`;
         strip.appendChild(a);

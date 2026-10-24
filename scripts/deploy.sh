@@ -232,6 +232,31 @@ if [ "$TARGET" = "dev" ]; then
     dist/client/ "$SSH_HOST:$FLAT_DIR"
 fi
 
+# ── 2b². Зачистка stale-статиков редирект-стабов (2026-07-15) ──────────────
+# Страницы с prerender=false не попадают в dist/client, но rsync без --delete
+# (намеренно, см. предупреждение в шаге 1) навсегда оставляет их старые
+# index.html на сервере. Astro standalone SSR отдаёт статик из client/ РАНЬШЕ
+# динамических маршрутов → реальный 301 из Astro.redirect() не срабатывает.
+# Инцидент (Labrika 15.07): /kupit-putevku-v-lager/ отдавал 200+noindex от 04.07.
+# Удаляем ТОЧЕЧНО по списку из исходников — никакого --delete.
+STUB_SLUGS=""
+for f in src/pages/*.astro; do
+  if grep -q 'prerender = false' "$f" && grep -q 'Astro.redirect' "$f"; then
+    STUB_SLUGS="$STUB_SLUGS $(basename "$f" .astro)"
+  fi
+done
+if [ -n "$STUB_SLUGS" ]; then
+  echo ""
+  echo "🧹 Зачистка stale-статиков редирект-стабов ($(echo $STUB_SLUGS | wc -w | tr -d ' ') слагов)..."
+  CLEAN_DIRS="${REMOTE_DIR}client/"
+  [ "$TARGET" = "dev" ] && CLEAN_DIRS="$CLEAN_DIRS $FLAT_DIR"
+  for dir in $CLEAN_DIRS; do
+    ssh -i "$SSH_KEY" "$SSH_HOST" "for s in $STUB_SLUGS; do
+      [ -d \"$dir\$s\" ] && rm -rf \"$dir\$s\" && echo \"  удалён $dir\$s/\"
+    done; true"
+  done
+fi
+
 # ── 2c. Медиа → единое хранилище (2026-07-02) ──────────────────────────────
 # /images/ и /videos/ на prod и dev отдаются nginx-alias'ом из /var/www/aidacamp-media/
 # (см. sites-enabled/*.conf). Деплой их НЕ таскает (exclude выше), но НОВЫЕ файлы
