@@ -8,6 +8,8 @@
  *  • При отправке формы добавляет discount=true в данные заявки
  */
 
+import { fmtPrice } from '../data/dynamicPrices';
+
 const DURATION_MS = 30 * 60 * 1000; // 30 минут
 const LS_START    = 'discount_start_v1';
 const DISCOUNT    = 0.05; // 5%
@@ -47,11 +49,6 @@ function parsePrice(priceStr: string): number {
   return parseInt(priceStr.replace(/\D/g, ''), 10) || 0;
 }
 
-/** Форматирует число → "71 155 ₽" */
-function formatPrice(n: number): string {
-  return n.toLocaleString('ru-RU') + ' ₽';
-}
-
 // ── Modal price patch ─────────────────────────────────────────────────────────
 
 let modalPriceInterval: ReturnType<typeof setInterval> | null = null;
@@ -63,8 +60,8 @@ function patchModalPrice(priceEl: HTMLElement, originalPriceText: string) {
   const discounted = Math.round(orig * (1 - DISCOUNT));
 
   priceEl.innerHTML = `
-    <span style="text-decoration:line-through;color:#94a3b8;font-size:0.7em;font-weight:500;margin-right:6px">${formatPrice(orig)}</span>
-    <span style="color:#15803d">${formatPrice(discounted)}</span>
+    <span style="text-decoration:line-through;color:#94a3b8;font-size:0.7em;font-weight:500;margin-right:6px">${fmtPrice(orig)}</span>
+    <span style="color:#15803d">${fmtPrice(discounted)}</span>
     <span style="display:inline-block;background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;margin-left:5px;vertical-align:middle">−5%</span>
   `;
 }

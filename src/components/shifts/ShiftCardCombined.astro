@@ -7,6 +7,7 @@
  * с подписями. Цена «От {min}». CTA primary (orange) если хоть одна low-avail.
  */
 import type { Shift } from '../../data/shifts';
+import { fmtPrice } from '../../data/dynamicPrices';
 
 interface Props {
   shifts: [Shift, Shift];
@@ -22,7 +23,7 @@ const isMobile = variant === 'mobile';
 // Min price среди двух смен для лейбла «От X»
 const prices = shifts.map((s) => parseInt(s.price.replace(/\D/g, ''))).filter((n) => n > 0);
 const minPrice = Math.min(...prices);
-const minPriceFmt = minPrice.toLocaleString('ru-RU') + ' ₽';
+const minPriceFmt = fmtPrice(minPrice);
 
 // Total places
 const totalFree = shifts.reduce((sum, s) => sum + s.free, 0);
