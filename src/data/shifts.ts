@@ -130,6 +130,9 @@ const _sorted = [..._allForPrice].sort((a, b) => _priceNum(a.price) - _priceNum(
 export const PRICE_MIN = _sorted[0].price;
 export const PRICE_MAX = _sorted[_sorted.length - 1].price;
 export const PRICE_RANGE = `от ${PRICE_MIN} до ${PRICE_MAX}`;
+// Числовые значения min/max цены (для JSON-LD Offer.price и калькуляторов)
+export const PRICE_MIN_NUM = _priceNum(PRICE_MIN);
+export const PRICE_MAX_NUM = _priceNum(PRICE_MAX);
 export const PRICE_S1 = _shift1.price;
 export const PRICE_S2 = _shift2.price;
 export const PRICE_S3 = mainShifts[0].price;

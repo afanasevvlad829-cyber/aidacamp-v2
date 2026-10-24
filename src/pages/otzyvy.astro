@@ -7,6 +7,7 @@ import RelatedPages from '../components/RelatedPages.astro';
 import Shifts from '../components/Shifts.astro';
 import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 import { reviews } from '../data/reviews';
+import { yandexReviews } from '../data/yandexReviews';
 import { getRelatedPages } from '../data/landing-pages';
 import { WHATSAPP_URL, YANDEX_MAPS_URL } from '../data/contacts';
 
@@ -27,11 +28,22 @@ const reviewsSchema = reviews.map((r) => ({
     "name": "АйДаКемп"
   }
 }));
+
+// Реальные отзывы с Яндекс.Карт (src/data/yandexReviews.ts) — источник правды для schema
+const yandexReviewsSchema = yandexReviews.map((r) => ({
+  "@type": "Review",
+  "author": { "@type": "Person", "name": r.name },
+  "datePublished": r.date,
+  "reviewBody": r.text,
+  "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
+  "itemReviewed": { "@type": "EducationalOrganization", "name": "АйДаКемп" }
+}));
+const reviewCount = yandexReviews.length;
 ---
 
 <Base
-  title="Отзывы о детском лагере АйДаКемп — 40+ отзывов родителей, рейтинг 5.0"
-  description="Отзывы родителей о детских лагерях: АйДаКемп — 40+ реальных отзывов на Яндекс.Картах, рейтинг 5.0. Детский IT-лагерь в Подмосковье, смены июнь–август 2026. Читайте мнения мам."
+  title="Отзывы о детском лагере АйДаКемп — 50+ отзывов родителей, рейтинг 5.0"
+  description="Отзывы родителей о детских лагерях: АйДаКемп — 50+ реальных отзывов, рейтинг 5.0 на Яндекс.Картах. Детский IT-лагерь в Подмосковье, смены июнь–август 2026. Читайте мнения мам."
   ogImage="/images/hero/otzyvy.avif"
 >
   <Fragment slot="head">
@@ -45,10 +57,10 @@ const reviewsSchema = reviews.map((r) => ({
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "5.0",
-        "reviewCount": "40",
+        "reviewCount": String(reviewCount),
         "bestRating": "5"
       },
-      "review": reviewsSchema
+      "review": yandexReviewsSchema
     })} />
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
@@ -57,7 +69,7 @@ const reviewsSchema = reviews.map((r) => ({
         {
           "@type": "Question",
           "name": "Сколько отзывов у детского лагеря АйДаКемп?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Более 40 верифицированных отзывов на Яндекс.Картах со средней оценкой 5.0. Лагерь работает с 2021 года — более 1 200 детей за 5 лет." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Более 50 верифицированных отзывов на Яндекс.Картах со средней оценкой 5.0. Лагерь работает с 2021 года — более 1 200 детей за 5 лет." }
         },
         {
           "@type": "Question",
@@ -108,7 +120,7 @@ const reviewsSchema = reviews.map((r) => ({
           </nav>
 
           <h1 class="text-[32px] md:text-[46px] font-bold leading-[1.1] tracking-[-0.03em] text-white">
-            Отзывы родителей о детском лагере АйДаКемп — 40+ на Яндекс.Картах
+            Отзывы родителей о детском лагере АйДаКемп — 50+ на Яндекс.Картах
           </h1>
           <p class="text-[16px] md:text-[17px] leading-[1.6] text-white/70 max-w-[580px]">
             Собрали настоящие отзывы родителей — с Яндекс.Карт, 2ГИС и напрямую от наших мам. Никакой редактуры, только живые слова. Хочешь узнать больше? <a href="/o-lagere/" class="text-orange-400 hover:underline">О нас</a> и <a href="/lager-v-podmoskove/" class="text-orange-400 hover:underline">о месте</a>.
@@ -131,7 +143,7 @@ const reviewsSchema = reviews.map((r) => ({
             </div>
             <div class="hidden sm:block w-px h-10 bg-white/20"></div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-[17px] font-semibold text-white">40+ отзывов</span>
+              <span class="text-[17px] font-semibold text-white">50+ отзывов</span>
               <a
                 href={YANDEX_MAPS_URL}
                 target="_blank"
@@ -209,6 +221,39 @@ const reviewsSchema = reviews.map((r) => ({
               </p>
             </article>
           ))}
+        </div>
+
+        <!-- Отзывы с Яндекс.Карт -->
+        <div id="reviews-yandex" class="mt-16">
+          <div class="flex items-center gap-2 mb-2">
+            <h2 class="text-[22px] md:text-[26px] font-bold text-slate-900">Отзывы с Яндекс.Карт</h2>
+            <span class="inline-flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2.5 py-0.5 text-[13px] font-semibold text-slate-700"><i class="bi bi-star-fill text-orange-500 text-[11px]" aria-hidden="true"></i> 5.0</span>
+          </div>
+          <p class="text-base text-slate-500 mb-8">{reviewCount} реальных отзывов родителей и ребят со средней оценкой 5.0. <a href={YANDEX_MAPS_URL} target="_blank" rel="nofollow noopener" class="text-orange-600 underline">Смотреть на Яндекс.Картах</a>.</p>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {yandexReviews.map((review) => (
+              <article class="flex flex-col bg-white rounded-[20px] border border-slate-100 shadow-[0_2px_8px_rgba(15,23,42,0.04)] p-6">
+                <div class="flex items-center gap-3 mb-4">
+                  <div class="w-11 h-11 rounded-full shrink-0 bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-lg select-none" aria-hidden="true">{review.name.trim().charAt(0).toUpperCase()}</div>
+                  <div class="min-w-0">
+                    <p class="text-base font-semibold text-slate-900 truncate">{review.name}</p>
+                    <p class="text-[12px] text-slate-400">{review.date}</p>
+                  </div>
+                  <div class="ml-auto flex items-center gap-0.5 shrink-0">
+                    {[0,1,2,3,4].map(() => <i class="bi bi-star-fill text-[11px] text-orange-500" aria-hidden="true"></i>)}
+                  </div>
+                </div>
+                <p class="text-base leading-[1.7] text-slate-600 flex-1">{review.text}</p>
+                {review.photos && (
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    {review.photos.map((p) => (
+                      <img src={p} alt={`Фото к отзыву — ${review.name}`} class="w-20 h-20 rounded-lg object-cover border border-slate-100" loading="lazy" width="80" height="80" />
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
         </div>
 
         <!-- Блок "Отзывы ребят" -->
