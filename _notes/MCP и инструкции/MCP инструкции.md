@@ -61,6 +61,25 @@
 | `photos` | Поиск фото на Яндекс.Диске (9200 фото с AI-описаниями) |
 | `browser_agent` | Headless браузер: скриншоты, скрапинг, Lighthouse |
 
+## Серверные скрипты (не MCP, управляются через `ssh`)
+
+### Мониторинг
+| Скрипт | Назначение | Расписание |
+|--------|-----------|-----------|
+| `/opt/tg-monitor/monitor.py` | Мониторинг 23 мамских Telegram-чатов на образовательные запросы. Авто-расширяется: добавляет новые чаты по regex имён. Тихие часы 21–08. Шлёт Дарье через Green-API TG | Каждые 5 мин |
+| `/opt/aidacamp-tools/serm_monitor.py` | Отзывы Яндекс.Карт + 2GIS за 7 дней → `serm_reviews` в БД + TG-дайджест | Каждый пн 13:00 МСК |
+| `/opt/etl/cm-v3-engine.py` | Critical Monitor v3: площадки РСЯ без конверсий, замёрзшие кампании, падение SEO. Правила в `cm_v3_rules`. `needs_human` — алерт+ждёт, `auto_fix` — выполняет сам | Каждые 30 мин |
+| `/opt/aidacamp-tools/critical_monitor.py` | Аномалии расходов, лидов, CPA по Direct+VK+Metrika → TG | Каждые 3 часа |
+| `/opt/aidacamp-tools/vk-monitor.py` | Мониторинг CPA VK | Каждые 30 мин |
+
+### Данные и синхронизация
+| Скрипт | Назначение | Расписание |
+|--------|-----------|-----------|
+| `/opt/aidacamp-tools/alfa_sync.py` | AlfaCRM → PostgreSQL (`ai_customers`, `crm_contacts`) | Каждые 6 часов |
+| `/opt/aidacamp-tools/daily_intelligence.py` | AI-дайджест: Direct+VK+Metrika → анализ Claude → TG с кнопками | Ежедневно 20:55 UTC |
+| `/opt/aidacamp-tools/morning_digest.py` | Топ клиентов для Дарьи | 05:00 UTC |
+| `/opt/aidacamp-tools/darya_feedback.py` | Разговорный агент Дарьи (голос/текст → действия по клиентам) | Каждую минуту |
+
 ## Запрещённые инструменты
 
 НЕ использовать: `mcp__Claude_in_Chrome__*`, `mcp__Claude_Preview__*`, `mcp__a3fef8cb-*` (Figma), `mcp__5967f77d__*`, `mcp__scheduled-tasks__*`, Desktop Commander, Kapture.
