@@ -36,10 +36,23 @@ with_timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
 case "$SERVICE" in
   claude)
-    # Smoke-агент №0: тот же бинарь, тот же OAuth, тот же канал, что у будущей очереди
+    # Smoke-агент №0: тот же бинарь, тот же OAuth, тот же канал, что у будущей очереди.
+    #
+    # ВАЖНО — проверять надо ТОГО пользователя, под которым реально пойдёт очередь.
+    # На сервере headless-агенты запускаются от непривилегированного `claude-run`
+    # (правило №1 в CLAUDE.md), а не от root. Ложное срабатывание 21.08.2026: у root
+    # OAuth протух, у claude-run был живой — preflight блокировал полностью рабочий
+    # конвейер, потому что тестировал root. Проверяем claude-run, если он есть.
     if [[ -n "$HOST" ]]; then
-      OUT=$(with_timeout 120 ssh "$HOST" 'claude -p "ping" --max-turns 1' 2>&1)
+      if ssh "$HOST" 'id claude-run >/dev/null 2>&1'; then
+        RUN_AS="claude-run"
+        OUT=$(with_timeout 120 ssh "$HOST" 'sudo -u claude-run -i claude -p "ping" --max-turns 1' 2>&1)
+      else
+        RUN_AS="root"
+        OUT=$(with_timeout 120 ssh "$HOST" 'claude -p "ping" --max-turns 1' 2>&1)
+      fi
     else
+      RUN_AS="$(whoami)"
       OUT=$(with_timeout 120 claude -p "ping" --max-turns 1 2>&1)
     fi
     RC=$?
