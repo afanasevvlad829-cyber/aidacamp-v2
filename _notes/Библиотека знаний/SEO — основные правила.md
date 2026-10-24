@@ -329,3 +329,21 @@ rewrite ^/legal\.html$ /legal/ permanent;
 - Google Search Quality Rater Guidelines (PDF) — [static.googleusercontent.com/media/guidelines.raterhub.com/en//searchqualityevaluatorguidelines.pdf](https://static.googleusercontent.com/media/guidelines.raterhub.com/en//searchqualityevaluatorguidelines.pdf)
 - Sitemap limits (Google) — [developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)
 - Clean-param (Яндекс) — [yandex.ru/support/webmaster/robot-workings/clean-param.html](https://yandex.ru/support/webmaster/robot-workings/clean-param.html)
+
+## Проверка ИКС и индексации — только Яндекс.Вебмастер
+
+**Правило (2026-04-30):**  
+Для проверки ИКС, индексации страниц, поисковых запросов — использовать **Яндекс.Вебмастер** (webmaster.yandex.ru), а не Arsenkin.  
+Arsenkin.ru показывал 0 отзывов и ИКС=50 — данные устаревшие/неверные.  
+Реальные данные: 35 отзывов, рейтинг 5.0, категория «Детский лагерь отдыха».
+
+**Симптом / Причина / Решение / Правило:**  
+- Симптом: Arsenkin ИКС tool вернул reviews=0, rating=0 для aidacamp.ru  
+- Причина: Arsenkin кеширует данные, не всегда актуальные  
+- Решение: Яндекс.Вебмастер → Поисковые запросы / Страницы в поиске  
+- Правило: ИКС, индексация, позиции — только через Вебмастер или stats.sh
+
+## Наличие в каталогах лагерей
+
+Мы есть на incamp.ru: https://incamp.ru/camp/aydakemp-13888/  
+Проверить также: vlagere.ru, mycamps.ru, enjoy-camp.ru
