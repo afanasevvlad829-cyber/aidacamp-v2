@@ -49,6 +49,33 @@ const tgMsg =
         <p class="mb-3 text-[16px] font-medium text-body">
           Сотрудники — войдите через Telegram:
         </p>
+        {/* Автологин в Telegram Mini App — initData есть → шлём на /api/portal/tg, минуя OAuth-виджет.
+            Без этого виджет открывает oauth.telegram.org во внешнем браузере, где может всплыть Google. */}
+        <script src="https://telegram.org/js/telegram-web-app.js?56" is:inline></script>
+        <script is:inline>
+          (function () {
+            try {
+              var tg = window.Telegram && window.Telegram.WebApp;
+              if (!tg || !tg.initData) return;
+              try { tg.ready(); } catch (e) {}
+              var qsInv = new URLSearchParams(location.search).get('invite');
+              var body = { initData: tg.initData };
+              if (qsInv) body.invite = qsInv;
+              fetch('/api/portal/tg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'include',
+              }).then(function (r) { return r.json().catch(function () { return {}; }); })
+                .then(function (j) {
+                  if (j && j.ok) {
+                    window.location.href = '/portal/';
+                  }
+                  // если не ok — пусть пользователь увидит виджет и инструкции ниже
+                });
+            } catch (e) { /* fallback на виджет */ }
+          })();
+        </script>
         {botUser ? (
           <div class="flex flex-col items-center gap-3">
             <script

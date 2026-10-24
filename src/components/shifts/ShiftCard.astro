@@ -2,6 +2,7 @@
 import type { Shift } from '../../data/shifts';
 import { renderCard, PEER_COUNTS } from '../../data/shifts';
 import { pluralDays } from '../../utils/plural';
+import { getTaxDeduction, getCurrentPrice, getDays, fmtPrice } from '../../data/dynamicPrices';
 
 interface Props {
   shift: Shift;
@@ -11,19 +12,10 @@ interface Props {
 const { shift, variant } = Astro.props;
 const { pct, btnClass } = renderCard(shift);
 
-// Налоговый вычет: формула 13% × (цена − 3800 × дни)
-const VYCHET_DATA: Record<string, { price: number; days: number }> = {
-  'shift-1':   { price: 85900, days: 10 },
-  'shift-2':   { price: 99000, days: 14 },
-  'shift-3':   { price: 89400, days: 13 },
-  'shift-4':   { price: 74900, days: 10 },
-  'shift-2-1': { price: 48000, days: 7  },
-  'shift-2-2': { price: 75000, days: 8  },
-};
-const vychetData = VYCHET_DATA[shift.id];
-const vychetAmount = vychetData
-  ? Math.round((vychetData.price - 3800 * vychetData.days) * 0.13)
-  : 0;
+// Актуальная цена и налоговый вычет — из единого источника
+const vychetAmount = getTaxDeduction(shift.id);
+const ssrPrice     = getCurrentPrice(shift.id);
+const ssrPriceFmt  = ssrPrice ? fmtPrice(ssrPrice) : shift.price;
 
 const isMobile = variant === 'mobile';
 const isLowAvailability = pct >= 85;
@@ -86,7 +78,7 @@ const daysLeft = startDate
   data-shift-card
   data-shift-id={shift.id}
   data-shift-spots={shift.free}
-  data-shift-days={vychetData?.days}
+  data-shift-days={getDays(shift.id)}
   class:list={[
     'reveal group relative flex flex-col rounded-[22px] border bg-card cursor-pointer select-none transition-none',
     'card-shadow',
@@ -167,7 +159,7 @@ const daysLeft = startDate
   <div class="mt-5 flex items-end justify-between gap-3">
     <div class="min-w-0">
       <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-body-faint">Стоимость</p>
-      <p class="mt-1 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={shift.id}>{shift.price}</p>
+      <p class="mt-1 text-[26px] md:text-[28px] font-extrabold tracking-[-0.02em] leading-none text-primary" data-dynamic-price={shift.id}>{ssrPriceFmt}</p>
       <p class="mt-1 text-[12px] text-body-faint">всё включено</p>
       <p class="hidden mt-1 text-[11px] font-semibold text-orange-500 leading-[1.3]" data-price-urgency={shift.id}></p>
       {vychetAmount > 0 && (

@@ -71,6 +71,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     maybe('end_time', body.end_time, (v) => (v === '' ? null : String(v)));
     maybe('notes', body.notes, (v) => (v === '' ? null : String(v)));
 
+    // responsible_staff_id — только админ и руководитель могут менять
+    if (body.responsible_staff_id !== undefined && (role === 'admin' || role === 'rukovoditel')) {
+      const raw = body.responsible_staff_id;
+      const n = raw === '' || raw === null ? null : Number(raw);
+      sets.push(`responsible_staff_id=$${i++}`);
+      vals.push(n != null && Number.isFinite(n) && n > 0 ? n : null);
+    }
+
     if (sets.length > 0) {
       vals.push(eventId);
       await c.query(`UPDATE shift_event SET ${sets.join(', ')} WHERE id=$${i}`, vals);

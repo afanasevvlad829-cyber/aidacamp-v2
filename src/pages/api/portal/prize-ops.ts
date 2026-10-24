@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { verifySessionPayload } from '../../../lib/portalSession';
 import {
-  listIssuances, createIssuance, deleteIssuance, countIssuancesByPrize,
+  listIssuances, createIssuance, deleteIssuance, deleteAllIssuances, countIssuancesByPrize,
   listCustomPrizes, createCustomPrize, archiveCustomPrize,
 } from '../../../lib/portalPrizeOps';
 import { decrementPrizeRemaining } from '../../../lib/portalEconomy';
@@ -153,6 +153,12 @@ export const POST: APIRoute = async ({ cookies, request }) => {
       if (!id) return j({ ok: false, error: 'id required' }, { status: 400 });
       await deleteIssuance(id);
       return j({ ok: true });
+    }
+    if (action === 'reset_all_issuances') {
+      // Только админ может массово сбросить выдачи.
+      if (p.role !== 'admin') return j({ ok: false, error: 'only admin' }, { status: 403 });
+      const deleted = await deleteAllIssuances();
+      return j({ ok: true, deleted });
     }
     return j({ ok: false, error: 'unknown action' }, { status: 400 });
   } catch (e: any) {
