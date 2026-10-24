@@ -49,6 +49,11 @@ const TILDA_REDIRECTS: Record<string, string> = {
   '/shifts/shift-1/': '/kak-proshla-smena-1/',
   '/shifts/shift-2': '/kak-proshla-smena-2/',
   '/shifts/shift-2/': '/kak-proshla-smena-2/',
+  // Смена 2.1/2.2 — половины той же Смены 2, отдельного пост-отчёта нет
+  '/shifts/shift-2-1': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-1/': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2': '/kak-proshla-smena-2/',
+  '/shifts/shift-2-2/': '/kak-proshla-smena-2/',
 };
 
 // nginx (сзади прокси) шлёт X-Forwarded-Proto: https корректно, но
