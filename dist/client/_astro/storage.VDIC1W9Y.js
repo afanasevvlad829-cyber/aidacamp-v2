@@ -1,1 +1,0 @@
-const e={selectedAge:"ac:selected_age",userAgeGroup:"ac:user_age_group",shiftsSwiped:"ac:shifts_swiped",ageBarDismissed:"ac:age_bar_dismissed",ymFired:"ym_fired",attribution:"ac_attribution"};export{e as S};
