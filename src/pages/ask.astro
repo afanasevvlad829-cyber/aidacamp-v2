@@ -436,6 +436,15 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
     .achivka-sub{font-size:11px;color:var(--text-muted);font-weight:400}
     .achivka-close{width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:none;cursor:pointer;color:var(--text-muted);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;margin-left:4px}
     .achivka-close:hover{background:var(--surface-3);color:var(--text-primary)}
+    /* ── МИНИ-БЕЙДЖ у ввода ── */
+    .achivka-mini{display:none;align-items:center;gap:6px;padding:5px 10px 5px 10px;margin:0 16px 4px auto;width:fit-content;background:var(--surface-1);border:1px solid rgba(236,124,0,.35);border-radius:30px;font-size:12px;font-weight:600;color:var(--text-primary);box-shadow:0 2px 10px rgba(236,124,0,.12);cursor:default;white-space:nowrap;animation:fadeIn .3s ease}
+    .achivka-mini.show{display:flex}
+    .achivka-mini.dad{border-color:rgba(96,165,250,.4)}
+    .achivka-mini .mini-icon{font-size:14px;color:var(--accent)}
+    .achivka-mini.dad .mini-icon{color:#60a5fa}
+    .achivka-mini .mini-close{background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:0 0 0 2px;line-height:1;transition:.15s}
+    .achivka-mini .mini-close:hover{color:var(--text-primary)}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
     /* ── SHARE ROW ── */
     .share-row{display:flex;gap:6px;padding:0 16px 6px;justify-content:flex-end;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s,max-height .3s}
@@ -554,6 +563,13 @@ const description = 'AI-ассистент IT-лагеря АйДаКемп. З�
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Мини-бейдж "Хорошая мама" — прикреплённая плашка у поля ввода -->
+  <div class="achivka-mini" id="achivkaMini">
+    <i class="bi bi-patch-check-fill mini-icon" id="achivkaMiniIcon" aria-hidden="true"></i>
+    <span id="achivkaMiniText">Хорошая мама</span>
+    <button class="mini-close" onclick="closeMini()" aria-label="Закрыть">×</button>
   </div>
 
   <div class="input-area">
@@ -809,12 +825,18 @@ initTheme();
 
 /* ── CAMP DATA ── */
 const SMENY=[
-  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'74 900 ₽',available:true,occupied:23,total:35},
-  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'95 000 ₽',available:true,popular:true,occupied:41,total:45},
-  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,short:true,occupied:29,total:40},
-  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'65 000 ₽',available:true,short:true,occupied:37,total:45},
-  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,occupied:40,total:45},
-  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:true,occupied:31,total:45},
+  {n:'Смена 1',dates:'30 мая — 8 июня',days:'10 дней',price:'74 900 ₽',available:true,popular:false,occupied:23,total:35,
+   desc:'За 10 дней — от первого шага до собственного проекта с AI и понятным результатом.'},
+  {n:'Смена 2',dates:'10 — 23 июня',days:'14 дней',price:'95 000 ₽',available:true,popular:true,occupied:41,total:45,
+   desc:'Полный цикл создания проекта: больше самостоятельности и более сложный результат.'},
+  {n:'Смена 2.1',dates:'10 — 16 июня',days:'7 дней',price:'48 000 ₽',available:true,short:true,occupied:29,total:40,
+   desc:'За 7 дней — быстрый вход, свой проект и понятный результат без перегруза.'},
+  {n:'Смена 2.2',dates:'16 — 23 июня',days:'8 дней',price:'65 000 ₽',available:true,short:true,occupied:37,total:45,
+   desc:'Интенсивная смена: больше времени на доработку и более сильный итоговый проект.'},
+  {n:'Смена 3',dates:'3 — 15 августа',days:'13 дней',price:'89 400 ₽',available:true,popular:false,occupied:40,total:45,
+   desc:'Проект от идеи до результата с акцентом на командную работу.'},
+  {n:'Смена 4',dates:'17 — 26 августа',days:'10 дней',price:'69 600 ₽',available:true,popular:false,occupied:31,total:45,
+   desc:'Закрытие лета: сильный проект и уверенный результат.'},
 ];
 const COURSES=[
   {icon:'keyboard',name:'Scratch',age:'8–10 лет',minAge:8,maxAge:10,
@@ -850,7 +872,7 @@ const DAY=[
 const COND=[
   {icon:'house-door',title:'Проживание',desc:'Корпуса по 2–4 человека, WiFi'},
   {icon:'cup-hot',title:'Питание',desc:'5 раз в день: завтрак, 2-й завтрак, обед, полдник, ужин. Аллергии учитываем'},
-  {icon:'sun',title:'Бассейн',desc:'Через день, открытый'},
+  {icon:'droplet',title:'Бассейн',desc:'Закрытый, через день'},
   {icon:'shield-check',title:'Охрана',desc:'24/7, видеокамеры — и фото в Telegram каждый день'},
   {icon:'heart-pulse-fill',title:'Медицина',desc:'Медсестра круглосуточно на территории'},
   {icon:'phone',title:'Связь',desc:'Фото в чат каждый день, звонки по расписанию'},
@@ -890,7 +912,7 @@ function blockSmeny(){
       +';padding:9px 10px 8px;transition:.18s;'+(s.available?'cursor:pointer':'opacity:.4;cursor:default')
       +';animation:smena-in .3s cubic-bezier(.16,1,.3,1) '+(idx*.05)+'s both;position:relative;overflow:hidden'
     );
-    if(s.available) sc.onclick=openPopup;
+    if(s.available) sc.onclick=()=>openSmenaModal(s);
 
     // popular/short badge
     if(s.popular){
@@ -940,22 +962,87 @@ function blockSmeny(){
 
   card.appendChild(grid);
 
-  // CTA — иконка-кнопка бронирования (без текста)
-  const ctaRow=mkEl('div','display:flex;align-items:center;gap:8px;padding:6px 8px 10px');
-  const btn=mkEl('button','flex:1;padding:10px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(236,124,0,.3);transition:.18s;font-family:inherit;font-size:13px;font-weight:700');
-  btn.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="font-size:18px"></i>';
-  btn.title='Выбрать смену';
-  btn.onmouseenter=()=>{btn.style.background='linear-gradient(135deg,#d96a00,#b85500)';btn.style.boxShadow='0 5px 18px rgba(236,124,0,.45)';};
-  btn.onmouseleave=()=>{btn.style.background='linear-gradient(135deg,#c45f00,#a34e00)';btn.style.boxShadow='0 3px 12px rgba(236,124,0,.3)';};
-  btn.onclick=openPopup;
-  ctaRow.appendChild(btn);
-  card.appendChild(ctaRow);
-
-  const foot=mkEl('div','padding:0 14px 10px;font-size:10px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Место фиксируется на 48ч · Возврат 50% за первые 3 дня');
+  const foot=mkEl('div','padding:6px 14px 12px;font-size:10px;color:rgba(13,27,42,.35);text-align:center','Налоговый вычет 13% · Нажмите на смену — выбирайте и бронируйте');
   card.appendChild(foot);
 
   wrap.appendChild(card);
   return wrap;
+}
+
+function openSmenaModal(s){
+  // remove existing modal if any
+  const existing=document.getElementById('smena-modal-overlay');
+  if(existing) existing.remove();
+
+  const overlay=mkEl('div','position:fixed;inset:0;background:rgba(13,27,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;animation:blockFade .2s ease-out both');
+  overlay.id='smena-modal-overlay';
+  overlay.onclick=(e)=>{if(e.target===overlay) overlay.remove();};
+
+  const panel=mkEl('div','background:#fff;border-radius:20px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(13,27,42,.22);overflow:hidden;animation:blockIn .25s cubic-bezier(.16,1,.3,1) both');
+
+  // header
+  const head=mkEl('div','padding:14px 16px 12px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;justify-content:space-between');
+  const title=mkEl('span','font-size:16px;font-weight:800;color:#0d1b2a');
+  title.textContent=s.n;
+  const closeBtn=mkEl('button','background:none;border:none;cursor:pointer;color:rgba(13,27,42,.45);font-size:20px;line-height:1;padding:2px 6px;border-radius:8px;transition:.15s;font-family:inherit');
+  closeBtn.innerHTML='<i class="bi bi-x-lg" aria-hidden="true"></i>';
+  closeBtn.onclick=()=>overlay.remove();
+  closeBtn.onmouseenter=()=>{closeBtn.style.background='rgba(13,27,42,.06)';closeBtn.style.color='#0d1b2a';};
+  closeBtn.onmouseleave=()=>{closeBtn.style.background='none';closeBtn.style.color='rgba(13,27,42,.45)';};
+  head.appendChild(title);head.appendChild(closeBtn);
+  panel.appendChild(head);
+
+  // body
+  const body=mkEl('div','padding:16px');
+
+  // dates row
+  const datesRow=mkEl('div','display:flex;align-items:center;gap:6px;margin-bottom:4px');
+  datesRow.innerHTML='<i class="bi bi-calendar-event" aria-hidden="true" style="color:#ec7c00;font-size:14px"></i>'
+    +'<span style="font-size:14px;color:#4e6072">'+s.dates+'</span>'
+    +'<span style="font-size:12px;color:#7e9094;margin-left:4px">'+s.days+'</span>';
+  body.appendChild(datesRow);
+
+  // price
+  const priceEl=mkEl('div','font-size:28px;font-weight:800;color:#ec7c00;letter-spacing:-.03em;margin:8px 0 10px');
+  priceEl.textContent=s.price;
+  body.appendChild(priceEl);
+
+  // occupancy bar
+  const free=s.total-s.occupied;
+  const pct=Math.round(s.occupied/s.total*100);
+  const isLast=free<=4;
+  const barWrap=mkEl('div','height:5px;border-radius:3px;background:rgba(13,27,42,.08);overflow:hidden;margin-bottom:6px;display:flex');
+  const barTaken=mkEl('div','height:100%;background:rgba(13,27,42,.12);border-radius:3px 0 0 3px;width:'+pct+'%');
+  const barFree=mkEl('div','height:100%;background:linear-gradient(90deg,'+(isLast?'#ef4444,#dc2626':'#22c55e,#16a34a')+');border-radius:0 3px 3px 0;width:'+(100-pct)+'%');
+  barWrap.appendChild(barTaken);barWrap.appendChild(barFree);
+  body.appendChild(barWrap);
+  const occRow=mkEl('div','display:flex;justify-content:space-between;font-size:12px;margin-bottom:14px');
+  occRow.appendChild(mkEl('span','color:#7e9094',''+s.occupied+'/'+s.total+' записалось'));
+  occRow.appendChild(mkEl('span',(isLast?'color:#dc2626':'color:#15803d')+';font-weight:700','свободно '+free));
+  body.appendChild(occRow);
+
+  // description
+  if(s.desc){
+    const desc=mkEl('div','font-size:14px;line-height:1.55;color:#4e6072;margin-bottom:16px');
+    desc.textContent=s.desc;
+    body.appendChild(desc);
+  }
+
+  // book button
+  const bookBtn=mkEl('button','width:100%;padding:13px;background:linear-gradient(135deg,#c45f00,#a34e00);border:none;border-radius:12px;color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(236,124,0,.35);transition:.18s;margin-bottom:10px');
+  bookBtn.innerHTML='<i class="bi bi-calendar-check" aria-hidden="true" style="margin-right:8px"></i>Выбрать смену — забронировать';
+  bookBtn.onmouseenter=()=>{bookBtn.style.background='linear-gradient(135deg,#d96a00,#b85500)';bookBtn.style.boxShadow='0 6px 20px rgba(236,124,0,.45)';};
+  bookBtn.onmouseleave=()=>{bookBtn.style.background='linear-gradient(135deg,#c45f00,#a34e00)';bookBtn.style.boxShadow='0 4px 14px rgba(236,124,0,.35)';};
+  bookBtn.onclick=()=>{overlay.remove();openPopup();};
+  body.appendChild(bookBtn);
+
+  // footer note
+  const note=mkEl('div','font-size:11px;color:rgba(13,27,42,.35);text-align:center','Место фиксируется на 48ч · Возврат 50% за первые 3 дня');
+  body.appendChild(note);
+
+  panel.appendChild(body);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
 }
 
 // Цвета подобраны для WCAG AA на белом фоне (мин. 4.5:1)
@@ -1267,7 +1354,7 @@ function blockPhotoCarousel(){
   card.appendChild(head);
   const scenes=[
     {label:'IT-занятие',sub:'Python и Scratch — пишем настоящий код',bg:'linear-gradient(135deg,#1e3a5f 0%,#0f2040 100%)',icon:'laptop'},
-    {label:'Бассейн через день',sub:'После занятий — открытый бассейн',bg:'linear-gradient(135deg,#0a3a2e 0%,#051a14 100%)',icon:'droplet'},
+    {label:'Бассейн через день',sub:'Закрытый бассейн — после занятий',bg:'linear-gradient(135deg,#0a3a2e 0%,#051a14 100%)',icon:'droplet'},
     {label:'Финальный хакатон',sub:'Командная защита проектов + дипломы',bg:'linear-gradient(135deg,#3a1e00 0%,#1a0d00 100%)',icon:'trophy-fill'},
     {label:'Вечерняя программа',sub:'Квесты, кино, мастер-классы — каждый день',bg:'linear-gradient(135deg,#2a1a50 0%,#110b25 100%)',icon:'star-fill'},
     {label:'Проживание',sub:'Корпуса по 2–4 чел., WiFi, своя комната',bg:'linear-gradient(135deg,#1a2e1a 0%,#0a150a 100%)',icon:'house-door'},
@@ -1490,6 +1577,82 @@ function blockYoutubeComment(){
   card.appendChild(body);
   wrap.appendChild(card);
   return wrap;
+}
+
+function blockChecklist(blockData){
+  const type=(blockData&&blockData.type)||'packing';
+  const isPacking=type==='packing';
+
+  const wrap=mkEl('div','width:100%;animation:blockIn .45s cubic-bezier(.16,1,.3,1) both,blockGlow .8s .2s ease-out both');
+  const card=mkEl('div','background:#fff;border:1px solid rgba(13,27,42,.09);border-radius:20px;overflow:hidden;box-shadow:0 2px 16px rgba(13,27,42,.07)');
+
+  // header
+  const head=mkEl('div','padding:12px 16px;border-bottom:1px solid rgba(13,27,42,.07);display:flex;align-items:center;gap:8px');
+  head.innerHTML='<i class="bi bi-'+(isPacking?'backpack':'file-earmark-text')+'" aria-hidden="true" style="font-size:16px;color:#ec7c00"></i>'
+    +'<span style="font-size:13px;font-weight:600;color:rgba(13,27,42,.55)">'+(isPacking?'Список вещей':'Документы при заезде')+'</span>';
+  card.appendChild(head);
+
+  const content=mkEl('div','padding:10px 14px 14px');
+
+  if(isPacking){
+    const groups=[
+      {title:'Одежда',items:['Футболки х5–7 (тёмные)','Шорты х3','Брюки/джинсы х2','Худи/толстовка х2','Дождевик или куртка','Нижнее бельё х7','Носки х7'],ok:true},
+      {title:'Обувь (важно!)',items:['Crocs/сабо с ЗАКРЫТЫМ носком — обязательно!','Кроссовки для спорта','Тапочки для корпуса'],ok:true},
+      {title:'Гигиена',items:['Зубная щётка + паста','Шампунь + мыло','Дезодорант','Солнцезащитный крем SPF 30+','Полотенца х2'],ok:true},
+      {title:'Гаджеты',items:['Телефон (простой, не флагман)','Зарядка + power bank'],ok:true},
+      {title:'НЕ БРАТЬ',items:['Ноутбук/планшет (в лагере есть)','Смарт-часы','Дорогие украшения','Флагманский телефон'],ok:false},
+    ];
+    groups.forEach((g,gi)=>{
+      const groupEl=mkEl('div',(gi>0?'margin-top:12px':''));
+      const titleEl=mkEl('div','font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:'+(g.ok?'#4e6072':'#dc2626')+';margin-bottom:5px');
+      titleEl.textContent=g.title;
+      groupEl.appendChild(titleEl);
+      g.items.forEach(item=>{
+        const row=mkEl('div','display:flex;align-items:flex-start;gap:7px;padding:4px 0;border-bottom:1px solid rgba(13,27,42,.04)');
+        const ico=mkEl('i','font-size:13px;flex-shrink:0;margin-top:1px;color:'+(g.ok?'#16a34a':'#dc2626'));
+        ico.className='bi bi-'+(g.ok?'check-circle-fill':'x-circle-fill');
+        ico.setAttribute('aria-hidden','true');
+        const txt=mkEl('span','font-size:13px;line-height:1.4;color:'+(g.ok?'#0d1b2a':'#dc2626'));
+        txt.textContent=item;
+        row.appendChild(ico);row.appendChild(txt);
+        groupEl.appendChild(row);
+      });
+      content.appendChild(groupEl);
+    });
+  } else {
+    // documents
+    const items=[
+      'Медсправка по форме 079/у (с подписью врача и печатью)',
+      'Полис ОМС (оригинал)',
+      'Справка об эпидокружении (датировать за 2–3 дня до заезда!)',
+      'Свидетельство о рождении или паспорт (копия)',
+      'Копия паспорта родителя',
+    ];
+    const titleEl=mkEl('div','font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4e6072;margin-bottom:5px');
+    titleEl.textContent='Обязательные документы';
+    content.appendChild(titleEl);
+    items.forEach(item=>{
+      const row=mkEl('div','display:flex;align-items:flex-start;gap:7px;padding:4px 0;border-bottom:1px solid rgba(13,27,42,.04)');
+      const ico=mkEl('i','font-size:13px;flex-shrink:0;margin-top:1px;color:#ec7c00');
+      ico.className='bi bi-check-circle-fill';
+      ico.setAttribute('aria-hidden','true');
+      const txt=mkEl('span','font-size:13px;line-height:1.4;color:#0d1b2a');
+      txt.textContent=item;
+      row.appendChild(ico);row.appendChild(txt);
+      content.appendChild(row);
+    });
+    const note=mkEl('div','margin-top:10px;font-size:11px;color:rgba(13,27,42,.45);line-height:1.4');
+    note.textContent='Все справки привозите в оригинале. Справку об эпидокружении оформите за 2–3 дня до заезда.';
+    content.appendChild(note);
+  }
+
+  card.appendChild(content);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function blockDocsList(blockData){
+  return blockChecklist({type:'documents'});
 }
 
 function blockPricingBreakdown(){
@@ -1875,6 +2038,8 @@ function renderBlock(blockType,blockData){
     case 'video_player': return blockVideoPlayer(blockData);
     case 'gallery': return blockGallery(blockData);
     case 'youtube_comment': return blockYoutubeComment();
+    case 'checklist': return blockChecklist(blockData);
+    case 'documents_list': return blockDocsList(blockData);
     case 'pricing_breakdown': return blockPricingBreakdown();
     case 'hackathon': return blockHackathon();
     case 'tax_calculator': return blockTaxCalculator();
@@ -2164,57 +2329,91 @@ function stopMic(){
 let userMsgCount = 0;
 const PROGRESS_MAX = 7;
 
-/* ── АЧИВКА — PERSISTENT BADGE ── */
+/* ── АЧИВКА — PERSISTENT BADGE (two-position) ── */
 const BADGE_KEY = 'ac_parent_badge';
 const BADGE_DISMISSED = 'ac_parent_badge_dismissed';
+const BADGE_MINIMIZED = 'ac_parent_badge_minimized'; // минибейдж у ввода
 let achivkaShown = false;
 let badgeType = null; // 'mom' | 'dad'
+let achivkaAutoTimer = null;
 
 function getBadgeType(){ return localStorage.getItem(BADGE_KEY); }
 function setBadgeType(t){ localStorage.setItem(BADGE_KEY, t); badgeType = t; }
 function isBadgeDismissed(){ return localStorage.getItem(BADGE_DISMISSED) === '1'; }
+function isBadgeMinimized(){ return localStorage.getItem(BADGE_MINIMIZED) === '1'; }
 
-function renderAchivka(type, animate){
+function _applyBadgeType(type){
   const el = document.getElementById('achivka');
-  const txt = document.getElementById('achivkaText');
-  const sub = document.getElementById('achivkaSub');
-  const icon = el.querySelector('.achivka-icon');
-  if(!el) return;
-  if(type === 'dad'){
-    el.classList.add('dad');
-    if(txt) txt.textContent = 'Хороший папа';
-    if(sub) sub.textContent = 'Разобрался и задал правильные вопросы';
-    if(icon){ icon.className='bi bi-patch-check-fill achivka-icon'; }
-  } else {
-    el.classList.remove('dad');
-    if(txt) txt.textContent = 'Хорошая мама';
-    if(sub) sub.textContent = 'Вы задали все правильные вопросы';
-    if(icon){ icon.className='bi bi-patch-check-fill achivka-icon'; }
+  const mini = document.getElementById('achivkaMini');
+  if(el){
+    if(type==='dad'){ el.classList.add('dad'); } else { el.classList.remove('dad'); }
+    const txt=document.getElementById('achivkaText');
+    const sub=document.getElementById('achivkaSub');
+    const icon=el.querySelector('.achivka-icon');
+    if(txt) txt.textContent = type==='dad' ? 'Хороший папа' : 'Хорошая мама';
+    if(sub) sub.textContent = type==='dad' ? 'Разобрался и задал правильные вопросы' : 'Вы задали все правильные вопросы';
+    if(icon) icon.className='bi bi-patch-check-fill achivka-icon';
   }
-  if(animate){
-    el.classList.add('show');
-    // Не скрываем автоматически — бейдж остаётся до закрытия
+  if(mini){
+    if(type==='dad'){ mini.classList.add('dad'); } else { mini.classList.remove('dad'); }
+    const mt=document.getElementById('achivkaMiniText');
+    const mi=document.getElementById('achivkaMiniIcon');
+    if(mt) mt.textContent = type==='dad' ? 'Хороший папа' : 'Хорошая мама';
+    if(mi) mi.className = 'bi bi-patch-check-fill mini-icon';
   }
 }
 
-function closeAchivka(){
+function showMini(){
   const el = document.getElementById('achivka');
+  const mini = document.getElementById('achivkaMini');
   if(el) el.classList.remove('show');
+  if(mini) mini.classList.add('show');
+  localStorage.setItem(BADGE_MINIMIZED, '1');
+}
+
+function closeAchivka(){
+  // Первый ×: схлопываем в мини
+  if(achivkaAutoTimer){ clearTimeout(achivkaAutoTimer); achivkaAutoTimer=null; }
+  showMini();
+}
+
+function closeMini(){
+  // Второй ×: полностью скрываем
+  const mini = document.getElementById('achivkaMini');
+  if(mini) mini.classList.remove('show');
   localStorage.setItem(BADGE_DISMISSED, '1');
+  localStorage.removeItem(BADGE_MINIMIZED);
+}
+
+function renderAchivka(type, animate){
+  _applyBadgeType(type);
+  if(isBadgeMinimized()){
+    // Если уже был свёрнут — показываем только мини
+    showMini();
+    return;
+  }
+  if(animate){
+    const el = document.getElementById('achivka');
+    if(el) el.classList.add('show');
+    // Авто-схлопывание через 6 секунд
+    achivkaAutoTimer = setTimeout(()=>{ showMini(); }, 6000);
+  }
 }
 
 function triggerMomBadge(){
   if(achivkaShown || isBadgeDismissed()) return;
   achivkaShown = true;
   setBadgeType('mom');
+  localStorage.removeItem(BADGE_MINIMIZED);
   renderAchivka('mom', true);
 }
 
 function triggerDadBadge(){
   setBadgeType('dad');
   achivkaShown = true;
+  localStorage.removeItem(BADGE_DISMISSED);
+  localStorage.removeItem(BADGE_MINIMIZED);
   renderAchivka('dad', true);
-  localStorage.removeItem(BADGE_DISMISSED); // Папа = новое событие, показываем снова
 }
 
 // Инициализация при загрузке — восстановить бейдж если был

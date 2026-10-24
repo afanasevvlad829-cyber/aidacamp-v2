@@ -23,11 +23,13 @@ export function findPhotos(query: string, count = 3): PhotoResult[] {
   const q = query.toLowerCase();
   const base = photoIndex.base;
 
-  // Считаем score по совпадению тегов
+  // Считаем score по совпадению тегов (двустороннее: тег в запросе ИЛИ слово запроса в теге)
+  const qWords = q.split(/\s+/).filter(w => w.length > 2);
   const scored = (photoIndex.photos as Photo[]).map(photo => {
-    const score = photo.tags.filter(tag =>
-      q.includes(tag) || tag.split(' ').some(w => q.includes(w))
-    ).length;
+    const score = photo.tags.filter(tag => {
+      const t = tag.toLowerCase();
+      return q.includes(t) || t.includes(q) || qWords.some(w => t.includes(w) || w.includes(t));
+    }).length;
     return { photo, score };
   });
 
@@ -44,9 +46,9 @@ export function findPhotos(query: string, count = 3): PhotoResult[] {
   // Если ничего не нашли — возвращаем общие фото атмосферы
   if (!results.length) {
     return [
-      { url: base + 'camp-smile.jpg', caption: 'Атмосфера лагеря' },
-      { url: base + 'camp-group-beanbags.jpg', caption: 'Дети в лагере' },
-      { url: base + 'study-dome-group.jpg', caption: 'Занятия' },
+      { url: base + 'camp-smile.avif', caption: 'Атмосфера лагеря' },
+      { url: base + 'camp-group-beanbags.avif', caption: 'Дети в лагере' },
+      { url: base + 'study-dome-group.avif', caption: 'Занятия' },
     ].slice(0, count);
   }
 

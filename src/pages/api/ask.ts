@@ -93,12 +93,11 @@ export const POST: APIRoute = async ({ request }) => {
     ]);
 
     // HARD GATE: фактический вопрос + нет RAG-контекста → редирект к менеджеру
-    // Исключение: вопросы про смены/цены/курсы покрыты facts в системном промпте
+    // Исключение: вопросы покрытые campData (смены/цены/курсы/условия/документы/вещи)
+    // НЕ включать: комнат, соседи, поселен, документ, справк — они теперь в campData
     const factKeywordsNotInFacts = [
       'трансфер', 'автобус', 'добраться', 'доехать',
-      'соседи', 'комнат', 'поселен',
       'преподаватель', 'педагог', 'учитель',
-      'документ', 'справк',
     ];
     const needsRagGate = factKeywordsNotInFacts.some(kw => message.toLowerCase().includes(kw));
     if (needsRagGate && ragResult.isEmpty) {
