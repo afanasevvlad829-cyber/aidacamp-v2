@@ -83,82 +83,102 @@ const lines = [
   </style>
 
   <script>
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     function runTerminal() {
       const body = document.getElementById('term-body');
       const text = document.getElementById('term-text');
       const cta = document.getElementById('term-cta');
       const cursor = document.getElementById('term-cursor');
       if (!body || !text || !cta || !cursor) return;
-      const lines = JSON.parse(body.dataset.lines || '[]');
+      let lines;
+      try {
+        lines = JSON.parse(body.dataset.lines || '[]');
+      } catch (e) {
+        console.error('terminal: bad lines JSON', e);
+        return;
+      }
 
       text.innerHTML = '';
       cta.style.opacity = '0';
-      cursor.style.display = 'inline-block';
+      cursor.style.opacity = '1';
 
       let lineIdx = 0;
       let charIdx = 0;
-      let html = '';
+      let committedHtml = '';
+
+      function renderPartial(line, partial) {
+        if (line.prompt) {
+          // Prompt всегда виден целиком; печатается только команда
+          const cmdSoFar = partial.length > line.prompt.length + 1
+            ? partial.slice(line.prompt.length + 1)
+            : '';
+          return committedHtml +
+            '<span class="text-[#5cf2ff]">' + escapeHtml(line.prompt) + '</span> ' +
+            '<span class="text-white">' + escapeHtml(cmdSoFar) + '</span>';
+        }
+        return committedHtml + '<span class="text-[#a8e6cf]">' + escapeHtml(partial) + '</span>';
+      }
+
+      function commitLine(line) {
+        if (line.prompt) {
+          committedHtml +=
+            '<span class="text-[#5cf2ff]">' + escapeHtml(line.prompt) + '</span> ' +
+            '<span class="text-white">' + escapeHtml(line.cmd || '') + '</span>\n';
+        } else {
+          committedHtml += '<span class="text-[#a8e6cf]">' + escapeHtml(line.out || '') + '</span>\n';
+        }
+      }
 
       function step() {
         if (lineIdx >= lines.length) {
-          // done — show CTA
           cursor.style.opacity = '0.4';
-          setTimeout(() => { cta.style.opacity = '1'; }, 400);
+          setTimeout(function () { cta.style.opacity = '1'; }, 400);
           return;
         }
 
         const line = lines[lineIdx];
-        const fullLine = line.prompt
-          ? `<span class="text-[#5cf2ff]">${line.prompt}</span> <span class="text-white">${line.cmd}</span>`
-          : `<span class="text-[#a8e6cf]">${line.out}</span>`;
-        const rawLine = line.prompt ? `${line.prompt} ${line.cmd}` : (line.out || '');
+        const rawLine = line.prompt
+          ? (line.prompt + ' ' + (line.cmd || ''))
+          : (line.out || '');
 
-        if (charIdx === 0 && rawLine === '') {
-          // empty line — skip immediately
-          html += '\n';
-          text.innerHTML = html;
-          lineIdx++;
+        // Пустая строка — пропускаем мгновенно
+        if (!rawLine) {
+          committedHtml += '\n';
+          text.innerHTML = committedHtml;
+          lineIdx += 1;
+          charIdx = 0;
           setTimeout(step, 80);
           return;
         }
 
         if (charIdx <= rawLine.length) {
-          // For prompt lines: show prompt instantly, type the command
-          // For output lines: type char by char with brief delay
           const partial = rawLine.slice(0, charIdx);
-          if (line.prompt) {
-            html_now = html + `<span class="text-[#5cf2ff]">${line.prompt}</span> <span class="text-white">${partial.slice(line.prompt.length + 1)}</span>`;
-          } else {
-            html_now = html + `<span class="text-[#a8e6cf]">${partial}</span>`;
-          }
-          text.innerHTML = html_now;
-          charIdx++;
-          // Speed: prompt cmds slower, output faster
+          text.innerHTML = renderPartial(line, partial);
+          charIdx += 1;
           const delay = line.prompt ? 35 : 18;
           setTimeout(step, delay);
         } else {
-          // Line done — commit to permanent html, newline, next line
-          html += fullLine + '\n';
-          text.innerHTML = html;
+          // Линия допечатана — фиксируем и идём дальше
+          commitLine(line);
+          text.innerHTML = committedHtml;
           charIdx = 0;
-          lineIdx++;
-          // Pause longer between blocks
+          lineIdx += 1;
           const pause = line.prompt ? 350 : 120;
           setTimeout(step, pause);
         }
       }
 
-      let html_now = '';
       step();
     }
 
-    // Auto-run on load
     document.addEventListener('astro:page-load', runTerminal);
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       runTerminal();
     }
 
-    // Replay button
     document.getElementById('term-replay')?.addEventListener('click', runTerminal);
   </script>
 </Base>
