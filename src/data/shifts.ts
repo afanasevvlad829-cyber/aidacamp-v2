@@ -9,13 +9,14 @@ export interface Shift {
   dates: string;
   duration: string;
   status: string;
-  statusType: 'available' | 'short';
+  statusType: 'available' | 'short' | 'soldout';
   description: string;
   price: string;
   free: number;
   occupied: number;
   highlighted?: boolean;
   popular?: boolean;
+  sold?: boolean;      // true = места нет, запись в лист ожидания
   startDate: string; // YYYY-MM-DD for calendar
   endDate: string;
 }
@@ -56,12 +57,13 @@ export const mainShifts: Shift[] = [
     name: 'Смена 3',
     dates: '3 августа — 15 августа',
     duration: '13 дней',
-    status: 'места есть',
-    statusType: 'available',
+    status: 'мест нет',
+    statusType: 'soldout',
     description: 'Проект от идеи до результата с акцентом на командную работу.',
     price: '89 400 ₽',
-    free: 5,
-    occupied: 40,
+    free: 0,
+    occupied: 45,
+    sold: true,
     startDate: '2026-08-03',
     endDate: '2026-08-15',
   },
@@ -126,12 +128,17 @@ export const PEER_COUNTS: Record<string, Record<string, number>> = {
 
 export function renderCard(shift: Shift) {
   const total = shift.free + shift.occupied;
-  const pct = Math.round((shift.occupied / total) * 100);
-  const badgeBg = shift.statusType === 'short' ? 'bg-amber-100' : 'bg-emerald-100';
-  const badgeText = shift.statusType === 'short' ? 'text-amber-700' : 'text-emerald-700';
-  const btnClass = shift.highlighted
+  const pct = total > 0 ? Math.round((shift.occupied / total) * 100) : 100;
+  let badgeBg = 'bg-emerald-100';
+  let badgeText = 'text-emerald-700';
+  if (shift.statusType === 'short') { badgeBg = 'bg-amber-100'; badgeText = 'text-amber-700'; }
+  if (shift.sold) { badgeBg = 'bg-red-100'; badgeText = 'text-red-700'; }
+  let btnClass = shift.highlighted
     ? 'bg-primary text-white transition-all duration-200 hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)] hover:-translate-y-[1px] active:translate-y-0'
     : 'border border-slate-200 bg-slate-100 text-slate-700 transition-all duration-200 hover:bg-white hover:-translate-y-[1px] active:translate-y-0';
+  if (shift.sold) {
+    btnClass = 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors';
+  }
 
   return { total, pct, badgeBg, badgeText, btnClass };
 }
