@@ -134,8 +134,22 @@ if [ "$LOCAL_HTML_HASH" != "$REMOTE_HTML_HASH" ]; then
   MISSING=$((MISSING + 1))
 fi
 
-# 6c. HTTP healthcheck
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$HEALTH_URL" || echo "000")
+# 6c. SSR ask-chunk совпадает
+LOCAL_ASK=$(ls dist/server/chunks/ask_*.mjs 2>/dev/null | head -1)
+if [ -n "$LOCAL_ASK" ]; then
+  LOCAL_ASK_HASH=$(md5 -q "$LOCAL_ASK" 2>/dev/null || md5sum "$LOCAL_ASK" | awk '{print $1}')
+  ASK_BASENAME=$(basename "$LOCAL_ASK")
+  REMOTE_ASK_HASH=$(ssh -i "$SSH_KEY" "$SSH_HOST" "md5sum ${SSR_DIR}chunks/$ASK_BASENAME 2>/dev/null | awk '{print \$1}'")
+  if [ "$LOCAL_ASK_HASH" != "$REMOTE_ASK_HASH" ]; then
+    echo "  ❌ SSR ask-chunk ${ASK_BASENAME} не совпадает с локальным!"
+    echo "     local:  $LOCAL_ASK_HASH"
+    echo "     remote: $REMOTE_ASK_HASH"
+    MISSING=$((MISSING + 1))
+  fi
+fi
+
+# 6d. HTTP healthcheck
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$HEALTH_URL" || echo "000")
 if [ "$HTTP_STATUS" != "200" ]; then
   echo "  ⚠️  $HEALTH_URL вернул HTTP $HTTP_STATUS"
 fi
@@ -148,6 +162,7 @@ fi
 
 echo "  ✅ HTML hash совпадает"
 echo "  ✅ Все hero-images на месте ($(echo "$HERO_IMAGES" | wc -l | tr -d ' ') файлов)"
+[ -n "$LOCAL_ASK" ] && echo "  ✅ SSR ask-chunk совпадает ($(basename "$LOCAL_ASK"))"
 echo "  ✅ HTTP $HTTP_STATUS"
 
 echo ""

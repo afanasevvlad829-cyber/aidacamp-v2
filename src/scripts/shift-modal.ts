@@ -86,7 +86,7 @@ export function initShiftModal() {
     infoBody.innerHTML = info ? info.html : '<p class="text-slate-500">Подробности появятся скоро.</p>';
 
     // Фокусируем блок «По возрастам» на выбранный возраст
-    const selectedAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge) || localStorage.getItem(STORAGE_KEYS.userAgeGroup);
+    const selectedAge = sessionStorage.getItem(STORAGE_KEYS.selectedAge);
     if (selectedAge) {
       const ageGroups = infoBody.querySelectorAll<HTMLElement>('[data-age-group]');
       if (ageGroups.length) {
