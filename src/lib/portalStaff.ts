@@ -1,5 +1,6 @@
 import type { PortalRole } from './portalSession';
 import { highestRole } from './portalRoles';
+import { query } from './db';
 
 export interface StaffRow {
   telegram_id: number | null;
@@ -36,13 +37,11 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
 
 /** Запись сотрудника по telegram_id (или null). */
 export async function getStaff(telegramId: number): Promise<StaffRow | null> {
-  return (await withClient(async (c) => {
-    const r = await c.query(
-      'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE telegram_id=$1',
-      [telegramId],
-    );
-    return (r.rows[0] as StaffRow) ?? null;
-  })) ?? null;
+  const rows = await query<StaffRow>(
+    'SELECT telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active FROM portal_staff WHERE telegram_id=$1',
+    [telegramId],
+  );
+  return rows?.[0] ?? null;
 }
 
 /** Создаёт заявку (pending, role=NULL), если сотрудника ещё нет. Возвращает запись. */
@@ -69,12 +68,10 @@ export async function ensurePending(
 }
 
 export async function listStaff(): Promise<StaffRowFull[]> {
-  return (await withClient(async (c) => {
-    const r = await c.query(
-      'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
-    );
-    return r.rows as StaffRowFull[];
-  })) ?? [];
+  const rows = await query<StaffRowFull>(
+    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
+  );
+  return rows ?? [];
 }
 
 /**
@@ -154,62 +151,50 @@ export async function mergePendingIntoPlaceholder(
 }
 
 export async function setRole(telegramId: number, role: PortalRole, approvedBy: number): Promise<void> {
-  await withClient(async (c) => {
-    await c.query(
-      `UPDATE portal_staff
-          SET role=$2,
-              roles = CASE WHEN $2 = ANY(COALESCE(roles, ARRAY[]::TEXT[])) THEN roles ELSE COALESCE(roles, ARRAY[]::TEXT[]) || $2 END,
-              approved_by=$3,
-              approved_at=now()
-        WHERE telegram_id=$1`,
-      [telegramId, role, approvedBy],
-    );
-  });
+  await query(
+    `UPDATE portal_staff
+        SET role=$2,
+            roles = CASE WHEN $2 = ANY(COALESCE(roles, ARRAY[]::TEXT[])) THEN roles ELSE COALESCE(roles, ARRAY[]::TEXT[]) || $2 END,
+            approved_by=$3,
+            approved_at=now()
+      WHERE telegram_id=$1`,
+    [telegramId, role, approvedBy],
+  );
 }
 
 /** Полный список ролей (заменяет существующий). Активная роль = НАИВЫСШАЯ из выданных. */
 export async function setRoles(telegramId: number, roles: PortalRole[], approvedBy: number): Promise<void> {
-  await withClient(async (c) => {
-    const activeRole = highestRole(roles);
-    const willActivate = roles.length > 0;
-    await c.query(
-      `UPDATE portal_staff
-          SET roles=$2,
-              role=$3,
-              active = CASE WHEN $5 THEN TRUE ELSE active END,
-              approved_by=$4,
-              approved_at=now()
-        WHERE telegram_id=$1`,
-      [telegramId, roles, activeRole, approvedBy, willActivate],
-    );
-  });
+  const activeRole = highestRole(roles);
+  const willActivate = roles.length > 0;
+  await query(
+    `UPDATE portal_staff
+        SET roles=$2,
+            role=$3,
+            active = CASE WHEN $5 THEN TRUE ELSE active END,
+            approved_by=$4,
+            approved_at=now()
+      WHERE telegram_id=$1`,
+    [telegramId, roles, activeRole, approvedBy, willActivate],
+  );
 }
 
 /** Включить/выключить сотрудника по PK id (работает и для placeholder без telegram_id). */
 export async function setActiveById(id: number, active: boolean): Promise<void> {
-  await withClient(async (c) => {
-    await c.query('UPDATE portal_staff SET active=$2 WHERE id=$1', [id, active]);
-  });
+  await query('UPDATE portal_staff SET active=$2 WHERE id=$1', [id, active]);
 }
 
 /** Переименовать сотрудника (full_name) по PK id. */
 export async function setNameById(id: number, fullName: string): Promise<void> {
-  await withClient(async (c) => {
-    await c.query('UPDATE portal_staff SET full_name=$2 WHERE id=$1', [id, fullName]);
-  });
+  await query('UPDATE portal_staff SET full_name=$2 WHERE id=$1', [id, fullName]);
 }
 
 /** Удалить запись сотрудника (для placeholder который больше не нужен, либо отклонения pending). */
 export async function deleteStaffById(id: number): Promise<void> {
-  await withClient(async (c) => {
-    await c.query('DELETE FROM portal_staff WHERE id=$1', [id]);
-  });
+  await query('DELETE FROM portal_staff WHERE id=$1', [id]);
 }
 
 export async function setActive(telegramId: number, active: boolean): Promise<void> {
-  await withClient(async (c) => {
-    await c.query('UPDATE portal_staff SET active=$2 WHERE telegram_id=$1', [telegramId, active]);
-  });
+  await query('UPDATE portal_staff SET active=$2 WHERE telegram_id=$1', [telegramId, active]);
 }
 
 /**

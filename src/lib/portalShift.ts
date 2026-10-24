@@ -1,4 +1,5 @@
 import type { PortalRole } from './portalSession';
+import { query } from './db';
 
 export interface ContentTask {
   id: number;
@@ -83,58 +84,61 @@ async function withClient<T>(fn: (c: import('pg').Client) => Promise<T>): Promis
 }
 
 export async function getActiveShift(): Promise<Shift | null> {
-  return (await withClient(async (c) => {
-    const r = await c.query("SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift WHERE status='active' ORDER BY start_date DESC LIMIT 1");
-    return (r.rows[0] as Shift) ?? null;
-  })) ?? null;
+  const rows = await query<Shift>(
+    "SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift WHERE status='active' ORDER BY start_date DESC LIMIT 1",
+  );
+  return rows?.[0] ?? null;
 }
 
 /** Отсортированный список дат смены (для навигации/шахматки) — без загрузки событий. */
 export async function getEventDates(shiftId: number): Promise<string[]> {
-  return (await withClient(async (c) => {
-    const r = await c.query(
-      "SELECT DISTINCT to_char(date,'YYYY-MM-DD') date FROM shift_event WHERE shift_id=$1 ORDER BY date", [shiftId]);
-    return r.rows.map((x: any) => x.date as string);
-  })) ?? [];
+  const rows = await query(
+    "SELECT DISTINCT to_char(date,'YYYY-MM-DD') date FROM shift_event WHERE shift_id=$1 ORDER BY date",
+    [shiftId],
+  );
+  return (rows ?? []).map((x: any) => x.date as string);
 }
 
 /** События смены. Если передана дата — только за этот день (легче для role/day видов). */
 export async function getEvents(shiftId: number, date?: string): Promise<ShiftEvent[]> {
-  return (await withClient(async (c) => {
-    const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,e.responsible_staff_id,ps.full_name AS responsible_name,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
-    const JOINS = "LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id LEFT JOIN portal_staff ps ON ps.id=e.responsible_staff_id";
-    const ev = date
-      ? await c.query(
-          `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 AND e.date=$2 ORDER BY e.date,e.sort,e.start_time`, [shiftId, date])
-      : await c.query(
-          `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 ORDER BY e.date,e.sort,e.start_time`, [shiftId]);
-    const ecl = await c.query(
-      "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
-      [ev.rows.map((e: any) => e.id)]);
-    const byEvent = new Map<number, any[]>();
-    for (const row of ecl.rows) {
-      const arr = byEvent.get(row.event_id) ?? []; arr.push(row); byEvent.set(row.event_id, arr);
-    }
-    return ev.rows.map((e: any) => ({
-      ...e,
-      content_task: e.ct_id != null ? { id: e.ct_id, title: e.ct_title, brief: e.ct_brief, content_type: e.ct_content_type } : null,
-      checklists: (byEvent.get(e.id) ?? []).map((r: any) => ({
-        event_checklist_id: r.event_checklist_id, checklist_id: r.checklist_id, title: r.title, roles: r.roles, items: r.items })),
-    }));
-  })) ?? [];
+  const COLS = "e.id,e.external_id,to_char(e.date,'YYYY-MM-DD') date,e.start_time::text,e.end_time::text,e.title,e.activity_type,e.event_type::text,e.activity_slug,e.content_task_template_id,e.group_color_id,e.staff_keys,e.roles,e.notes,e.sort,e.responsible_staff_id,ps.full_name AS responsible_name,ct.id ct_id,ct.title ct_title,ct.brief ct_brief,ct.content_type ct_content_type";
+  const JOINS = "LEFT JOIN content_task_template ct ON ct.id::text=e.content_task_template_id LEFT JOIN portal_staff ps ON ps.id=e.responsible_staff_id";
+  const evRows = date
+    ? await query(
+        `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 AND e.date=$2 ORDER BY e.date,e.sort,e.start_time`,
+        [shiftId, date],
+      )
+    : await query(
+        `SELECT ${COLS} FROM shift_event e ${JOINS} WHERE e.shift_id=$1 ORDER BY e.date,e.sort,e.start_time`,
+        [shiftId],
+      );
+  if (!evRows) return [];
+  const eclRows = await query(
+    "SELECT ec.id event_checklist_id, ec.event_id, ec.checklist_id, ec.roles, cl.title, cl.items FROM event_checklist ec JOIN checklist cl ON cl.id=ec.checklist_id WHERE ec.event_id = ANY($1)",
+    [evRows.map((e: any) => e.id)],
+  );
+  const byEvent = new Map<number, any[]>();
+  for (const row of (eclRows ?? [])) {
+    const arr = byEvent.get(row.event_id) ?? []; arr.push(row); byEvent.set(row.event_id, arr);
+  }
+  return evRows.map((e: any) => ({
+    ...e,
+    content_task: e.ct_id != null ? { id: e.ct_id, title: e.ct_title, brief: e.ct_brief, content_type: e.ct_content_type } : null,
+    checklists: (byEvent.get(e.id) ?? []).map((r: any) => ({
+      event_checklist_id: r.event_checklist_id, checklist_id: r.checklist_id, title: r.title, roles: r.roles, items: r.items })),
+  }));
 }
 
 /** Множество ключей "eventId:checklistId:itemId", отмеченных этим человеком. */
 export async function getDone(telegramId: number, shiftId: number): Promise<Set<string>> {
-  return (await withClient(async (c) => {
-    const r = await c.query(
-      "SELECT d.event_id,d.checklist_id,d.item_id FROM checklist_done d JOIN shift_event e ON e.id=d.event_id WHERE e.shift_id=$1 AND d.telegram_id=$2",
-      [shiftId, telegramId]);
-    return new Set(r.rows.map((x: any) => `${x.event_id}:${x.checklist_id}:${x.item_id}`));
-  })) ?? new Set<string>();
+  const rows = await query(
+    "SELECT d.event_id,d.checklist_id,d.item_id FROM checklist_done d JOIN shift_event e ON e.id=d.event_id WHERE e.shift_id=$1 AND d.telegram_id=$2",
+    [shiftId, telegramId],
+  );
+  return new Set((rows ?? []).map((x: any) => `${x.event_id}:${x.checklist_id}:${x.item_id}`));
 }
 
-/** Переключить пункт; возвращает {done}. roles — роли event_checklist для проверки доступа. */
+/** Переключить пункт; возвращает {done}. Требует одного соединения (DELETE + условный INSERT). */
 export async function toggleDone(telegramId: number, eventId: number, checklistId: number, itemId: string): Promise<{ done: boolean } | null> {
   return await withClient(async (c) => {
     const del = await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3 AND telegram_id=$4",
@@ -148,10 +152,11 @@ export async function toggleDone(telegramId: number, eventId: number, checklistI
 
 /** Роли event_checklist (для проверки доступа в API). */
 export async function eventChecklistRoles(eventId: number, checklistId: number): Promise<string[]> {
-  return (await withClient(async (c) => {
-    const r = await c.query("SELECT roles FROM event_checklist WHERE event_id=$1 AND checklist_id=$2 LIMIT 1", [eventId, checklistId]);
-    return (r.rows[0]?.roles as string[]) ?? [];
-  })) ?? [];
+  const rows = await query(
+    "SELECT roles FROM event_checklist WHERE event_id=$1 AND checklist_id=$2 LIMIT 1",
+    [eventId, checklistId],
+  );
+  return (rows?.[0]?.roles as string[]) ?? [];
 }
 
 // ===== Admin helpers =====
@@ -159,31 +164,30 @@ export interface ChecklistTemplate { id: number; key: string | null; title: stri
 
 /** Все смены (для админки). */
 export async function listShifts(): Promise<Shift[]> {
-  return (await withClient(async (c) => {
-    const r = await c.query("SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift ORDER BY start_date DESC");
-    return r.rows as Shift[];
-  })) ?? [];
+  const rows = await query<Shift>(
+    "SELECT id,name,to_char(start_date,'YYYY-MM-DD') start_date,to_char(end_date,'YYYY-MM-DD') end_date,status FROM shift ORDER BY start_date DESC",
+  );
+  return rows ?? [];
 }
 
 /** Шаблоны чек-листов (для админки). */
 export async function getChecklists(): Promise<ChecklistTemplate[]> {
-  return (await withClient(async (c) => {
-    const r = await c.query("SELECT id,key,title,items FROM checklist ORDER BY title");
-    return r.rows as ChecklistTemplate[];
-  })) ?? [];
+  const rows = await query<ChecklistTemplate>("SELECT id,key,title,items FROM checklist ORDER BY title");
+  return rows ?? [];
 }
 
 /** Создать смену; возвращает id. */
 export async function createShift(name: string, start: string, end: string): Promise<number | null> {
-  return await withClient(async (c) => {
-    const r = await c.query("INSERT INTO shift(name,start_date,end_date) VALUES($1,$2,$3) RETURNING id", [name, start, end]);
-    return r.rows[0].id as number;
-  });
+  const rows = await query<{ id: number }>(
+    "INSERT INTO shift(name,start_date,end_date) VALUES($1,$2,$3) RETURNING id",
+    [name, start, end],
+  );
+  return rows?.[0]?.id ?? null;
 }
 
 /** Архивировать смену. */
 export async function archiveShift(id: number): Promise<void> {
-  await withClient(async (c) => { await c.query("UPDATE shift SET status='archived' WHERE id=$1", [id]); });
+  await query("UPDATE shift SET status='archived' WHERE id=$1", [id]);
 }
 
 /** Создать/обновить событие; возвращает id. */
@@ -249,16 +253,12 @@ export async function upsertChecklist(cl: {
 
 /** Удалить событие (каскадно — все привязки чек-листов и отметки). */
 export async function deleteEvent(id: number): Promise<void> {
-  await withClient(async (c) => {
-    await c.query("DELETE FROM shift_event WHERE id=$1", [id]);
-  });
+  await query("DELETE FROM shift_event WHERE id=$1", [id]);
 }
 
 /** Удалить шаблон чек-листа (и каскадно — все его привязки и отметки). */
 export async function deleteChecklist(id: number): Promise<void> {
-  await withClient(async (c) => {
-    await c.query("DELETE FROM checklist WHERE id=$1", [id]);
-  });
+  await query("DELETE FROM checklist WHERE id=$1", [id]);
 }
 
 /** Привязать чек-лист к событию для ролей (или обновить роли существующей привязки). */
