@@ -57,9 +57,25 @@ const { label = 'Промокод', class: cls = 'mt-4' } = Astro.props;
 </div>
 
 <script>
-  // Astro бандлит скрипт компонента один раз на страницу, даже если PromoField
-  // вставлен в несколько форм — initPromoFields() сам обойдёт все поля и
-  // защищён от повторной инициализации.
-  import { initPromoFields } from '../scripts/promo';
-  initPromoFields();
+  // Ленивая загрузка: логика промокода (initPromoFields в src/scripts/promo.ts)
+  // догружается dynamic import'ом по onIdle — поле не нужно раньше, а чанк
+  // promo перестаёт входить в начальный граф страницы (цепочка критических
+  // запросов PageSpeed). Страховка от быстрого ввода: фокус/тач по полю
+  // догружает модуль раньше первого keystroke. Инициализация идемпотентна.
+  import { onIdle } from '../lib/onIdle';
+
+  let booted = false;
+  function boot(): Promise<unknown> {
+    if (booted) return Promise.resolve();
+    booted = true;
+    return import('../scripts/promo');
+  }
+
+  onIdle(() => { void boot(); });
+  document.addEventListener('focusin', (e) => {
+    if ((e.target as Element)?.matches?.('[data-promo-input]')) void boot();
+  }, { capture: true, passive: true });
+  document.addEventListener('pointerdown', (e) => {
+    if ((e.target as Element)?.closest?.('[data-promo-root]')) void boot();
+  }, { capture: true, passive: true });
 </script>

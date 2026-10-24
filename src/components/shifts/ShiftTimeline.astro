@@ -215,6 +215,11 @@ const milestones = isShort
   function initShiftTimeline() {
     const pinned = document.querySelector<HTMLElement>('[data-timeline-pinned]');
     if (!pinned) return;
+    // Desktop-only: на мобильных разметка display:none, а скролл-обработчики
+    // лишь читали бы геометрию невидимого элемента (forced layout на каждом
+    // кадре после записей setActive). Ресайз через брейкпоинт не переармит
+    // эффект — это прогрессивное улучшение, мобильная версия секции — карточки.
+    if (window.matchMedia('(max-width: 767px)').matches) return;
     const timeline = pinned;
     const photos = pinned.querySelectorAll<HTMLImageElement>('[data-pin-photo]');
     const slides = pinned.querySelectorAll<HTMLElement>('[data-pin-slide]');
@@ -243,11 +248,21 @@ const milestones = isShort
       if (caption && photos[idx]) caption.textContent = photos[idx].alt;
     }
 
+    // total меняется только при ресайзе/смене контента — кэшируем через
+    // ResizeObserver. Раньше offsetHeight читался на каждом кадре скролла
+    // сразу после записей setActive() (смена w-12/w-6 у баров инвалидирует
+    // layout) — это был источник forced layout на странице смены.
+    let total = 0;
+    const measure = () => { total = timeline.offsetHeight - window.innerHeight; };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(timeline);
+    window.addEventListener('resize', measure, { passive: true });
+
     function update() {
-      const rect = timeline.getBoundingClientRect();
-      const total = timeline.offsetHeight - window.innerHeight;
       if (total <= 0) return;
-      const scrolled = Math.max(0, Math.min(total, -rect.top));
+      // Единственное чтение геометрии на кадр — rect.top для прогресса.
+      const scrolled = Math.max(0, Math.min(total, -timeline.getBoundingClientRect().top));
       const progress = scrolled / total;
       // равные сегменты: i ∈ [0..N-1]
       const idx = Math.min(N - 1, Math.max(0, Math.floor(progress * N)));
@@ -256,21 +271,28 @@ const milestones = isShort
 
     buttons.forEach((btn, i) => {
       btn.addEventListener('click', () => {
-        const total = timeline.offsetHeight - window.innerHeight;
         const segment = total / N;
         const target = timeline.offsetTop + segment * i + segment / 2;
         window.scrollTo({ top: target, behavior: 'smooth' });
       });
     });
 
+    // Пока timeline вне вьюпорта (±100%), скролл вообще не обрабатываем —
+    // нечего читать и писать.
+    let nearViewport = false;
     let ticking = false;
     function onScroll() {
-      if (ticking) return;
+      if (!nearViewport || ticking) return;
       ticking = true;
       requestAnimationFrame(() => { update(); ticking = false; });
     }
+    const visibilityObserver = new IntersectionObserver((entries) => {
+      nearViewport = entries[0]?.isIntersecting ?? false;
+      if (nearViewport) onScroll();
+    }, { rootMargin: '100% 0px' });
+    visibilityObserver.observe(timeline);
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
     // Defer initial layout read — #shifts has content-visibility:auto, so calling
     // update() synchronously breaks the skip and causes forced reflow. At scroll=0
     // the first slide is always active, so setActive(0) is sufficient here.

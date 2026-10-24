@@ -144,15 +144,69 @@ import { TELEGRAM_URL } from '../data/contacts';
 </div>
 
 <script>
-  import { initShiftModal } from '../scripts/shift-modal';
-  import { initDiscountTimer } from '../scripts/discount-timer';
+  // Ленивый бутстрап: логика модалки (shift-modal.ts + discount-timer.ts)
+  // догружается dynamic import'ом — по первому намерению открыть (hover/touch/
+  // клик по триггерам) либо по onIdle. Статический импорт тянул чанк ShiftModal
+  // в начальный граф каждой страницы (цепочка критических запросов PageSpeed).
+  // Поведение прежнее: модалка открывается с первого клика — если клик опередил
+  // загрузку модуля, он повторяется после неё.
+  let mod: typeof import('../scripts/shift-modal') | null = null;
+  let loading: Promise<unknown> | null = null;
+  let pendingClick: HTMLElement | null = null;
+
+  const TRIGGERS = '[data-shift-calendar], [data-shift-info], [data-occupancy-shift], [data-shift-link]';
+
+  function stopIntentWatch() {
+    document.removeEventListener('pointerover', onIntent, { capture: true });
+    document.removeEventListener('touchstart', onIntent, { capture: true });
+    document.removeEventListener('click', onIntent, { capture: true });
+  }
+
+  function boot(): Promise<unknown> {
+    if (loading) return loading;
+    loading = Promise.all([
+      import('../scripts/shift-modal'),
+      import('../scripts/discount-timer'),
+    ]).then(([m, t]) => {
+      m.initShiftModal();
+      t.initDiscountTimer();
+      mod = m;
+      stopIntentWatch();
+      // Клик пришёл раньше загрузки — повторяем его, чтобы модалка
+      // открылась с первого нажатия.
+      const el = pendingClick;
+      pendingClick = null;
+      if (el && el.isConnected) el.click();
+    });
+    return loading;
+  }
+
+  function onIntent(e: Event) {
+    const t = e.target as Element | null;
+    if (!t || !(t instanceof Element)) return;
+    const trigger = t.closest<HTMLElement>(TRIGGERS);
+    if (!trigger) return;
+    if (mod) return; // модуль загружен — обработает сам
+    if (e.type === 'click') {
+      // Глушим клик до загрузки модуля и повторим его в boot().
+      e.preventDefault();
+      e.stopPropagation();
+      pendingClick = trigger;
+    }
+    void boot();
+  }
+  document.addEventListener('pointerover', onIntent, { capture: true, passive: true });
+  document.addEventListener('touchstart', onIntent, { capture: true, passive: true });
+  document.addEventListener('click', onIntent, { capture: true });
+
   document.addEventListener('astro:page-load', () => {
-    initShiftModal();
-    initDiscountTimer();
+    if (mod) mod.initShiftModal(); // идемпотентно (initialized-флаг в модуле)
   });
+
+  // onIdle-fallback: даже без намерения модуль появится сразу после загрузки
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => { initShiftModal(); initDiscountTimer(); }, { timeout: 2000 });
+    requestIdleCallback(() => { void boot(); }, { timeout: 2000 });
   } else {
-    setTimeout(() => { initShiftModal(); initDiscountTimer(); }, 200);
+    setTimeout(() => { void boot(); }, 200);
   }
 </script>

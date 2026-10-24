@@ -68,14 +68,37 @@ export function initScrollTracking() {
     { p: 75, id: 'scroll_75' },
     { p: 90, id: 'scroll_90' },
   ];
+  // scrollHeight документа кэшируется и перечитывается только на resize:
+  // чтение геометрии на каждом событии скролла — forced layout в момент,
+  // когда другие scroll-обработчики уже записали стили/DOM. Расчёт глубины
+  // группируется в один rAF-кадр (чтение scrollY после записей не форсирует
+  // компоновку — это не геометрия layout).
+  let pageHeight = 0;
+  let viewportH = 0;
+  let metricsDirty = true;
+  const refreshMetrics = () => {
+    pageHeight = document.documentElement.scrollHeight;
+    viewportH = window.visualViewport?.height ?? window.innerHeight;
+    metricsDirty = false;
+  };
+  window.addEventListener('resize', () => { metricsDirty = true; }, { passive: true });
+  // После load документ может «подрасти» (своп шрифтов, lazy-изображения) —
+  // обновляем кэш, чтобы глубина прокрутки считалась по актуальной высоте.
+  window.addEventListener('load', () => { metricsDirty = true; }, { once: true });
+  let ticking = false;
   window.addEventListener('scroll', () => {
-    const pct = Math.round(
-      (window.scrollY / (document.documentElement.scrollHeight - (window.visualViewport?.height ?? window.innerHeight))) * 100
-    );
-    goals.forEach((g) => {
-      if (pct >= g.p && !fired.has(g.id)) {
-        trackGoal(g.id);
-      }
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (metricsDirty) refreshMetrics();
+      const denom = pageHeight - viewportH;
+      const pct = denom > 0 ? Math.round((window.scrollY / denom) * 100) : 0;
+      goals.forEach((g) => {
+        if (pct >= g.p && !fired.has(g.id)) {
+          trackGoal(g.id);
+        }
+      });
     });
   }, { passive: true });
 }
