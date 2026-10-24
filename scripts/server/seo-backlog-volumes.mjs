@@ -24,7 +24,7 @@ const env = Object.fromEntries(
     .filter(l => l.includes('=')).map(l => [l.split('=')[0].trim(), l.split('=').slice(1).join('=').trim()])
 );
 const MCP_BASE = 'http://127.0.0.1:3457';
-const PG = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const PG = 'postgresql://aidacamp@localhost:5432/aidacamp';
 // BATCH 100 → 30 (27.08.2026). Проверено вручную: батч 30 реальных ключей проходит
 // за 45с и отдаёт частотность; батч 100 стабильно ловил 429 и ронял весь прогон
 // («добрано 0, без ответа 4362» каждую ночь). Время ответа почти не зависит от

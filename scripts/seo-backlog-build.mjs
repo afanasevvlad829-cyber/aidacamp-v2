@@ -35,7 +35,7 @@ const env = Object.fromEntries(
 );
 const TV_TOKEN = env.TOPVISOR_TOKEN, TV_USER = env.TOPVISOR_USER_ID;
 const MCP_BASE = 'http://127.0.0.1:3457';
-const PG = 'postgresql://aidacamp:aidacamp2026@localhost:5432/aidacamp';
+const PG = 'postgresql://aidacamp@localhost:5432/aidacamp';
 
 const SITES = [
   { site: 'aidacamp',    project: 11807186 },
