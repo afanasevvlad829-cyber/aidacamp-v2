@@ -147,11 +147,13 @@ export async function getEvents(shiftId: number, date?: string): Promise<ShiftEv
   }));
 }
 
-/** Множество ключей "eventId:checklistId:itemId", отмеченных этим человеком. */
-export async function getDone(telegramId: number, shiftId: number): Promise<Set<string>> {
+/** Множество ключей "eventId:checklistId:itemId", отмеченных КЕМ УГОДНО в смене.
+ *  Чек-листы общие: отметил один сотрудник — видят все (и админ). telegramId не используется
+ *  для фильтра, оставлен в сигнатуре для совместимости вызовов. */
+export async function getDone(_telegramId: number, shiftId: number): Promise<Set<string>> {
   const rows = await query(
-    "SELECT d.event_id,d.checklist_id,d.item_id FROM checklist_done d JOIN shift_event e ON e.id=d.event_id WHERE e.shift_id=$1 AND d.telegram_id=$2",
-    [shiftId, telegramId],
+    "SELECT DISTINCT d.event_id,d.checklist_id,d.item_id FROM checklist_done d JOIN shift_event e ON e.id=d.event_id WHERE e.shift_id=$1",
+    [shiftId],
   );
   return new Set((rows ?? []).map((x: any) => `${x.event_id}:${x.checklist_id}:${x.item_id}`));
 }
@@ -159,8 +161,9 @@ export async function getDone(telegramId: number, shiftId: number): Promise<Set<
 /** Переключить пункт; возвращает {done}. Требует одного соединения (DELETE + условный INSERT). */
 export async function toggleDone(telegramId: number, eventId: number, checklistId: number, itemId: string): Promise<{ done: boolean } | null> {
   return await withClient(async (c) => {
-    const del = await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3 AND telegram_id=$4",
-      [eventId, checklistId, itemId, telegramId]);
+    // Общая отметка: снимаем независимо от того, кто ставил.
+    const del = await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3",
+      [eventId, checklistId, itemId]);
     if (del.rowCount && del.rowCount > 0) return { done: false };
     await c.query("INSERT INTO checklist_done(event_id,checklist_id,item_id,telegram_id) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
       [eventId, checklistId, itemId, telegramId]);
@@ -179,8 +182,9 @@ export async function setDone(telegramId: number, eventId: number, checklistId: 
       await c.query("INSERT INTO checklist_done(event_id,checklist_id,item_id,telegram_id) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
         [eventId, checklistId, itemId, telegramId]);
     } else {
-      await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3 AND telegram_id=$4",
-        [eventId, checklistId, itemId, telegramId]);
+      // Общая отметка: снимаем независимо от автора.
+      await c.query("DELETE FROM checklist_done WHERE event_id=$1 AND checklist_id=$2 AND item_id=$3",
+        [eventId, checklistId, itemId]);
     }
     return { done };
   });

@@ -15,9 +15,8 @@ const SUMMARY_TITLE = root?.getAttribute('data-summary-title') || '📦 Мате
 const SUMMARY_TIME = '23:59';
 
 // Перезагрузка с сохранением места: запоминаем открытую карточку и скролл.
-function reloadKeepingPlace(eventId) {
+function reloadKeepingPlace(eventId?: any) {
   try {
-    const card = eventId ? document.querySelector(`.den-card[data-event="${eventId}"]`) : null;
     const openId = eventId || (document.querySelector('.den-card-body:not([hidden])')?.closest('.den-card')?.getAttribute('data-event'));
     sessionStorage.setItem('den-open', openId || '');
     sessionStorage.setItem('den-scroll', String(window.scrollY));
@@ -30,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const scroll = sessionStorage.getItem('den-scroll');
   if (openId) {
     const card = document.querySelector(`.den-card[data-event="${openId}"]`);
-    const body = card?.querySelector('.den-card-body');
+    const body = card?.querySelector('.den-card-body') as HTMLElement | null;
     if (body) body.hidden = false;
     if (card && body) card.classList.add('open');
     sessionStorage.removeItem('den-open');
@@ -42,7 +41,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Единый разбор ответа: всегда возвращает {ok, error?, ...} с понятным текстом.
-async function parseResp(r) {
+async function parseResp(r: any) {
   const text = await r.text().catch(() => '');
   let data = null;
   try { data = JSON.parse(text); } catch {}
@@ -50,11 +49,11 @@ async function parseResp(r) {
     if (data.ok === false && !data.error) data.error = `ошибка сервера (HTTP ${r.status})`;
     return data;
   }
-  const map = { 401: 'нужно войти заново', 403: 'нет прав на это действие', 404: 'не найдено', 413: 'файл слишком большой', 500: 'ошибка на сервере', 503: 'база недоступна' };
+  const map: Record<number, string> = { 401: 'нужно войти заново', 403: 'нет прав на это действие', 404: 'не найдено', 413: 'файл слишком большой', 500: 'ошибка на сервере', 503: 'база недоступна' };
   return { ok: r.ok, error: r.ok ? undefined : (map[r.status] || `HTTP ${r.status}`) + (text ? ': ' + text.slice(0, 100) : '') };
 }
 
-async function post(body) {
+async function post(body: any) {
   let r;
   try {
     r = await fetch(API.eventEdit, {
@@ -71,7 +70,7 @@ async function post(body) {
 document.querySelectorAll('[data-toggle]').forEach((el) => {
   el.addEventListener('click', () => {
     const card = el.closest('.den-card');
-    const body = el.parentElement.querySelector('.den-card-body');
+    const body = el.parentElement!.querySelector('.den-card-body') as HTMLElement | null;
     if (body) body.hidden = !body.hidden;
     if (card && body) card.classList.toggle('open', !body.hidden);
   });
@@ -80,9 +79,9 @@ document.querySelectorAll('[data-toggle]').forEach((el) => {
 // Сохранить блок
 // Фоновое автосохранение карточки (debounce). Без reload — обновляем только сводку.
 const saveTimers = new WeakMap();
-async function autoSaveCard(card, opts = {}) {
+async function autoSaveCard(card: any, opts: any = {}) {
   const eventId = card.getAttribute('data-event');
-  const get = (f) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
+  const get = (f: any) => card.querySelector(`[data-field="${f}"]`)?.value ?? '';
   const status = card.querySelector('[data-status]');
   if (status) status.textContent = 'Сохраняю…';
   const res = await post({
@@ -101,14 +100,14 @@ async function autoSaveCard(card, opts = {}) {
   if (res.ok && opts.reload) reloadKeepingPlace(Number(eventId));
 }
 
-function scheduleSave(card) {
+function scheduleSave(card: any) {
   clearTimeout(saveTimers.get(card));
   saveTimers.set(card, setTimeout(() => autoSaveCard(card), 600));
 }
 
 // Обновить мини-сводку (название, ответственный, комментарий) в свёрнутом виде
-function updateCardSummary(card) {
-  const get = (f) => card.querySelector(`[data-field="${f}"]`);
+function updateCardSummary(card: any) {
+  const get = (f: any) => card.querySelector(`[data-field="${f}"]`);
   const titleEl = card.querySelector('.den-card-title');
   if (titleEl && get('title')) titleEl.textContent = get('title').value || titleEl.textContent;
   const noteVal = get('notes')?.value?.trim() || '';
@@ -141,14 +140,14 @@ document.querySelectorAll('[data-save]').forEach((btn) => {
 document.querySelectorAll('[data-del]').forEach((btn) => {
   btn.addEventListener('click', async () => {
     if (!confirm('Удалить блок?')) return;
-    const card = btn.closest('.den-card');
+    const card = btn.closest('.den-card')!;
     const res = await post({ event_id: Number(card.getAttribute('data-event')), delete: true });
     if (res.ok) reloadKeepingPlace();
   });
 });
 
 // Пересчёт бейджа «done/total» по реальным чекбоксам тела
-function syncChkBadge(card) {
+function syncChkBadge(card: any) {
   const boxes = card.querySelectorAll('[data-check]');
   if (!boxes.length) return;
   const done = [...boxes].filter((b) => (b as HTMLInputElement).checked).length;
@@ -157,7 +156,7 @@ function syncChkBadge(card) {
 }
 
 // Применить состояние пункта во всех представлениях: превью + чекбокс тела + бейдж.
-function applyCheck(card, clId, itemId, done) {
+function applyCheck(card: any, clId: any, itemId: any, done: any) {
   const sel = '[data-cl="' + clId + '"][data-item="' + itemId + '"]';
   const li = card.querySelector('[data-preview-check]' + sel);
   if (li) {
@@ -172,7 +171,7 @@ function applyCheck(card, clId, itemId, done) {
 }
 
 // Сохранить отметку: оптимистичный UI + откат при ошибке. Единая точка для тела и превью.
-async function saveCheck(card, clId, itemId, done) {
+async function saveCheck(card: any, clId: any, itemId: any, done: any) {
   applyCheck(card, clId, itemId, done);
   const r = await postJson(API.check, {
     eventId: Number(card.getAttribute('data-event')),
@@ -204,9 +203,9 @@ document.querySelectorAll('[data-suggest]').forEach((btn) => {
     const title = btn.getAttribute('data-suggest') || '';
     const r = await fetch(API.contentTasks + '?suggest=' + encodeURIComponent(title), { credentials: 'include' });
     const data = await r.json().catch(() => ({ ok: false, items: [] }));
-    const sel = btn.parentElement.querySelector('[data-lib]');
+    const sel = btn.parentElement!.querySelector('[data-lib]');
     if (data.items && data.items.length && sel) {
-      const names = data.items.map((t) => `[${t.content_type}] ${t.title}`).join('\n');
+      const names = data.items.map((t: any) => `[${t.content_type}] ${t.title}`).join('\n');
       alert('Подходящие задания:\n\n' + names + '\n\nВыбери в списке выше.');
     } else {
       alert('Под этот блок подсказок не нашлось — выбери из общего списка.');
@@ -216,8 +215,8 @@ document.querySelectorAll('[data-suggest]').forEach((btn) => {
 
 // Добавить блок
 document.getElementById('add-btn')?.addEventListener('click', async () => {
-  const title = (document.getElementById('add-title')).value.trim();
-  const time = (document.getElementById('add-time')).value;
+  const title = (document.getElementById('add-title') as HTMLInputElement).value.trim();
+  const time = (document.getElementById('add-time') as HTMLInputElement).value;
   if (!title) { alert('Введите название блока'); return; }
   const res = await post({ action: 'create', shift_id: Number(shiftId), date, title, start_time: time });
   if (res.ok) location.reload();
@@ -225,7 +224,7 @@ document.getElementById('add-btn')?.addEventListener('click', async () => {
 });
 
 const ADMIN = API.admin;
-async function postForm(fields) {
+async function postForm(fields: any) {
   // JSON, а не FormData: admin при FormData делает redirect (isForm=true),
   // а нам нужен чистый JSON-ответ для разбора.
   let r;
@@ -241,7 +240,7 @@ async function postForm(fields) {
 // Параллельное событие (копия блока с тем же временем, можно сменить преподавателя)
 document.querySelectorAll('[data-dup]').forEach((btn) => {
   btn.addEventListener('click', async () => {
-    const card = btn.closest('.den-card');
+    const card = btn.closest('.den-card')!;
     const res = await postForm({ action: 'duplicateEvent', id: Number(card.getAttribute('data-event')) });
     if (res.ok) reloadKeepingPlace(Number(card.getAttribute('data-event')));
     else alert('Не удалось создать параллельный блок: ' + (res.error || ''));
@@ -251,8 +250,8 @@ document.querySelectorAll('[data-dup]').forEach((btn) => {
 // Привязать существующий чек-лист
 document.querySelectorAll('[data-cl-attach]').forEach((btn) => {
   btn.addEventListener('click', async () => {
-    const card = btn.closest('.den-card');
-    const pick = card.querySelector('[data-cl-pick]');
+    const card = btn.closest('.den-card')!;
+    const pick = card.querySelector('[data-cl-pick]') as HTMLSelectElement | null;
     const checklistId = pick && pick.value;
     if (!checklistId) { alert('Выбери чек-лист из списка'); return; }
     const res = await postForm({ action: 'attachChecklist', event_id: Number(card.getAttribute('data-event')), checklist_id: Number(checklistId) });
@@ -263,13 +262,13 @@ document.querySelectorAll('[data-cl-attach]').forEach((btn) => {
 
 // Создать новый чек-лист и сразу привязать к блоку
 // Модалка создания чек-листа
-const clModal = document.getElementById('cl-modal');
-const clItems = document.getElementById('cl-items');
-const clTitle = document.getElementById('cl-title');
-const clStatus = document.getElementById('cl-status');
-let clTargetEvent = null;
+const clModal = document.getElementById('cl-modal') as HTMLElement;
+const clItems = document.getElementById('cl-items') as HTMLElement;
+const clTitle = document.getElementById('cl-title') as HTMLInputElement;
+const clStatus = document.getElementById('cl-status') as HTMLElement;
+let clTargetEvent: any = null;
 
-function clAddItemRow(value) {
+function clAddItemRow(value: any) {
   const row = document.createElement('div');
   row.className = 'cl-item-row';
   const inp = document.createElement('input');
@@ -281,16 +280,16 @@ function clAddItemRow(value) {
   clItems.appendChild(row);
   return inp;
 }
-let clEditId = null;
+let clEditId: any = null;
 const clModalTitle = clModal?.querySelector('h3');
 const clCreateBtn = document.getElementById('cl-create');
-function clOpen(eventId, edit) {
+function clOpen(eventId: any, edit?: any) {
   clTargetEvent = eventId;
   clEditId = edit?.id || null;
   clTitle.value = edit?.title || '';
   clItems.innerHTML = '';
   if (edit?.items) {
-    edit.items.split('\n').filter(Boolean).forEach((t) => clAddItemRow(t));
+    edit.items.split('\n').filter(Boolean).forEach((t: any) => clAddItemRow(t));
     if (!edit.items) { clAddItemRow(''); clAddItemRow(''); }
   } else { clAddItemRow(''); clAddItemRow(''); }
   if (clModalTitle) clModalTitle.textContent = clEditId ? 'Редактировать чек-лист' : 'Новый чек-лист';
@@ -303,7 +302,7 @@ function clClose() { clModal.hidden = true; }
 
 document.querySelectorAll('[data-cl-new]').forEach((btn) => {
   btn.addEventListener('click', () => {
-    const card = btn.closest('.den-card');
+    const card = btn.closest('.den-card')!;
     clOpen(Number(card.getAttribute('data-event')));
   });
 });
@@ -311,7 +310,7 @@ document.querySelectorAll('[data-cl-new]').forEach((btn) => {
 // Редактировать существующий чек-лист
 document.querySelectorAll('[data-cl-edit]').forEach((btn) => {
   btn.addEventListener('click', () => {
-    const card = btn.closest('.den-card');
+    const card = btn.closest('.den-card')!;
     clOpen(Number(card.getAttribute('data-event')), {
       id: Number(btn.getAttribute('data-cl-id')),
       title: btn.getAttribute('data-cl-name') || '',
@@ -324,7 +323,7 @@ document.querySelectorAll('[data-cl-edit]').forEach((btn) => {
 document.querySelectorAll('[data-cl-detach]').forEach((btn) => {
   btn.addEventListener('click', async () => {
     if (!confirm('Отвязать чек-лист от этого блока?')) return;
-    const card = btn.closest('.den-card');
+    const card = btn.closest('.den-card')!;
     const res = await post({ event_id: Number(card.getAttribute('data-event')), detach_event_checklist_id: Number(btn.getAttribute('data-ec-id')) });
     if (res.ok) reloadKeepingPlace(Number(card.getAttribute('data-event')));
     else alert('Ошибка: ' + (res.error || ''));
@@ -351,7 +350,7 @@ document.getElementById('cl-create')?.addEventListener('click', async () => {
 
 // Копировать день
 document.getElementById('copy-day')?.addEventListener('click', () => {
-  const target = prompt('На какую дату скопировать день? (ГГГГ-ММ-ДД)', date);
+  const target = prompt('На какую дату скопировать день? (ГГГГ-ММ-ДД)', date || '');
   if (!target) return;
   fetch(API.copyDay, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -364,9 +363,9 @@ document.getElementById('copy-day')?.addEventListener('click', () => {
 
 // ── Материалы дня: загрузка общих фото/видео ──
 (function () {
-  const sec = document.querySelector('.den-summary');
+  const sec = document.querySelector('.den-summary') as HTMLElement;
   if (!sec) return;
-  const fileInput = document.getElementById('day-file');
+  const fileInput = document.getElementById('day-file') as HTMLInputElement;
   const status = document.getElementById('day-status');
   document.getElementById('day-upload')?.addEventListener('click', () => fileInput.click());
 
