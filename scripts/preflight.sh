@@ -53,14 +53,21 @@ case "$SERVICE" in
   replicate)
     [[ -z "${REPLICATE_API_TOKEN:-}" ]] \
       && die "нет REPLICATE_API_TOKEN в окружении. Возьми из .env и передай: REPLICATE_API_TOKEN=... bash scripts/preflight.sh replicate"
-    # Официальная тест-модель replicate/hello-world: копеечный запуск проверяет
-    # И валидность токена, И наличие кредита — «insufficient credit» вылетает
-    # прямо на создании prediction, ждать выполнения не нужно.
+    # Короткий путь /v1/models/{owner}/{name}/predictions у replicate/hello-world
+    # перестал работать (404 — проверено 08.08.2026, модель 2022 года, вероятно
+    # больше не поддерживает shorthand-запуск). Резолвим latest_version явно и
+    # бьём в канонический /v1/predictions — универсально работает для любой модели.
+    VERSION=$(with_timeout 30 curl -sS "https://api.replicate.com/v1/models/replicate/hello-world" \
+      -H "Authorization: Bearer $REPLICATE_API_TOKEN" 2>&1 \
+      | python3 -c "import json,sys; print(json.load(sys.stdin)['latest_version']['id'])" 2>/dev/null)
+    [[ -z "$VERSION" ]] && die "не удалось получить latest_version hello-world — токен невалиден или API недоступен"
+    # Копеечный запуск проверяет И валидность токена, И наличие кредита —
+    # «insufficient credit» вылетает прямо на создании prediction, ждать выполнения не нужно.
     RESP=$(with_timeout 60 curl -sS -X POST \
-      "https://api.replicate.com/v1/models/replicate/hello-world/predictions" \
+      "https://api.replicate.com/v1/predictions" \
       -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"input":{"text":"preflight"}}' 2>&1) || die "curl упал: ${RESP:0:300}"
+      -d "{\"version\":\"$VERSION\",\"input\":{\"text\":\"preflight\"}}" 2>&1) || die "curl упал: ${RESP:0:300}"
     echo "$RESP" | grep -qi 'insufficient credit' \
       && die "на счету Replicate нет денег — конвейер мертворождённый (инцидент 16.07). Пополни биллинг ДО постройки."
     echo "$RESP" | grep -qiE 'authentication|unauthenticated|invalid.*token' \
