@@ -10,6 +10,28 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   security: { checkOrigin: false },
   integrations: [
+    // Стабильные имена server-чанков (без content-hash). SSR-серверу кэш-бастинг
+    // не нужен (Node читает файлы с диска при старте), а хэш в имени ломал
+    // rsync-дельту: манифест-чанк ~150MB каждую сборку получал новое имя
+    // (в манифесте есть случайный key server islands) → rsync видел «новый файл»
+    // и гнал все 150MB по сети (Matched data: 0). Со стабильными именами rsync
+    // делает дельта-передачу — уезжают только реально изменённые байты.
+    // Client-бандл НЕ трогаем: у браузеров хэш в имени обязателен для кэша.
+    {
+      name: 'stable-server-chunk-names',
+      hooks: {
+        'astro:build:setup'({ vite, target }) {
+          if (target !== 'server') return;
+          vite.build ??= {};
+          vite.build.rollupOptions ??= {};
+          const ro = vite.build.rollupOptions;
+          const patch = (out) => ({ ...out, chunkFileNames: 'chunks/[name].mjs' });
+          ro.output = Array.isArray(ro.output)
+            ? ro.output.map(patch)
+            : patch(ro.output ?? {});
+        },
+      },
+    },
     sitemap({
       // Исключаем служебные и тестовые страницы из sitemap.xml
       // /admin/* — админка загрузки фото, /попробовать/ — внутренняя страница
