@@ -52,11 +52,13 @@ case "$TARGET" in
     ;;
 esac
 
-# Сборка
+# Сборка — ВСЕГДА с очисткой кешей (.astro / vite / dist).
+# Без этого Astro может закешировать старые компоненты и задеплоить устаревший HTML.
+# Инцидент 2026-04-25: 4 деплоя подряд с одной и той же старой версией LandingHero.
 echo ""
-echo "🔨 Сборка..."
+echo "🔨 Сборка (fresh, кеши очищены)..."
 cd "$PROJECT_DIR"
-npm run build --silent
+npm run build:fresh --silent
 
 # Проверка что билд существует
 if [ ! -f "dist/client/index.html" ]; then
@@ -105,3 +107,41 @@ echo ""
 echo "✅ Задеплоено на $LABEL"
 echo "   Статика:    dist/client/ → $REMOTE_DIR"
 echo "   SSR-сервер: dist/server/ → $SSR_DIR"
+
+# Smoke-проверка: ключевые страницы должны отдавать 200 + базовый контент.
+# Защита от багов вида «деплой прошёл, но html пустой/сломан».
+if [ "$TARGET" = "dev" ]; then
+  HOST="dev.aidacamp.ru"
+else
+  HOST="aidacamp.ru"
+fi
+
+echo ""
+echo "🔎 Smoke-test https://$HOST ..."
+SMOKE_FAILED=0
+for slug in "" "ceny/" "pitanie/" "lager-programmirovaniya/" "kompyuternyy-lager/" "stati/"; do
+  url="https://$HOST/$slug"
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url")
+  if [ "$code" != "200" ]; then
+    echo "   ❌ $url → HTTP $code"
+    SMOKE_FAILED=1
+  else
+    echo "   ✅ $url → 200"
+  fi
+done
+
+# Гарантия что hero-картинок нет на SEO-лендингах (после T2-перехода на CSS-эффекты)
+for slug in "lager-programmirovaniya" "detskiy-lager" "kompyuternyy-lager"; do
+  hero_img=$(curl -s "https://$HOST/$slug/" | grep -oE '<img src="/images/hero/[^"]*"' | head -1)
+  if [ -n "$hero_img" ]; then
+    echo "   ❌ $slug: hero <img> ещё в HTML — кеш не очищен или код не задеплоен"
+    SMOKE_FAILED=1
+  fi
+done
+
+if [ "$SMOKE_FAILED" = "1" ]; then
+  echo ""
+  echo "⚠️  Smoke-test НЕ прошёл — проверь страницы вручную"
+  exit 2
+fi
+echo "   Все smoke-проверки пройдены"
