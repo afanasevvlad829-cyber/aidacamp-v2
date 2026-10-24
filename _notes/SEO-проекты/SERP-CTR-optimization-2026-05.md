@@ -194,3 +194,19 @@ git push origin dev
 
 **Status:** CRITICAL — Conversions dropped -80.0% (critical)
 
+
+
+### A/B Analysis — 2026-05-05
+
+**Baseline (2026-04-28 to 2026-05-04):**
+- CTR:  4.221428571428571%
+- Conversions:       105
+- Bounce Rate:  38.042857142857144
+
+**Test (2026-05-04):**
+- CTR:         0% (change: -100.0%)
+- Conversions:         0 (change: -100.0%)
+- Bounce Rate:         0 (change: -100.0%)
+
+**Status:** CRITICAL — Conversions dropped -100.0% (critical)
+
