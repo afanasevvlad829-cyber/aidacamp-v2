@@ -1,22 +1,62 @@
 ---
-import { faqItems } from '../../data/corp/shared';
+const tabs = [
+  { id: 'about', label: 'О лагере', items: [
+    { q: 'Что входит в стоимость путёвки?', a: 'Всё включено: проживание в комнатах по 2–4 человека, 5-разовое горячее питание, IT-программа с преподавателями-практиками, оборудование (ноутбуки предоставляются), бассейн, спорт, досуг и медработник 24/7. Доплачивать за оборудование или занятия не нужно.' },
+    { q: 'Нужно ли ребёнку уметь программировать?', a: 'Нет. Принимаем с нуля — с 7 лет. Дети без опыта начинают со Scratch и Minecraft Education и за 7–14 дней создают первый проект. Те, кто уже умеет — работают на продвинутом уровне.' },
+    { q: 'Чем IT-лагерь отличается от обычного?', a: 'В обычном лагере дети отдыхают. В IT-лагере — отдыхают и создают: каждый ребёнок уезжает с готовым проектом (игрой, ботом, AI-приложением). При этом бассейн, спорт и вожатые тоже есть.' },
+    { q: 'Какой возраст принимаете?', a: 'От 7 до 15 лет включительно. Для каждого возрастного диапазона подобраны подходящие треки и педагоги.' },
+  ]},
+  { id: 'medicine', label: 'Медицина', items: [
+    { q: 'Есть ли медицинский персонал?', a: 'Да, медсестра работает круглосуточно. Санаторий «Изумруд» имеет собственный медицинский блок.' },
+    { q: 'Что нужно привезти из документов?', a: 'Медицинская справка (форма 079/у), справка об отсутствии контактов с инфекционными больными (не старше 3 дней до заезда), СНИЛС. Полный список высылаем при записи.' },
+  ]},
+  { id: 'safety', label: 'Безопасность', items: [
+    { q: 'Как обеспечивается безопасность?', a: 'Территория огорожена, вход по пропускам. Вожатые — по одному на 8–10 детей. Медицинский пост 24/7. Все педагоги с медкнижками и справками.' },
+    { q: 'Можно ли забрать ребёнка раньше срока?', a: 'Да, в любое время. Нужно предупредить за день и приехать самостоятельно или прислать доверенное лицо с документами.' },
+  ]},
+  { id: 'food', label: 'Питание', items: [
+    { q: 'Как организовано питание?', a: '5-разовое питание в столовой санатория: завтрак, обед, полдник, ужин, поздний перекус. Меню без полуфабрикатов, есть выбор блюд.' },
+    { q: 'Учитываете ли аллергии?', a: 'Да. При записи укажите аллергии и пищевые ограничения — передадим на кухню. Если нужна строгая диета, уточните индивидуально.' },
+  ]},
+  { id: 'accommodation', label: 'Проживание', items: [
+    { q: 'Где живут дети?', a: 'В корпусах санатория «Изумруд», комнаты по 2–4 человека. Есть душ, туалет на этаже или в номере (зависит от корпуса).' },
+    { q: 'Можно ли с ребёнком?', a: 'Нет, это детский лагерь. Дети живут без родителей под присмотром вожатых.' },
+  ]},
+  { id: 'communication', label: 'Связь', items: [
+    { q: 'Есть ли интернет?', a: 'Wi-Fi в общих зонах. Телефоны у детей при себе, но время использования ограничено по распорядку дня.' },
+    { q: 'Как общаться с ребёнком?', a: 'Звонки и сообщения в свободное время (вечер). Вожатые создают родительский чат в Telegram с фото и новостями каждый день.' },
+  ]},
+];
 ---
 
-<section class="corp-section corp-section-alt">
-  <div class="corp-wrap">
-    <div class="corp-kicker r">Частые вопросы</div>
-    <h2 class="corp-h2 r mb-10">Ответы на <em class="not-italic text-[var(--corp-or2)]">частые вопросы</em></h2>
-
-    <div class="mx-auto max-w-3xl divide-y divide-[var(--corp-bdr)]">
-      {faqItems.map((item) => (
-        <details class="r group py-4">
-          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-[var(--corp-txt)] md:text-lg">
-            {item.q}
-            <i class="bi bi-plus-lg shrink-0 text-[var(--corp-or)] transition-transform group-open:rotate-45" aria-hidden="true"></i>
-          </summary>
-          <p class="mt-3 text-base leading-relaxed text-[var(--corp-txt2)]">{item.a}</p>
-        </details>
+<section>
+  <div class="wrap">
+    <div class="s-kicker r">Частые вопросы</div>
+    <h2 class="r"><em>FAQ</em></h2>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--gap-xs);margin-bottom:var(--gap-lg);" class="r">
+      {tabs.map((t, i) => (
+        <button type="button" class:list={['gtab', i === 0 && 'active']} onclick={`switchFaq('${t.id}',this)`}>{t.label}</button>
       ))}
     </div>
+    {tabs.map((t, i) => (
+      <div id={`faq-${t.id}`} class:list={['faq-panel', i === 0 && 'active']} class="r">
+        {t.items.map(item => (
+          <details class="faq-item">
+            <summary>{item.q}</summary>
+            <div class="faq-ans">{item.a}</div>
+          </details>
+        ))}
+      </div>
+    ))}
   </div>
 </section>
+
+<script>
+  function switchFaq(id: string, el: HTMLElement) {
+    document.querySelectorAll('.gtab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.faq-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('faq-' + id)?.classList.add('active');
+  }
+  (window as any).switchFaq = switchFaq;
+</script>
