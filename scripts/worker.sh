@@ -50,9 +50,9 @@ case "$cmd" in
 
     echo -e "${CYAN}Создаю воркер: $task${NC}"
 
-    # Создаём ветку от свежего dev
+    # Создаём ветку от свежего main
     git fetch origin --quiet
-    git branch "$BRANCH" origin/dev 2>/dev/null || true
+    git branch "$BRANCH" origin/main 2>/dev/null || true
 
     # Создаём worktree
     git worktree add "$WORKTREE_DIR" "$BRANCH"

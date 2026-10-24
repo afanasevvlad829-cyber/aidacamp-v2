@@ -20,7 +20,7 @@ git clone --depth 50 "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
 cd repo
 git config user.email "agent@aidacamp.local"
 git config user.name  "aidacamp-agent"
-git checkout -b "$BRANCH" origin/dev
+git checkout -b "$BRANCH" origin/main
 export GH_TOKEN   # для gh
 
 echo "▶ claude над брифом ($(wc -w < "$BRIEF_FILE") слов)"
@@ -32,14 +32,14 @@ if [ -n "$(git status --porcelain)" ]; then
   git add -A && git commit -m "agent: $SLUG (auto-commit оставшихся изменений)" || true
 fi
 
-if [ -z "$(git log origin/dev..HEAD --oneline)" ]; then
+if [ -z "$(git log origin/main..HEAD --oneline)" ]; then
   echo "✖ агент не внёс изменений — PR не создаю"
   exit 0
 fi
 
 echo "▶ push + PR"
 git push origin "$BRANCH"
-gh pr create --repo "$REPO" --base dev --head "$BRANCH" \
+gh pr create --repo "$REPO" --base main --head "$BRANCH" \
   --title "$SLUG (агент-контейнер)" \
   --body "Сгенерировано dev-агентом в изолированном контейнере. Бриф:\n\n$(cat "$BRIEF_FILE")" \
   && echo "✅ PR создан" || echo "⚠ gh pr create не удался (возможно PR уже есть)"
