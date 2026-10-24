@@ -13,6 +13,12 @@ export function clampIds(raw: unknown, max = 300): string[] {
   return out;
 }
 
+/** Leaves only requested IDs that are members of the resolved shift album. */
+export function filterAlbumAssetIds(requestedIds: string[], albumAssetIds: Iterable<string>): string[] {
+  const inAlbum = new Set(albumAssetIds);
+  return requestedIds.filter((id) => inAlbum.has(id));
+}
+
 /**
  * Имя файла для Content-Disposition — только ASCII-безопасные символы
  * (буквы латиницы/цифры/пробелы/точки/дефисы), остальное вырезаем.

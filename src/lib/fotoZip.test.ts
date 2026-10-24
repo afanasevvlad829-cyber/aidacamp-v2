@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clampIds, safeZipFilename } from './fotoZip';
+import { clampIds, filterAlbumAssetIds, safeZipFilename } from './fotoZip';
 
 describe('clampIds', () => {
   it('не массив → пусто', () => {
@@ -20,6 +20,13 @@ describe('clampIds', () => {
     const many = Array.from({ length: 400 }, (_, i) => `id-${i}`);
     expect(clampIds(many)).toHaveLength(300);
     expect(clampIds(many, 5)).toHaveLength(5);
+  });
+});
+
+describe('filterAlbumAssetIds', () => {
+  it('keeps request order but excludes IDs outside the shift album', () => {
+    expect(filterAlbumAssetIds(['own-2', 'foreign', 'own-1'], ['own-1', 'own-2']))
+      .toEqual(['own-2', 'own-1']);
   });
 });
 
