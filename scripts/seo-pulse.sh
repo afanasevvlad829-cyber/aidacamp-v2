@@ -84,6 +84,27 @@ WAVE_MEASURED=$(sudo -u postgres psql -d aidacamp -tAc "
 WAVE_OPEN_PRS=$(sudo -u postgres psql -d aidacamp -tAc "
   SELECT site || ' | ' || pr_url FROM seo_wave_log WHERE pr_url IS NOT NULL AND edited_at >= now() - interval '24 hours'" 2>/dev/null || true)
 
+# ── 4. Очередь работы (seo_keyword_backlog) ─────────────────────────────────
+# Показываем не только сделанное, но и что впереди: сколько ключей ждёт, какая
+# страница следующая по приоритету. Ранжирование — то же, что использует цикл
+# (Шаг E.1 скилла seo-wave-cycle): коммерческие кластеры вперёд, главную не трогаем.
+BACKLOG_STATE=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ': в очереди ' || COUNT(*) FILTER (WHERE status='new' AND position BETWEEN 11 AND 40)
+      || ', в работе ' || COUNT(*) FILTER (WHERE status='in_wave')
+      || ', закрыто ' || COUNT(*) FILTER (WHERE status='done')
+      || ' (частотность у ' || COUNT(volume) || '/' || COUNT(*) || ')'
+  FROM seo_keyword_backlog GROUP BY site ORDER BY site" 2>/dev/null || true)
+BACKLOG_NEXT=$(sudo -u postgres psql -d aidacamp -tAc "
+  SELECT site || ' | ' || cluster_page || ' | ключей ' || COUNT(*)
+      || ' (комм. ' || COUNT(*) FILTER (WHERE intent='commercial') || ')'
+      || ' | лучшая поз. ' || MIN(position)
+  FROM seo_keyword_backlog
+  WHERE status='new' AND position BETWEEN 11 AND 40 AND cluster_page IS NOT NULL
+    AND cluster_page !~ '^https?://[^/]+/?\$'
+  GROUP BY site, cluster_page
+  HAVING COUNT(*) FILTER (WHERE intent='commercial') > 0
+  ORDER BY site, COUNT(*) FILTER (WHERE intent='commercial') DESC, SUM(priority) DESC" 2>/dev/null | awk '!seen[$1]++' || true)
+
 # ── HTML-отчёт ───────────────────────────────────────────────────────────────
 cat > "$REPORT" <<HTML
 <!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
@@ -126,6 +147,12 @@ $( if [[ -n "$WAVE_MEASURED" ]]; then echo "<pre>$(echo "$WAVE_MEASURED" | esc)<
 <p class="muted">Открытые PR за сутки:</p>
 $( if [[ -n "$WAVE_OPEN_PRS" ]]; then echo "<pre>$(echo "$WAVE_OPEN_PRS" | esc)</pre>"; else echo "<p>Пусто.</p>"; fi )
 <p class="muted">Источник — таблица seo_wave_log, заполняется скиллом seo-wave-cycle. Лабрика-конвейер (скор/конкуренты вручную в браузере) сюда не входит — отдельная ручная работа в сессии.</p></div>
+
+<div class="card"><h2>📋 4. Очередь работы (бэклог ключей)</h2>
+$( if [[ -n "$BACKLOG_STATE" ]]; then echo "<pre>$(echo "$BACKLOG_STATE" | esc)</pre>"; else echo "<p>Бэклог пуст — нужен прогон scripts/seo-backlog-build.mjs.</p>"; fi )
+<p class="muted">Следующая цель по каждому сайту (коммерческие кластеры вперёд, главная исключена):</p>
+$( if [[ -n "$BACKLOG_NEXT" ]]; then echo "<pre>$(echo "$BACKLOG_NEXT" | esc)</pre>"; else echo "<p>Коммерческих кластеров в диапазоне 11-40 не осталось.</p>"; fi )
+<p class="muted">Единица работы — страница со всем кластером ключей: одна правка закрывает сразу все её запросы. Приоритет = спрос (показы Вебмастера, иначе Wordstat) × близость к ТОП-10 × √размер кластера × интент (коммерция ×1.5, инфо ×0.3).</p></div>
 
 <p class="muted">Скрипт: scripts/seo-pulse.sh (репо aidacamp-v2, самообновляется из origin/dev).</p>
 </body></html>
