@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX, mainShifts } from '../data/shifts';
+import { PRICE_MIN, SEASON_YEAR, VYCHET_MAX, mainShifts, openShiftsDaysLabel } from '../data/shifts';
 import { AUTUMN_SEASON } from '../data/seasons';
 import SeasonPreRegister from '../components/SeasonPreRegister.astro';
 import '../styles/global.css';
@@ -10,9 +10,8 @@ import Shifts from '../components/Shifts.astro';
 import GalleryPreview from '../components/GalleryPreview.astro';
 import FAQ from '../components/FAQ.astro';
 
-// Диапазон длительности открытых смен — из mainShifts, не хардкодить (см. shifts.ts).
-const _durations = mainShifts.map(s => parseInt(s.duration, 10));
-const DURATION_RANGE = `${Math.min(..._durations)}–${Math.max(..._durations)}`;
+// Длительность открытых смен — из mainShifts: «7 дней» или «7–14 дней», без «7–7» (см. shifts.ts).
+const DURATION_LABEL = openShiftsDaysLabel(mainShifts);
 
 // Даты осенних заездов — из seasons.ts, не хардкодить (гард check:dates).
 const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
@@ -23,9 +22,9 @@ const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
 <LandingLayout
   noindex={true}
   heroImage="/images/landing/hero-glamping.avif"
-  title={`Едете отдыхать — а ребёнку подарите своё лето | АйДаКемп ${SEASON_YEAR}`}
+  title={`Едете отдыхать — а ребёнку подарите свои каникулы | АйДаКемп ${SEASON_YEAR}`}
   description={`Планируете отдых? Пока вы отдыхаете, ребёнок — в IT-лагере в Подмосковье: программирование, нейросети, бассейн, друзья. Ближайшие заезды на осенние каникулы: ${AUTUMN_DATES}.`}
-  h1="Едете отдыхать — а ребёнку подарите своё лето"
+  h1="Едете отдыхать — а ребёнку подарите свои каникулы"
   breadcrumb="Лето для себя"
 >
   <!-- Хиро: полноэкранное фото + градиент-слой + текст. Кадр подменяется по utm_content -->
@@ -41,11 +40,11 @@ const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
         <a href="/" class="hover:text-white">Главная</a> <span class="mx-1">→</span> <span>Лето для себя</span>
       </nav>
       <h1 class="text-white font-bold text-[30px] md:text-[52px] leading-[1.08] tracking-[-0.02em] max-w-[760px]">
-        Едете отдыхать — а ребёнку подарите <span class="text-primary">своё лето</span>
+        Едете отдыхать — а ребёнку подарите <span class="text-primary">свои каникулы</span>
       </h1>
       <p class="mt-5 text-[16px] md:text-[19px] leading-[1.55] text-white/90 max-w-[620px]">
         Глэмпинг и загородный отель придуманы для взрослых. Ребёнку нужен свой драйв.
-        Пока вы отдыхаете на природе — он в IT-лагере создаёт игры и нейросети. {DURATION_RANGE} дней, Подмосковье.
+        Пока вы отдыхаете — он в IT-лагере создаёт игры и нейросети. {DURATION_LABEL}, Подмосковье.
       </p>
       <ul class="mt-6 space-y-2 max-w-[600px]">
         <li class="flex items-start gap-2 text-[15px] md:text-[16px] text-white/90">
@@ -66,7 +65,7 @@ const AUTUMN_DATES = (AUTUMN_SEASON.calendarWindows ?? [])
         Записаться на осенние каникулы <Icon name="bi:arrow-right" class="bi bi-arrow-right" aria-hidden="true" />
       </a>
       <p class="mt-3 text-[14px] text-white/70">
-        Летние смены {SEASON_YEAR} завершены. Ближайшие заезды — {AUTUMN_DATES}: смотрите программу и даты на странице <a href="/lager-na-osennie-kanikuly/" class="underline hover:text-white">детский лагерь на осенние каникулы</a>.
+        Ближайшие заезды — {AUTUMN_DATES}: смотрите программу и даты на странице <a href="/lager-na-osennie-kanikuly/" class="underline hover:text-white">детский лагерь на осенние каникулы</a>.
       </p>
     </div>
   </section>

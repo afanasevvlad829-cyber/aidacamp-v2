@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { SHIFT_META, mainShifts, SEASON_YEAR } from '../../data/shifts';
+import { SHIFT_META, mainShifts, SEASON_YEAR, openShiftsDaysLabel } from '../../data/shifts';
 import { getCurrentPrice, getTaxDeduction, fmtPrice } from '../../data/dynamicPrices';
 import '../../styles/global.css';
 import Base from '../../layouts/Base.astro';
@@ -19,14 +19,14 @@ const vychetOf = (id: string) => fmtPrice(getTaxDeduction(id));
 
 // Длительности — тоже из данных, не литералом: иначе протухают при смене состава смен.
 const daysOf = (id: string) => `${SHIFT_META[id].days} дней`;
-const openDays = mainShifts.map((s) => SHIFT_META[s.id].days).sort((a, b) => a - b);
-const DAYS_RANGE_NOW = `${openDays[0]}–${openDays[openDays.length - 1]} дней`;
+const DAYS_RANGE_NOW = openShiftsDaysLabel(mainShifts); // «7 дней» или «7–14 дней», без «7–7»
 
 // Диапазон и максимальный вычет — по открытым сменам, тоже от текущих цен.
 const openPrices = mainShifts.map((s) => getCurrentPrice(s.id) ?? SHIFT_META[s.id].basePrice);
 const PRICE_MIN_NOW = fmtPrice(Math.min(...openPrices));
 const PRICE_MAX_NOW = fmtPrice(Math.max(...openPrices));
 const VYCHET_MAX_NOW = fmtPrice(Math.max(...mainShifts.map((s) => getTaxDeduction(s.id))));
+const VYCHET_MIN_NOW = fmtPrice(Math.min(...mainShifts.map((s) => getTaxDeduction(s.id))));
 
 const relatedPages = [
   { title: "Налоговый вычет за лагерь", url: "/nalogovyj-vychet/", icon: "cash-coin", description: `Как вернуть до ${VYCHET_MAX_NOW} — пошаговая инструкция` },
@@ -387,7 +387,7 @@ const faqItems = [
         <div class="flex items-center gap-2 mb-4">
           <div class="list-accent-dot"></div>
           <h2 class="text-[20px] md:text-[24px] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
-            Налоговый вычет: возвращаем от {vychetOf('shift-4')} до {VYCHET_MAX_NOW}
+            Налоговый вычет: возвращаем от {VYCHET_MIN_NOW} до {VYCHET_MAX_NOW}
           </h2>
         </div>
         <p class="text-[16px] leading-[1.7] text-slate-600 max-w-[720px] mb-4">

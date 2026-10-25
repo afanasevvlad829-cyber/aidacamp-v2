@@ -7,11 +7,12 @@ import Shifts from '../components/Shifts.astro';
 import AskCta from '../components/AskCta.astro';
 import FAQSchema from '../components/FAQSchema.astro';
 import { STAT_LICENSE } from '../data/contacts';
-import { SEASON_YEAR, SHIFT_META } from '../data/shifts';
+import { NEAREST_OPEN_SHIFT, SEASON_YEAR, SHIFT_META } from '../data/shifts';
 import { getCurrentPrice } from '../data/dynamicPrices';
 
 // Всё по смене — только из shifts.ts, ни одной даты и цены руками
-const SHIFT_ID = 'shift-4';
+// Ближайшая открытая смена, а не зашитая 'shift-4': та закончилась в августе и висела в первом экране до октября.
+const SHIFT_ID = NEAREST_OPEN_SHIFT.id;
 const meta = SHIFT_META[SHIFT_ID];
 const MONTH_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const dm = (iso: string) => `${parseInt(iso.slice(8, 10), 10)} ${MONTH_GEN[parseInt(iso.slice(5, 7), 10) - 1]}`;
@@ -79,7 +80,7 @@ const faqItems = [
     keywords={[
       "Компенсируем дорогу в обе стороны",
       "Встречаем в Москве и везём до лагеря",
-      "8–16 лет · Подмосковье · лицензия Минобрнауки"
+      "7–15 лет · Подмосковье · лицензия Минобрнауки"
     ]}
     image="/images/hero/lager-dlya-podrostkov.avif"
     imageAlt="IT-лагерь АйДаКемп для ребят из Санкт-Петербурга"
@@ -211,7 +212,7 @@ const faqItems = [
     </div>
   </section>
 
-  <Shifts />
+  <Shifts compactPastShifts />
 
   <section class="mx-auto max-w-[860px] px-4 pt-14 pb-0">
     <div class="text-center mb-6 max-w-[560px] mx-auto">
