@@ -20,6 +20,12 @@ const SKIP_COMPRESS = process.env.SKIP_COMPRESS === '1';
 export default defineConfig({
   site: 'https://aidacamp.ru',
   adapter: node({ mode: 'standalone' }),
+  // Заезд 25–31 октября (shift-autumn-1) снят с сайта 25.10.2026 (не состоялся) —
+  // его страницы уводим на осенний лендинг, а не в 404: на них вели реклама и статьи.
+  redirects: {
+    '/shifts/shift-autumn-1/': '/lager-na-osennie-kanikuly/',
+    '/lager-na-osennie-kanikuly/25-oktyabrya/': '/lager-na-osennie-kanikuly/',
+  },
   // CSRF-проверка Origin (checkOrigin, дефолт true) снова включена. В апреле (bf40ff3f)
   // её выключили: за nginx-прокси Astro без allowedDomains не доверяет X-Forwarded-Proto,
   // строил URL как http://aidacamp.ru, Origin https://… не совпадал → 403 на form-POST.
@@ -119,6 +125,8 @@ export default defineConfig({
         // /shifts/shift-1/ и /shifts/shift-2/ — завершённые смены, nginx отдаёт 301 на
         // /kak-proshla-smena-N/ (sitemap не должен вести на редирект). GSC 26.09.2026.
         !/^https:\/\/aidacamp\.ru\/shifts\/shift-(1|2)\/?$/.test(page) &&
+        // редиректы снятого октябрьского заезда (см. redirects выше)
+        !/^https:\/\/aidacamp\.ru\/(shifts\/shift-autumn-1|lager-na-osennie-kanikuly\/25-oktyabrya)\/?$/.test(page) &&
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
         !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики

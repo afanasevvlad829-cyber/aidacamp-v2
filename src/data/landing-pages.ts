@@ -132,7 +132,7 @@ export const landingPages: LandingPage[] = [
   { title: 'Лагерь на неделю', description: 'Короткие смены 7–10 дней круглый год', url: '/lager-na-nedelyu/', icon: 'bi-calendar2-check' },
   { title: 'Лагерь на июль', description: `Июльские смены ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-iyul/', icon: 'bi-sun' },
   { title: 'Лагерь на август', description: `Смены августа ${SEASON_YEAR} в Подмосковье`, url: '/lager-na-avgust-podmoskove/', icon: 'bi-sun' },
-  { title: 'Лагерь на осенние каникулы', description: `IT-смена в октябре ${SEASON_YEAR}, предзапись открыта`, url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },
+  { title: 'Лагерь на осенние каникулы', description: `IT-смена в ноябре ${SEASON_YEAR}, идёт запись`, url: '/lager-na-osennie-kanikuly/', icon: 'bi-cloud-sun' },
   { title: 'Лагерь на зимние каникулы', description: `IT-смена в декабре ${SEASON_YEAR} — январе ${SEASON_YEAR + 1}`, url: '/lager-na-zimnie-kanikuly/', icon: 'bi-snow' },
   { title: 'Лагерь на весенние каникулы', description: 'IT-смена в марте 2027, предзапись открыта', url: '/lager-na-vesennie-kanikuly/', icon: 'bi-flower1' },
 

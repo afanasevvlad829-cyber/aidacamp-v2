@@ -182,32 +182,21 @@ export const mainShifts: Shift[] = [
   // предзаписью без оплаты. Перенесены в mainShifts, как и предписывал комментарий
   // при их заведении. Константы ниже теперь ВЫЧИСЛЯЮТСЯ из этих смен — единый
   // источник правды сохранён, дублирования цен и дат нет.
-  {
-    id: 'shift-autumn-1',
-    name: 'Осенняя смена',
-    dates: '25 октября — 31 октября',
-    duration: '7 дней',
-    status: 'идёт запись',
-    statusType: 'available',
-    description: 'Осенние каникулы: программирование, нейросети и хакатон за неделю.',
-    price: '49 900 ₽',
-    free: 20,
-    occupied: 0,
-    nearest: true,
-    startDate: '2026-10-25',
-    endDate: '2026-10-31',
-  },
+  // Заезд 25–31 октября (shift-autumn-1) не состоялся и снят с сайта целиком — решение
+  // владельца 25.10.2026, без пометок «отменена». Старые адреса уводит redirects в
+  // astro.config.mjs. id shift-autumn-2 не меняем: на /shifts/shift-autumn-2/ ведут ссылки.
   {
     id: 'shift-autumn-2',
-    name: 'Осенняя смена (триместр)',
+    name: 'Осенняя смена',
     dates: '15 ноября — 21 ноября',
     duration: '7 дней',
     status: 'идёт запись',
     statusType: 'available',
-    description: 'Заезд для школ с триместровым графиком — та же программа, свои даты.',
+    description: 'Неделя в ноябре: программирование, нейросети и хакатон.',
     price: '49 900 ₽',
     free: 20,
     occupied: 0,
+    nearest: true,
     startDate: '2026-11-15',
     endDate: '2026-11-21',
   },
@@ -468,30 +457,23 @@ export const VYCHET_MAX = _fmtV(shiftDeduction(_maxVychetShift));
 export const VYCHET_MAX_DAYS = _maxVychetShift.duration;
 
 // === Осень 2026 — окна заездов утверждены владельцем 2026-08-14 (цена — решение 2026-07-03) ===
-// Два заезда: основной под четвертные каникулы, второй под триместровый график школ.
+// Был и октябрьский заезд (shift-autumn-1) — снят 25.10.2026, остался ноябрьский.
 // ⚠️ Заезды ПЕРЕНЕСЕНЫ в mainShifts 27.08.2026 (продажи открыты). Константы оставлены
 // как производные — их импортируют seasons.ts, lager-na-nedelyu.astro и
 // lager-na-osennie-kanikuly/[window].astro; удалять их без правки этих страниц нельзя.
-const _autumn1 = mainShifts.find(s => s.id === 'shift-autumn-1')!;
+// Октябрьский заезд снят 25.10.2026 — осенний заезд теперь один, ноябрьский.
+const _autumn = mainShifts.find(s => s.id === 'shift-autumn-2')!;
 export const AUTUMN_2026 = {
-  price: _autumn1.price,
-  startDate: _autumn1.startDate,
-  endDate: _autumn1.endDate,
-  days: 7,
-} as const;
-// Второй (дополнительный) заезд — для школ с триместровой системой, утверждён 2026-08-14.
-const _autumn2 = mainShifts.find(s => s.id === 'shift-autumn-2')!;
-export const AUTUMN_2026_WINDOW2 = {
-  price: _autumn2.price,
-  startDate: _autumn2.startDate,
-  endDate: _autumn2.endDate,
+  price: _autumn.price,
+  startDate: _autumn.startDate,
+  endDate: _autumn.endDate,
   days: 7,
 } as const;
 export const PRICE_OSEN = AUTUMN_2026.price;
 // Длительность межсезонного заезда — рядом с ценой, по той же причине, что
 // DAYS_S3 рядом с PRICE_S3: «${PRICE_OSEN} за 7 дней» разъедется, как только
 // у осенней смены изменится длина. Страж: npm run check:durations.
-export const DAYS_OSEN = _autumn1.duration;
+export const DAYS_OSEN = _autumn.duration;
 export const VYCHET_OSEN = _fmtV(Math.round(taxDeduction(_priceNum(AUTUMN_2026.price), AUTUMN_2026.days) / 50) * 50);
 
 // === Зима 2026–2027 — продажи открыты 27.08.2026, смена перенесена в mainShifts ===
@@ -907,7 +889,7 @@ export const shiftInfo: Record<string, {
   },
 };
 
-// Осенние заезды (25–31 октября и 15–21 ноября, одна программа) — решение владельца
+// Осенний заезд (15–21 ноября) — решение владельца
 // 30.09.2026: подробная программа, экономика и хакатон на странице смены. Факты — те же,
 // что в итогах Смены 3 и в статьях про хакатон/экономику: роли, StarCoins, 600 лагерных
 // рублей в день, 10 ₽ = минута телефона. Даты и цена берутся из самой смены, не дублируются.
@@ -937,6 +919,4 @@ const AUTUMN_PROGRAM_HTML =
   section('Лагерная экономика',
     'С первого дня у каждого свой счёт: 600 лагерных рублей за каждый день, бонусы за активность и конкурсы, штрафы за нарушения. Рубли тратят на минуты телефона (10 ₽ = 1 минута), сувениры и мерч лагеря или копят всем отрядом на общее — кино, вечер у костра, отбой на час позже. Копить или тратить сразу, ребята решают сами. Все расходы уже в цене путёвки.');
 
-for (const s of [_autumn1, _autumn2]) {
-  shiftInfo[s.id] = { dates: s.dates, duration: s.duration, price: s.price, html: AUTUMN_PROGRAM_HTML };
-}
+shiftInfo[_autumn.id] = { dates: _autumn.dates, duration: _autumn.duration, price: _autumn.price, html: AUTUMN_PROGRAM_HTML };
