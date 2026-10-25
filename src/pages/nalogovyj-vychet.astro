@@ -1,5 +1,5 @@
 ---
-import { DAYS_MAX, DAYS_S1, DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, daysAdj } from '../data/shifts';
+import { DAYS_MAX, DAYS_S1, DAYS_S2, DAYS_S21, DAYS_S22, DAYS_S3, DAYS_S4, PRICE_MAX, PRICE_MIN, PRICE_S1, PRICE_S2, PRICE_S21, PRICE_S22, PRICE_S3, PRICE_S4, SEASON_YEAR, VYCHET_MAX, VYCHET_MAX_DAYS, VYCHET_S1, VYCHET_S2, VYCHET_S21, VYCHET_S22, VYCHET_S3, VYCHET_S4, daysAdj, daysNum, EDU_RESID_PER_DAY, fmtRub, mainShifts, shiftDeduction } from '../data/shifts';
 import { STAT_LICENSE } from '../data/contacts';
 import '../styles/global.css';
 import LandingLayout from '../layouts/LandingLayout.astro';
@@ -12,6 +12,19 @@ import { getRelatedPages } from '../data/landing-pages';
 import ShiftBookModal from '../components/shifts/ShiftBookModal.astro';
 import AskCta from '../components/AskCta.astro';
 
+// Пример расчёта для самой дорогой открытой смены — из данных, а не текстом:
+// иначе дни и цена едут вместе со сменой, а «13 × 3 800 = 49 400» остаётся летним.
+const _exDays = daysNum(DAYS_MAX);
+const _exResid = EDU_RESID_PER_DAY * _exDays;
+const _exEdu = Math.max(parseInt(PRICE_MAX.replace(/[^\d]/g, ''), 10) - _exResid, 0);
+const EXAMPLE_SPLIT = `${_exDays} × ${fmtRub(EDU_RESID_PER_DAY).replace(' ₽', '')} = ${fmtRub(_exResid)} бытовая, ${fmtRub(_exEdu)} образовательная`;
+
+// Нижняя граница — по открытым сменам, как VYCHET_MAX (VYCHET_S4 — прошедшая смена, и диапазон выходил перевёрнутым).
+const VYCHET_MIN_OPEN = fmtRub(Math.min(...mainShifts.map(shiftDeduction)));
+
+// Возврат по каждой открытой смене — для FAQ (раньше там стояли прошедшие смены 3 и 4).
+const OPEN_VYCHET_LIST = mainShifts.map((s) => `${s.dates} (${s.duration}, ${s.price}) — возврат ~${fmtRub(shiftDeduction(s))}`).join('; ');
+
 const sections = [
   {
     h2: "Правовая основа: статья 219 НК РФ",
@@ -19,7 +32,7 @@ const sections = [
   },
   {
     h2: `Что изменилось в вычете за лагерь`,
-    text: `С 2024 года лимит социального вычета по ст. 219 НК РФ вырос до 110 000 ₽ в год на одного школьника (было 50 000 ₽). Возврат считается от фактически потраченной образовательной части, а не от всего лимита. Для открытых августовских смен эта часть с запасом укладывается в лимит. Итого: от ~${VYCHET_S4} до ~${VYCHET_MAX}. Срок давности — 3 года.`,
+    text: `С 2024 года лимит социального вычета по ст. 219 НК РФ вырос до 110 000 ₽ в год на одного школьника (было 50 000 ₽). Возврат считается от фактически потраченной образовательной части, а не от всего лимита. Для открытых смен эта часть с запасом укладывается в лимит. Итого: от ~${VYCHET_MIN_OPEN} до ~${VYCHET_MAX}. Срок давности — 3 года.`,
     list: [
       "Если двое детей — лимиты отдельные по каждому ребенку",
       "Срок давности — 3 года: за 2023, 2024, 2025 ещё можно подать"
@@ -31,7 +44,7 @@ const sections = [
     list: [
       "Бытовая часть — 3 800 ₽ в день (комната, 5-разовое питание, охрана территории)",
       "Образовательная — оставшаяся сумма (преподаватели, ноутбуки, ПО, 3D-принтеры, учебные материалы, диагностика, сертификаты)",
-      `Например, для открытой смены ${DAYS_MAX} по ${PRICE_MAX}: 13 × 3 800 = 49 400 ₽ бытовая, 40 000 ₽ образовательная`,
+      `Например, для открытой смены ${DAYS_MAX} по ${PRICE_MAX}: ${EXAMPLE_SPLIT}`,
       "Образовательную часть выделяем в договоре отдельной строкой по запросу — это база для вычета"
     ]
   },
@@ -128,7 +141,7 @@ const sections = [
 
   <FAQ items={['medicine:0', 'safety:0', 'food:0', 'communication:0', 'payment:1', 'documents:5', 'about2026:5', 'payment:2']} extraItems={[
     { q: "Можно ли получить налоговый вычет за путёвку в летний лагерь?", a: `Да, если лагерь имеет образовательную лицензию. АйДаКемп работает по лицензии Минобрнауки (${STAT_LICENSE}). Родитель возвращает 13% от образовательной части смены по ст. 219 НК РФ — до ${VYCHET_MAX} на школьника в год.` },
-    { q: "Сколько можно вернуть за смену в АйДаКемп?", a: `Зависит от смены: смена 4 (${DAYS_S4}, ${PRICE_S4}) — возврат ~${VYCHET_S4}; смена 3 (${DAYS_S3}, ${PRICE_S3}) — возврат ~${VYCHET_MAX}. Точный расчёт — в калькуляторе на странице.` },
+    { q: "Сколько можно вернуть за смену в АйДаКемп?", a: `Зависит от смены: ${OPEN_VYCHET_LIST}. Точный расчёт — в калькуляторе на странице.` },
     { q: "Какие документы нужны для налогового вычета за лагерь?", a: "Договор с выделенной образовательной частью, акт, копия лицензии Минобрнауки, чек или платёжка, свидетельство о рождении ребенка. Все документы выдаём после оплаты автоматически." },
     { q: "Как подать декларацию для вычета?", a: "Способ 1: через работодателя — уведомление ФНС через nalog.ru и передача в бухгалтерию. Способ 2: декларация 3-НДФЛ через Личный кабинет ФНС в следующем году. Срок давности — 3 года." },
     { q: "Могут ли оба родителя получить налоговый вычет?", a: `Да, оба родителя получают вычет независимо — каждый со своего НДФЛ. По ${daysAdj(VYCHET_MAX_DAYS, 'gen')} смене каждый вернёт до ~${VYCHET_MAX}, семья удваивает возврат. Нужен платёжный документ на своё имя у каждого.` },
