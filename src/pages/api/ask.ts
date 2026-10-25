@@ -211,15 +211,35 @@ export const POST: APIRoute = async ({ request }) => {
         'Но без выдуманных историй — общие наблюдения, без «один мальчик».';
     }
     // Для story режима убираем общий RAG-контекст (другие истории/видео миксуют) — оставляем ТОЛЬКО pickRealStory
-    const ctxForLLM = (intent === 'story') ? '' : ragResult.context;
-    const systemText = basePrompt + ctxForLLM + intentBoost;
+    // Citations API: чанки идут отдельными document-блоками в content,
+    // НЕ вклеиваются в systemText. Бот цитирует их → grounding verifiable.
+    const useChunks = intent !== 'story' && ragResult.chunks?.length > 0;
+    const systemText = basePrompt + intentBoost + (useChunks
+      ? '\n\nВАЖНО: ниже в сообщении пользователя — DOCUMENTS из БАЗЫ ЗНАНИЙ. ' +
+        'Используй ТОЛЬКО факты из этих документов. ' +
+        'Если факта в документах нет — говори «уточню у менеджера», НЕ выдумывай. ' +
+        'Эти документы — твой grounding.'
+      : (intent === 'story' ? '' : ragResult.context));
+
+    const docBlocks: any[] = useChunks
+      ? ragResult.chunks.slice(0, 8).map((c) => ({
+          type: 'document',
+          source: { type: 'content', content: [{ type: 'text', text: c.text }] },
+          title: c.source,
+          citations: { enabled: true },
+        }))
+      : [];
+
+    const userContent: any = useChunks
+      ? [...docBlocks, { type: 'text', text: message }]
+      : message;
 
     const messages: Anthropic.MessageParam[] = [
       ...history.slice(-12).map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
-      { role: 'user', content: message },
+      { role: 'user', content: userContent },
     ];
 
     // A/B: ?m=haiku -> используем haiku как primary (для замера latency/CSAT)
@@ -257,9 +277,27 @@ export const POST: APIRoute = async ({ request }) => {
     const latencyMs = Date.now() - t0;
     const inputTokens = response?.usage?.input_tokens ?? null;
     const outputTokens = response?.usage?.output_tokens ?? null;
-    const metrics = { latencyMs, model: usedModel, inputTokens, outputTokens };
 
-    const raw = response.content[0].type === 'text' ? response.content[0].text : '';
+    // Citations API может вернуть несколько text-блоков — собираем все
+    const textBlocks: any[] = (response?.content ?? []).filter((b: any) => b?.type === 'text');
+    const raw = textBlocks.map((b: any) => b.text || '').join('');
+
+    // Собираем citations для grounding-метрики
+    const allCitations: { source: string; cited: string }[] = [];
+    for (const b of textBlocks) {
+      for (const c of (b.citations || [])) {
+        const src = c.document_title || c.title || `doc#${c.document_index ?? '?'}`;
+        const cited = (c.cited_text || '').slice(0, 160);
+        if (cited) allCitations.push({ source: src, cited });
+      }
+    }
+    const groundedSources = Array.from(new Set(allCitations.map(c => c.source)));
+
+    const metrics: any = {
+      latencyMs, model: usedModel, inputTokens, outputTokens,
+      citations: allCitations.length,
+      grounded_sources: groundedSources,
+    };
 
     // Extract JSON even if Claude wraps it in ```json ... ```
     const jsonMatch = raw.match(/\{[\s\S]*\}/);

@@ -57,10 +57,38 @@ function openaiEmbed(text: string): Promise<number[]> {
   });
 }
 
+export interface RagChunk {
+  source: string;
+  text: string;
+  score: number;
+  pinned?: boolean;
+}
+
 export interface RagResult {
-  context: string;   // строка для system prompt
-  isEmpty: boolean;  // true = ничего не нашли выше порога
+  context: string;        // legacy: строка для system prompt
+  chunks: RagChunk[];     // structured: массив чанков для Citations API
+  hits: string[];         // имена источников (для логирования)
+  isEmpty: boolean;
   trustedCount: number;
+}
+
+/**
+ * Keyword-pinning — принудительное включение канонических kb_* по теме.
+ */
+function pinSourcesForQuery(question: string): string[] {
+  const qLow = question.toLowerCase();
+  const pin: string[] = [];
+  if (/прожива|номер|комнат|расселен|как живут|где спят|условия прожив/.test(qLow)) pin.push('kb_on_site_2026');
+  if (/меню|кормят|питани|завтрак|обед|ужин|полдник|что едят|как едят|аллерги/.test(qLow)) pin.push('kb_on_site_2026');
+  if (/добраться|маршрут|шоссе|трансфер|адрес|где лагерь|как ехать|на машине|солнцево/.test(qLow)) pin.push('kb_logistics_2026');
+  if (/игровые рубл|внутренн.*валют|телефонн.*время|мерч|лагерн.*деньг/.test(qLow)) pin.push('kb_game_economy_2026');
+  if (/что включ|что входит|что не входит|что взять|с собой|обувь|шапочку|вещи/.test(qLow)) {
+    pin.push('kb_whats_included_2026', 'kb_what_to_pack_2026');
+  }
+  if (/налог|вычет|13%|ндфл/.test(qLow)) pin.push('kb_tax_deduction_2026');
+  if (/скидк|акци|дешевл|приведи друг/.test(qLow)) pin.push('kb_prices_discounts_2026');
+  if (/возврат|отказ|не понравил/.test(qLow)) pin.push('kb_payment_2026');
+  return Array.from(new Set(pin));
 }
 
 /**
@@ -68,7 +96,7 @@ export interface RagResult {
  * Возвращает RagResult — caller может решить что делать при isEmpty=true.
  */
 export async function ragSearch(question: string): Promise<RagResult> {
-  const empty: RagResult = { context: '', isEmpty: true, trustedCount: 0 };
+  const empty: RagResult = { context: '', chunks: [], hits: [], isEmpty: true, trustedCount: 0 };
 
   const pool = getPool();
   if (!pool || !OPENAI_API_KEY) return empty;
@@ -82,9 +110,10 @@ export async function ragSearch(question: string): Promise<RagResult> {
   if (!qVec.length) return empty;
 
   const vecStr = `[${qVec.join(',')}]`;
+  const pinSources = pinSourcesForQuery(question);
 
   try {
-    // Tier 1: проверенные источники
+    // Tier 1: trusted
     const { rows: trusted } = await pool.query<{ source: string; text: string; score: number }>(
       `SELECT source, text, 1 - (embedding <=> $1::vector) AS score
        FROM knowledge_chunks
@@ -95,7 +124,7 @@ export async function ragSearch(question: string): Promise<RagResult> {
     );
     const trustedOk = trusted.filter(r => r.score >= MIN_SCORE_TRUSTED);
 
-    // Tier 2: диалоги — только если trusted дал меньше 3
+    // Tier 2: dialogs (только если trusted < 3)
     let dialogOk: typeof trusted = [];
     if (trustedOk.length < 3) {
       const need = 6 - trustedOk.length;
@@ -105,21 +134,41 @@ export async function ragSearch(question: string): Promise<RagResult> {
          WHERE (source LIKE 'tg_%' OR source LIKE 'wa_%')
          ORDER BY embedding <=> $1::vector
          LIMIT $2`,
-        [vecStr, need * 2]   // берём с запасом, потом фильтруем
+        [vecStr, need * 2]
       );
       dialogOk = dialogs.filter(r => r.score >= MIN_SCORE_DIALOG).slice(0, need);
     }
 
-    const all = [...trustedOk, ...dialogOk];
-    if (!all.length) return empty;
+    // Pinned: принудительные kb_* по ключевикам
+    let pinned: typeof trusted = [];
+    if (pinSources.length) {
+      const { rows: pinnedRows } = await pool.query<{ source: string; text: string; score: number }>(
+        `SELECT source, text, 1 - (embedding <=> $1::vector) AS score
+         FROM knowledge_chunks WHERE source = ANY($2)`,
+        [vecStr, pinSources]
+      );
+      pinned = pinnedRows;
+    }
 
-    const texts = all
-      .map(r => `[${r.source}]\n${r.text}`)
-      .join('\n\n---\n\n');
+    // Merge: pinned first, then trusted, then dialogs (без дублей по source)
+    const seen = new Set<string>();
+    const merged: RagChunk[] = [];
+    for (const r of pinned) {
+      if (!seen.has(r.source)) { merged.push({ ...r, pinned: true }); seen.add(r.source); }
+    }
+    for (const r of [...trustedOk, ...dialogOk]) {
+      if (!seen.has(r.source)) { merged.push({ ...r, pinned: false }); seen.add(r.source); }
+    }
+
+    if (!merged.length) return empty;
+
+    const texts = merged.map(r => `[${r.source}]\n${r.text}`).join('\n\n---\n\n');
 
     return {
-      context: `\n\nКОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ (реальные слова Дарьи и отзывы родителей — используй если релевантно, своими словами):\n\n${texts}\n`,
-      isEmpty: false,
+      context: `\n\nКОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ (используй если релевантно, своими словами):\n\n${texts}\n`,
+      chunks: merged,
+      hits: merged.map(r => r.source),
+      isEmpty: pinned.length === 0 && trustedOk.length === 0,
       trustedCount: trustedOk.length,
     };
   } catch {
