@@ -44,13 +44,69 @@ if [ "$DUE" -lt "$MIN_DUE" ] 2>/dev/null; then
   exit 0
 fi
 
-say "созревших волн $DUE — запускаю съём по всем проектам"
+# ── Google — раз в неделю, Яндекс — при каждом съёме (решение владельца 27.10.2026) ──
+# Google был ~75% стоимости проверок, а волны меряются по Яндексу. Поэтому Яндекс
+# снимаем как раньше, а Google добавляем, только если с прошлого его съёма прошло
+# GOOGLE_INTERVAL суток. Индексы регионов берём у самого Топвизора (searcher_key:
+# 0 — Яндекс, 1 — Google). Если узнать их не вышло — снимаем всё, как до правки:
+# лишний Google дешевле, чем пропущенный замер волн.
+GOOGLE_INTERVAL="${GOOGLE_INTERVAL:-7}"
+GOOGLE_STAMP=/var/lib/seo-alerts/last-positions-check-google
+GOOGLE_DUE=1
+if [ -f "$GOOGLE_STAMP" ]; then
+  G_AGE_D=$(( ( $(date +%s) - $(stat -c %Y "$GOOGLE_STAMP") ) / 86400 ))
+  [ "$G_AGE_D" -lt "$GOOGLE_INTERVAL" ] && GOOGLE_DUE=0
+fi
+
+# Вывод: строки "<project_id> <yandex-индексы через запятую> <google-индексы через запятую>", "-" если пусто.
+REGIONS=$(/opt/scripts/mcp-call.sh topvisor projects '{"show_searchers_and_regions":1}' 2>/dev/null | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+items = data.get("result", data) if isinstance(data, dict) else data
+for pr in items if isinstance(items, list) else []:
+    found = {0: [], 1: []}
+    for s in pr.get("searchers") or []:
+        key = s.get("searcher_key", s.get("searcher"))
+        key = int(key) if str(key) in ("0", "1") else None
+        if str(s.get("enabled", 1)) == "0" or key is None:
+            continue
+        for r in s.get("regions") or []:
+            if str(r.get("enabled", 1)) != "0" and r.get("index") is not None:
+                found[key].append(str(r["index"]))
+    if pr.get("searchers") is not None:
+        print(pr["id"], ",".join(found[0]) or "-", ",".join(found[1]) or "-")
+')
+
+[ "$GOOGLE_DUE" = 1 ] && G_NOTE="Google тоже (прошло ≥${GOOGLE_INTERVAL} сут)" || G_NOTE="без Google (был < ${GOOGLE_INTERVAL} сут назад)"
+say "созревших волн $DUE — запускаю съём по всем проектам, $G_NOTE"
 FAILED=""
+GOOGLE_SENT=0
 for pair in $PROJECTS; do
   pid="${pair%%:*}"; name="${pair##*:}"
-  RESP=$(/opt/scripts/mcp-call.sh topvisor check "{\"project_id\":\"$pid\"}" 2>&1) || RESP="ошибка вызова"
+  line=$(printf '%s\n' "$REGIONS" | awk -v p="$pid" '$1==p')
+  if [ -z "$line" ]; then
+    # индексов нет — старое поведение: все поисковики
+    PARAMS="{\"project_id\":\"$pid\"}"; WHAT="все поисковики (регионы не определены)"
+    [ "$GOOGLE_DUE" = 1 ] && GOOGLE_SENT=1
+  else
+    ya=$(echo "$line" | awk '{print $2}'); go=$(echo "$line" | awk '{print $3}')
+    idx=""; WHAT=""
+    [ "$ya" != "-" ] && idx="$ya" && WHAT="Яндекс"
+    if [ "$GOOGLE_DUE" = 1 ] && [ "$go" != "-" ]; then
+      idx="${idx:+$idx,}$go"; WHAT="${WHAT:+$WHAT + }Google"; GOOGLE_SENT=1
+    fi
+    if [ -z "$idx" ]; then
+      say "  $name ($pid): пропуск — нечего снимать (Яндекс выключен, Google не по графику)"
+      continue
+    fi
+    PARAMS="{\"project_id\":\"$pid\",\"regions_indexes\":[$idx]}"
+  fi
+  RESP=$(/opt/scripts/mcp-call.sh topvisor check "$PARAMS" 2>&1) || RESP="ошибка вызова"
   if echo "$RESP" | grep -q "projectIds"; then
-    say "  $name ($pid): съём запущен"
+    say "  $name ($pid): съём запущен — $WHAT"
   else
     say "  $name ($pid): НЕ запущен — ${RESP:0:120}"
     FAILED="$FAILED $name"
@@ -58,6 +114,7 @@ for pair in $PROJECTS; do
 done
 
 date > "$STAMP"
+[ "$GOOGLE_SENT" = 1 ] && date > "$GOOGLE_STAMP"
 
 # ── Страж классификации замеров (08.09.2026) ────────────────────────────────
 # Статус волны ставит агент конвейера по правилу из скилла seo-wave-cycle:
