@@ -119,6 +119,9 @@ export default defineConfig({
         // /shifts/shift-1/ и /shifts/shift-2/ — завершённые смены, nginx отдаёт 301 на
         // /kak-proshla-smena-N/ (sitemap не должен вести на редирект). GSC 26.09.2026.
         !/^https:\/\/aidacamp\.ru\/shifts\/shift-(1|2)\/?$/.test(page) &&
+        // Ещё три адреса, на которые nginx отдаёт 301 (аудит 25.10.2026): /lager-na-iyun/ →
+        // /lager-na-leto/, обе статьи про игровую зависимость → kak-izbavitsya-ot-zavisimosti-ot-igr.
+        !/^https:\/\/aidacamp\.ru\/(lager-na-iyun|stati\/igromaniya-u-detej|stati\/zavisimost-ot-kompyuternyh-igr)\/?$/.test(page) &&
         !page.includes('/smena-taymlayn/') && // персонализированный таймлайн смены (ссылка родителям), не для органики
         !page.includes('/leto-dlya-sebya/') && // noindex={true}, лендинг только под РСЯ (глэмпинги/отели), не для органики
         !page.includes('/privacy-policy/') && // noindex, follow — политика конфиденциальности, не для органики
