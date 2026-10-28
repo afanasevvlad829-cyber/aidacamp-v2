@@ -103,14 +103,29 @@ async function checkBrand() {
 // не errors). Исправлено: 'positionsData' убран из fields, лишний
 // positions_fields (тоже не поддерживаемое имя параметра) убран —
 // historyFields по умолчанию уже включает position.
+// Индекс региона — из настроек проекта: Топвизор перевыдаёт индексы при правке проекта
+// (10.2026: Яндекс/Москва у codims и aidacamp 33 → 712183), с зашитым 33 отчёт молча слеп.
+async function yandexRegionIndex(projId) {
+  const r = await fetch('https://api.topvisor.com/v2/json/get/projects_2/projects/', {
+    method: 'POST',
+    headers: { 'User-Id': TV_USER, 'Authorization': `bearer ${TV_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: ['id'], filters: [{ name: 'id', operator: 'EQUALS', values: [projId] }], show_searchers_and_regions: 1 }),
+  });
+  const j = await r.json();
+  const idx = (j.result?.[0]?.searchers || []).find(s => /yandex/i.test(s.name || ''))?.regions?.[0]?.index;
+  if (!idx) throw new Error('нет региона Яндекса в проекте Топвизора');
+  return idx;
+}
+
 async function checkTopvisor(proj) {
+  const reg = await yandexRegionIndex(proj.id);
   const r = await fetch('https://api.topvisor.com/v2/json/get/positions_2/history/', {
     method: 'POST',
     headers: { 'User-Id': TV_USER, 'Authorization': `bearer ${TV_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       project_id: proj.id, date1: weekAgo, date2: today,
       fields: ['id', 'name'],
-      regions_indexes: [33],
+      regions_indexes: [reg],
     })
   });
   const d = await r.json();
@@ -123,7 +138,7 @@ async function checkTopvisor(proj) {
   keywords.forEach(kw => {
     const pd = kw.positionsData || {};
     const entries = Object.entries(pd)
-      .filter(([k]) => k.endsWith(`:${proj.id}:33`))
+      .filter(([k]) => k.endsWith(`:${proj.id}:${reg}`))
       .map(([k, v]) => [k.slice(0, 10), v.position === '--' || v.position == null ? 100 : Number(v.position)])
       .sort((a, b) => a[0].localeCompare(b[0]));
     if (entries.length < 2) return;
