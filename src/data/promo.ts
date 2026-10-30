@@ -50,6 +50,12 @@ export const PROMOS: Record<string, Promo> = {
     discountPct: 5,
     freeTransfer: true,
   },
+  AIDACROSSLIFE: {
+    code: 'AIDACROSSLIFE',
+    partner: 'Кросслайф',
+    discountPct: 8,
+    freeTransfer: true,
+  },
 };
 
 /** Приводит ввод пользователя к каноническому виду: обрезает пробелы, поднимает регистр. */
