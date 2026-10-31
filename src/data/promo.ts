@@ -54,7 +54,7 @@ export const PROMOS: Record<string, Promo> = {
     code: 'AIDACROSSLIFE',
     partner: 'Кросслайф',
     discountPct: 8,
-    freeTransfer: true,
+    freeTransfer: false,
   },
 };
 
