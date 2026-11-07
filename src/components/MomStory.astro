@@ -323,7 +323,7 @@ const photoH = compact ? 96 : 192;
     try {
       const { submitLead } = await import('../scripts/form-submit');
       const { getStoredPromoCode, promoNoteForLead } = await import('../scripts/promo');
-      await submitLead({
+      const ok = await submitLead({
         phone: phoneInput.value,
         age: '',
         form: 'daria_callback',
@@ -331,6 +331,7 @@ const photoH = compact ? 96 : 192;
         promo: getStoredPromoCode(),
         note_extra: promoNoteForLead(),
       });
+      if (!ok) throw new Error('lead was not accepted');
       // Show success
       const formEls = modal?.querySelectorAll<HTMLElement>('p, input, label, button[id="daria-callback-submit"]');
       formEls?.forEach(el => el.classList.add('hidden'));

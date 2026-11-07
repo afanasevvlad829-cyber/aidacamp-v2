@@ -7,7 +7,7 @@
  * два независимых PR, смерженных на уже сломанный dev.
  *
  * Что проверяем: критический путь заявки. Ошибка здесь — это потерянная
- * заявка, то есть прямые деньги. Внешние вызовы (AlfaCRM, Telegram, Andata)
+ * заявка, то есть прямые деньги. Внешние вызовы (AidaPlus CRM, Telegram, Andata)
  * замоканы; Postgres не трогается сам — без PG_DSN функции дедупа и лога
  * возвращаются раньше обращения к базе.
  */
@@ -23,7 +23,7 @@ vi.mock('../lib/andata', () => ({
 
 const { POST } = await import('../pages/api/lead');
 
-/** Ответ AlfaCRM/Telegram по умолчанию — успешный. */
+/** Ответ AidaPlus/Telegram по умолчанию — успешный. */
 function okResponse(body: unknown = { id: 12345 }) {
   return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
 }
@@ -41,15 +41,12 @@ beforeEach(() => {
   fetchWithTimeout.mockResolvedValue(okResponse());
   vi.stubEnv('TELEGRAM_BOT_TOKEN', 'test-token');
   vi.stubEnv('TELEGRAM_CHAT_ID', '-100500');
+  vi.stubEnv('AIDAPLUS_LEADS_WEBHOOK_SECRET', 'test-secret');
+  vi.stubEnv('AIDAPLUS_LEADS_WEBHOOK_URL', 'http://crm.test/api/leads/webhook');
+  vi.stubEnv('ALLOW_RECOVERY_TEST_LEADS', '');
   // Без DSN дедуп и запись в PG выходят до обращения к базе — тесты не трогают Postgres.
   vi.stubEnv('AIDAPLUS_PG_DSN', '');
   vi.stubEnv('PG_DSN', '');
-  // AlfaCRM должна быть «настроена», иначе createCrmLead выходит раньше вызова
-  // и проверка «тестовый номер не идёт в CRM» стала бы зелёной при любой поломке.
-  vi.stubEnv('ALFACRM_HOSTNAME', 'test.s20.online');
-  vi.stubEnv('ALFACRM_EMAIL', 'test@example.com');
-  vi.stubEnv('ALFACRM_API_KEY', 'test-key');
-  vi.stubEnv('ALFACRM_BRANCH_ID', '1');
 });
 
 afterEach(() => {
@@ -79,7 +76,7 @@ describe('POST /api/lead — тестовые заявки', () => {
   it('обычный номер ИДЁТ в CRM — контроль, что проверка ниже не ложно-зелёная', async () => {
     await POST({ request: request({ phone: '+79688086455', shift: '1 смена' }) } as never);
     const urls = fetchWithTimeout.mock.calls.map((c) => String(c[0]));
-    expect(urls.some((u) => u.includes('s20.online'))).toBe(true);
+    expect(urls.some((u) => u === 'http://crm.test/api/leads/webhook')).toBe(true);
   });
 
   it('номер из диапазона +7999000XXXX не создаёт лид в CRM', async () => {
@@ -89,7 +86,17 @@ describe('POST /api/lead — тестовые заявки', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, test: true });
     const urls = fetchWithTimeout.mock.calls.map((c) => String(c[0]));
-    expect(urls.some((u) => u.includes('s20.online'))).toBe(false);
+    expect(urls.some((u) => u.includes('/api/leads/webhook'))).toBe(false);
+  });
+
+  it('явный recovery-тест с флагом окружения создаёт карточку с тестовым номером', async () => {
+    vi.stubEnv('ALLOW_RECOVERY_TEST_LEADS', 'true');
+    const res = await POST({ request: request({
+      phone: '+79990000000',
+      recovery_test: 'leads-20261107',
+    }) } as never);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, crm_id: 12345 });
   });
 
   it('form_id=health_smoke тоже помечается тестовой', async () => {
@@ -99,19 +106,19 @@ describe('POST /api/lead — тестовые заявки', () => {
 });
 
 describe('POST /api/lead — устойчивость критического пути', () => {
-  it('заявка принимается, даже если внешний вызов упал', async () => {
-    // CRM и Telegram — best-effort: их падение не должно терять заявку.
+  it('не подтверждает заявку, если CRM недоступна', async () => {
     fetchWithTimeout.mockRejectedValue(new Error('ECONNREFUSED'));
     const res = await POST({ request: request({ phone: '+79688086455', shift: '2 смена' }) } as never);
-    expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ ok: true });
+    expect(res.status).toBe(502);
+    expect(await res.json()).toMatchObject({ ok: false, error: 'crm_unavailable' });
   });
 
-  it('без токена Telegram отвечает 500 — заявку некуда доставить', async () => {
+  it('без токена Telegram подтверждает уже созданную карточку CRM', async () => {
     vi.stubEnv('TELEGRAM_BOT_TOKEN', '');
     vi.stubEnv('TELEGRAM_CHAT_ID', '');
     const res = await POST({ request: request({ phone: '+79688086455' }) } as never);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, tg: false, crm_id: 12345 });
   });
 
   it('битый JSON не роняет эндпоинт', async () => {

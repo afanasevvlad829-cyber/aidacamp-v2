@@ -20,7 +20,7 @@ function toggleTheme(){
 }
 function updateThemeIcon(theme){
   const icon=document.getElementById('themeIcon');
-  if(icon) icon.className=theme==='dark'?'bi bi-sun-fill':'bi bi-moon-stars-fill';
+  if(icon) icon.setAttribute('class',theme==='dark'?'bi bi-sun-fill':'bi bi-moon-stars-fill');
 }
 initTheme();
 
@@ -1482,11 +1482,13 @@ async function submitBooking(){
   btn.disabled=true;btn.textContent='Отправляем...';
 
   try{
-    await fetch('/api/lead',{
+    const response=await fetch('/api/lead',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({phone,shift,age,source:'ask-chat',sessionId,landing_url:location.href,page_title:document.title,...promoFields()})
     });
+    const result=await response.json().catch(()=>null);
+    if(!response.ok||result?.ok!==true)throw new Error('lead was not accepted');
     if(typeof ym!=='undefined'){
       ym(YM_COUNTER,'reachGoal','ai_form_submit');
     }

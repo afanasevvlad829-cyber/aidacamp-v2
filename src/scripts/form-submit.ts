@@ -164,7 +164,7 @@ export async function submitLead(data: {
   ]);
 
   try {
-    await fetch('/api/lead', {
+    const response = await fetch('/api/lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -182,6 +182,8 @@ export async function submitLead(data: {
         ym_client_id,
       }),
     });
+    const result = await response.json().catch(() => null) as { ok?: boolean } | null;
+    if (!response.ok || result?.ok !== true) return false;
 
     (window as any)._tmr = (window as any)._tmr || [];
     (window as any)._tmr.push({ type: 'reachGoal', id: MAILRU_PIXEL_ID, value: 6375, goal: 'lead' });

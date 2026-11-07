@@ -6,7 +6,7 @@ import { getPool } from '../../../lib/db';
 import { getCurrentPrice } from '../../../data/dynamicPrices';
 import { signDiscount } from './token';
 import { readVisitorId } from '../../../lib/attribution/cookie';
-import { saveLeadToPg, createCrmLead } from '../lead';
+import { saveLeadToPg, sendToAidaplus } from '../lead';
 
 async function logFortuneEvent(data: {
   event_type: string;
@@ -79,7 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Платёжный шлюз не настроен' }, 503);
   }
 
-  let body: { shiftId?: string; discount?: number; token?: string; name?: string; phone?: string; test?: boolean };
+  let body: { shiftId?: string; discount?: number; token?: string; name?: string; phone?: string; test?: boolean; recovery_test?: string };
   try {
     body = await request.json();
   } catch {
@@ -167,6 +167,7 @@ export const POST: APIRoute = async ({ request }) => {
       form_id: 'Колесо фортуны',
       note_extra: `🎰 Колесо фортуны: скидка ${discount}%, итоговая цена ${finalPrice.toLocaleString('ru')} ₽ (было ${origPrice.toLocaleString('ru')} ₽). OrderId: ${orderId}`,
     };
+    if (body.recovery_test === 'leads-20261107') leadBody.recovery_test = body.recovery_test;
     if (ctx && typeof ctx === 'object') {
       for (const [k, v] of Object.entries(ctx)) {
         if (typeof v === 'string' && v && !(k in leadBody)) leadBody[k] = v;
@@ -178,7 +179,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     let crmId: number | null = null;
     try {
-      crmId = await createCrmLead(leadBody);
+      crmId = await sendToAidaplus(leadBody, null);
     } catch (e: any) {
       console.error('[fortune/init] CRM: заявка не создана:', e?.message);
     }
@@ -188,8 +189,12 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[fortune/init] leads_log: запись не сохранена:', e?.message);
     }
 
+    if (!crmId) {
+      return json({ error: 'CRM недоступна, заявка не принята' }, 502);
+    }
+
     console.log(`[fortune/init] LEAD orderId=${orderId} discount=${discount}% finalPrice=${finalPrice}₽ name="${name}" phone="${phone}" crmId=${crmId ?? 'нет'}`);
-    return json({ leadMode: true, orderId, discount, finalPrice, origPrice });
+    return json({ leadMode: true, orderId, discount, finalPrice, origPrice, crm_id: crmId });
   }
 
   // К этой точке дошли только в payment-режиме (lead вернулся раньше выше) —
