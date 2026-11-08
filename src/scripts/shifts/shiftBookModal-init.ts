@@ -141,7 +141,8 @@ export function initShiftBookModal() {
         promo: getStoredPromoCode(),
         note_extra: promoNoteForLead(Number.isFinite(priceRub) ? priceRub : undefined),
       });
-      if (ok) markSent(dedupKey);
+      if (!ok) throw new Error('lead was not accepted');
+      markSent(dedupKey);
       modal.close();
       const referralModal = document.getElementById('referralModal') as HTMLDialogElement | null;
       referralModal?.showModal();

@@ -257,7 +257,8 @@ const calCards = (calWindows ?? []).map((w) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
-        if (!resp.ok) throw new Error('server error');
+        const result = await resp.json().catch(() => null) as { ok?: boolean } | null;
+        if (!resp.ok || result?.ok !== true) throw new Error('server error');
         form.classList.add('hidden');
         successEl.classList.remove('hidden');
         if (typeof window.ym === 'function') {

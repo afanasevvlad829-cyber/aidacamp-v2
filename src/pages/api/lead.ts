@@ -100,19 +100,32 @@ export async function saveLeadToPg(
  * ночного моста AlfaCRM→aidaplus. Best-effort: секрет/сеть недоступны — не блокируем
  * заявку, она всё равно есть в AlfaCRM/Telegram/ФС/PG.
  */
-async function sendToAidaplus(body: Record<string, string>, crmId: number | null): Promise<void> {
+export async function sendToAidaplus(body: Record<string, string>, crmId: number | null): Promise<number | null> {
   const secret = process.env.AIDAPLUS_LEADS_WEBHOOK_SECRET;
-  if (!secret) return;
+  const url = process.env.AIDAPLUS_LEADS_WEBHOOK_URL || 'https://aidaplus.ru/api/leads/webhook';
+  if (!secret) {
+    console.error('[lead] AIDAPLUS_LEADS_WEBHOOK_SECRET is not configured');
+    return null;
+  }
   try {
-    await fetchWithTimeout('https://aidaplus.ru/api/leads/webhook', {
+    const response = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Leads-Secret': secret },
       // crm_id — 26.08.2026, см. LeadsWebhookController: карточка заводится сразу
       // под этим id, чтобы ночной мост AlfaCRM→aidaplus её обновил, а не задвоил.
       body: JSON.stringify({ site: 'aidacamp', crm_id: crmId ?? undefined, ...body }),
     }, AIDAPLUS_WEBHOOK_TIMEOUT_MS);
-  } catch {
-    // best-effort — не блокируем ответ
+    const data = await response.json().catch(() => null) as { id?: number | string; error?: string } | null;
+    const id = typeof data?.id === 'number' ? data.id
+      : typeof data?.id === 'string' && data.id ? Number(data.id) : null;
+    if (!response.ok || !Number.isInteger(id) || id! <= 0) {
+      console.error(`[lead] AidaPlus webhook failed: HTTP ${response.status}, id missing`);
+      return null;
+    }
+    return id;
+  } catch (error) {
+    console.error('[lead] AidaPlus webhook request failed:', error instanceof Error ? error.message : String(error));
+    return null;
   }
 }
 
@@ -445,7 +458,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Тестовые/проверочные заявки (диапазон +7999000XXXX и health-check) —
     // уведомление в TG уходит беззвучно и с пометкой, чтобы не дёргать
     // менеджеров (владелец 28.08.2026).
-    const isTestLead = digits.startsWith('7999000') || body.form_id === 'health_smoke';
+    const allowRecoveryTest = process.env.ALLOW_RECOVERY_TEST_LEADS === 'true'
+      && body.recovery_test === 'leads-20261107';
+    const isTestLead = !allowRecoveryTest
+      && (digits.startsWith('7999000') || body.form_id === 'health_smoke');
 
     // Извлекаем IP и User-Agent для логирования
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -481,21 +497,19 @@ export const POST: APIRoute = async ({ request }) => {
     const token  = process.env.TELEGRAM_BOT_TOKEN  || import.meta.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID    || import.meta.env.TELEGRAM_CHAT_ID;
 
-    if (!token || !chatId) {
-      return new Response(JSON.stringify({ ok: false, error: 'No TG token' }), { status: 500 });
-    }
-
-    // CRM (best-effort, не блокирует TG)
-    // Тестовые заявки лидов в CRM не создают вовсе (удалить их через API
-    // нельзя — customer/delete в AlfaCRM не существует, проверено 28.08.2026;
-    // владелец: «удаляй тестовые лиды»). Путь проверяется тихим TG + PG-логом.
-    const crmId = isTestLead ? null : await createCrmLead(body);
+    // АйдаПлюс — единственная действующая CRM. В отличие от прежнего
+    // best-effort вызова, ждём её id до ответа: успех без карточки теряет лид.
+    const crmId = isTestLead ? null : await sendToAidaplus(body, null);
 
     // PG лог (best-effort)
     await saveLeadToPg(body, { ip, userAgent, crmId, visitorId });
 
-    // aidaplus CRM (best-effort, переходный период — см. sendToAidaplus)
-    if (!isTestLead) void sendToAidaplus(body, crmId);
+    if (!isTestLead && !crmId) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'crm_unavailable' }),
+        { status: 502, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
 
     // Andata — событие order_new. Fire-and-forget: НЕ ждём ответ и НЕ блокируем
     // путь заявки (у sendAndataEvent есть свой таймаут и он не бросает исключений).
@@ -524,6 +538,12 @@ export const POST: APIRoute = async ({ request }) => {
     // leads_log и файловом бэкапе, этого достаточно для проверки пути.
     if (isTestLead) {
       return new Response(JSON.stringify({ ok: true, test: true, tg: false }), { status: 200 });
+    }
+
+    // Telegram — дополнительный канал. Карточка уже создана в CRM, поэтому
+    // отсутствие токена не превращает принятую заявку в HTTP 500.
+    if (!token || !chatId) {
+      return new Response(JSON.stringify({ ok: true, tg: false, crm_id: crmId }), { status: 200 });
     }
 
     const text = buildTgText(body, crmId);
