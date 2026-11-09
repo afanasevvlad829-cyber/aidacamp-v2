@@ -1,460 +1,143 @@
-name: Deploy
+name: Deploy aidacamp.ru (dev-стенд → промоут → прод)
 
-# Continuous deployment.
+# Автовыкат в восстановленной инфраструктуре (09.11.2026). Поток:
+#   push в dev → deploy-dev  (сборка + выкат на dev-стенд Атласа + smoke)
+#              → promote      (fast-forward main ← dev, тем же SHA)
+#              → deploy-prod  (тот же артефакт с Атласа → Буран, health, автооткат)
+# Триггер — ТОЛЬКО push в dev (слияние PR). push в main выкат не запускает.
 #
-#   push в dev ─┬─ build (1 раз) ─┬→ деплой dev + smoke   (параллельно, прод не ждёт)
-#               │                 └→ merge dev→main → деплой prod → верификация + smoke
-#               └─ typecheck ──────────────────────↑                        ↓ красный
-#                                                                     авто-откат прода
+# Приёмник выката — aida-deploy-recv (репо aidacamp-ops, buran/opt/aida-deploy): ключ
+# DEPLOY_SSH_KEY привязан на хостах к одной команде и одному сайту, произвольного shell нет.
+# Релиз = каталог /…/releases/aidacamp/r/<sha>, переключение ссылкой current + рестарт
+# контейнера + проверка + автооткат на предыдущий релиз при красном health.
+# Артефакт собирается один раз (deploy-dev) и едет в прод ровно тем же архивом.
 #
-# ⚡ dev едет ПАРАЛЛЕЛЬНО проду (2026-08-14). Раньше прод ждал зелёный smoke на
-# dev — это стоило 95с в критическом пути. Размен осознанный: dev перестал быть
-# канарейкой, поломка теперь доезжает до прода и откатывается там сама, вместо
-# того чтобы не доехать вовсе. Окно битого прода — время верификации и smoke,
-# порядка минуты. Обратно это разворачивается одной строкой:
-# `promote: needs: [deploy-dev, typecheck]`.
-#
-# Прод защищён четырьмя рубежами (dev-канарейка ушла, добавился конверсионный smoke):
-#   1) quality-gate.yml (check:banned / check:prices / build — БЕЗ astro check,
-#      required PR-проверка, быстрая — гейтит только мерж в dev);
-#   2) astro check — job `typecheck`, идёт параллельно с build, promote его ждёт
-#      через needs (см. комментарий в job promote) — гейтит прод, не dev;
-#   3) верификация + smoke на самом проде, при провале — авто-откат на последний
-#      backup-* (deploy.sh: fail_deploy → rollback.sh). Это тот же smoke.sh, что
-#      гонялся на dev, так что проверка не потерялась — сместилась во времени.
-#   4) конверсионный smoke прода (scripts/smoke-conversion.sh, шаг 6e — сразу
-#      после обычного smoke.sh, тот же fail_deploy → авто-откат): Метрика
-#      инициализируется, reachGoal доходит, /api/lead принимает заявку —
-#      ловит класс инцидента Partytown 16-18.04.2026 (0 конверсий, −60К₽).
-#
-# ⚠️ main теперь означает «прошло quality + typecheck», а НЕ «проверено на живом
-# окружении»: promote происходит до того, как dev успел ответить.
-#
-# main МЕРЖИТСЯ, а не ресетится. Прежний `reset --hard`-промоут разъезжал
-# истории и терял правки (инцидент 2026-07-07).
-#
-# ⚡ Один build-job на весь пуш (2026-07-26). Раньше deploy-dev и deploy-prod
-# каждый гоняли свой npm run build (guard + astro check + astro build + pagefind)
-# с нуля — до ~18 мин на пуш из-за двойной работы. Теперь: build собирает dist/
-# ОДИН раз и кладёт его в artifact, deploy-dev/deploy-prod его только скачивают
-# и рассылают (SKIP_BUILD=1). Это безопасно ровно потому, что:
-#   - astro check (тайпчек) больше не гейтит ни dev, ни этот build — он гоняется
-#     отдельно и единственный раз в job `promote`, перед прод-веткой
-#     (SKIP_ASTRO_CHECK=1 здесь, см. scripts/check-public-astro.mjs);
-#   - dev и prod сейчас собираются побитово одинаково — DEPLOY_ENV ни на что
-#     не влияет, CDN отключён (см. src/data/cdn.ts) — так что один и тот же
-#     dist/ валиден для обоих окружений, пересборка после тайпчека не нужна.
-#   ⚠️ Если вернут CDN/per-env assetsPrefix — вернуть раздельные билды
-#   (убрать job build, вернуть npm run build внутрь deploy-dev/deploy-prod).
-#
-# Требуется секрет SSH_KEY_PROD (приватный ключ для root@159.194.223.55).
-# Опционально: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID для уведомлений.
+# Адреса: dev-стенд http://192.168.1.43:18201/ (Атлас), прод http://192.168.1.147:18088/ (Буран, LAN).
+# Релиз — рабочее дерево с prod-зависимостями (Astro SSR); секреты и DATABASE_URL живут в site.env на Буране,
+# в артефакт не попадают. Dev-стенд ходит в свою копию БД на Атласе (aida-dev-aidacamp-db), не в прод-базу.
+# Имя job'а прода — ровно `deploy-prod`: по нему evergreen-refresh.yml находит последний успешный выкат. Публичный DNS сайта сейчас указывает на мёртвый IP — выкат от DNS не зависит.
 
-# ⚠️ Автозапуск по push отключён 08.09.2026 при переезде с GitHub на свой
-# Forgejo (git.aidaplus.ru). Причина: зеркальный пуш всех веток разом поставил
-# в очередь 56 прогонов, среди них — выкаты прода из старых веток. Пока CI
-# на новом месте не обкатан, прод выкатывается осознанно: вручную из UI
-# (workflow_dispatch) или скриптом ./scripts/release.sh с машины владельца.
-# Вернуть автодеплой = раскомментировать push-блок ниже.
 on:
   push:
     branches: [dev]
   workflow_dispatch:
     inputs:
-      release_sha:
-        description: 'Изолированный hotfix: полный SHA, уже merged в dev; пусто = обычный dev release'
-        type: string
-        default: ''
-      expected_prod_sha:
-        description: 'Полный текущий prod SHA; обязателен для release_sha'
-        type: string
-        default: ''
-      expected_runtime_digest:
-        description: 'SHA256 manifest текущих client/server; обязателен для isolated release'
-        type: string
-        default: ''
       skip_prod:
-        description: 'Только dev, без прода'
+        description: 'Только dev-стенд, без промоута в прод'
         type: boolean
         required: false
         default: false
 
 concurrency:
-  group: deploy
-  cancel-in-progress: false   # деплой не прерываем на середине
+  group: deploy-aidacamp
+  cancel-in-progress: false
 
 permissions:
   contents: write
-  checks: read   # promote ждёт зелёный check "quality" перед пушем в main
+
+env:
+  ATLAS: vlad@192.168.1.43
+  BURAN: aida@192.168.1.147
+  # публичные ключи хостов (ssh-keyscan 09.11.2026)
+  KNOWN_HOSTS: |
+    192.168.1.147 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINEe7bGAWpR4XpJ9KLAv0sUiV8c+N6ZrGSp12HdjJsol
+    192.168.1.43 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKS3F2Ni8zwBdU9J8oy8EvJ5KHw/1hT8z7l4MzkrtwgX
 
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.pin.outputs.sha }}
-    steps:
-      - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 0 }
-      - id: pin
-        env:
-          RELEASE_SHA: ${{ inputs.release_sha }}
-          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
-          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
-          EVENT: ${{ github.event_name }}
-          REF: ${{ github.ref }}
-        run: |
-          git fetch origin main dev
-          if [ -n "$RELEASE_SHA" ]; then
-            test "$EVENT" = workflow_dispatch
-            test "$REF" = refs/heads/dev
-            printf '%s' "$RELEASE_SHA" | grep -Eq '^[0-9a-f]{40}$'
-            printf '%s' "$EXPECTED_PROD_SHA" | grep -Eq '^[0-9a-f]{40}$'
-            printf '%s' "$EXPECTED_RUNTIME_DIGEST" | grep -Eq '^[0-9a-f]{64}$'
-            MAIN_SHA=$(git rev-parse origin/main)
-            test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
-            git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
-            git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
-            test "$RELEASE_SHA" != "$EXPECTED_PROD_SHA"
-          else
-            RELEASE_SHA=$(git rev-parse origin/dev)
-          fi
-          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
-
-  build:
-    needs: resolve
-    runs-on: ubuntu-latest
-    steps:
-      # fetch-depth: 1 — job только собирает, git-история ему не нужна.
-      # В deploy-dev/deploy-prod намеренно оставлен 0: там deploy.sh сверяет
-      # HEAD с origin/dev (pre-flight guard), и на shallow-клоне это надо
-      # проверять отдельно — экономия 7с того не стоит.
-      - uses: actions/checkout@v5
-        with: { ref: '${{ needs.resolve.outputs.sha }}', fetch-depth: 1 }
-
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'npm' }
-
-      - run: npm ci
-
-      # Кэш минификации HTML (scripts/html-minify-cached.mjs). Ключ по содержимому
-      # каждой страницы, поэтому даже устаревший кэш полезен: совпадут все страницы,
-      # которых правка не коснулась. restore-keys без хэша — берём самый свежий.
-      - name: Кэш минификации HTML
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.cache/html-minify
-          key: htmlmin-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            htmlmin-${{ runner.os }}-
-
-      # SKIP_ASTRO_CHECK=1: astro check по всем 385 страницам (~2.5 мин) уже
-      # прошёл как required quality-gate проверка на этом SHA — не дублируем.
-      # Лимит кучи 2 ГБ, не 5: раннер (eu-runner) — 3.9 ГБ RAM на всех, с прод-сервисами.
-      # Процесс, выросший за 3 ГБ, ядро убивает без сообщения (exit 137) — так падали
-      # сборки dev с 10.10. Пик сборки по замеру ~0.9 ГБ, запас есть.
-      - name: Сборка (один раз на весь пуш)
-        run: SKIP_ASTRO_CHECK=1 NODE_OPTIONS="--max-old-space-size=2048" npm run build --silent
-
-      - name: Загрузка dist как artifact
-        uses: https://code.forgejo.org/forgejo/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3, Forgejo-compatible
-        with:
-          name: site-dist
-          path: dist/
-          retention-days: 1
-
-  # ⚡ Тайпчек отдельным job'ом, параллельно с build (2026-08-14). Он гейтит прод и
-  # больше ничего: от dist/ не зависит, вывод сборки не меняет. Раньше стоял внутри
-  # promote и потому ждал build → deploy-dev, добавляя свои ~2.5 мин прямо в
-  # критический путь push→прод. Теперь стартует одновременно с build и к моменту
-  # промоута давно готов; promote только проверяет его результат через needs.
-  typecheck:
-    needs: resolve
-    if: ${{ inputs.skip_prod != 'true' && inputs.skip_prod != true }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with: { ref: '${{ needs.resolve.outputs.sha }}', fetch-depth: 1 }
-
-      - uses: actions/setup-node@v5
-        with: { node-version: '22', cache: 'npm' }
-
-      - run: npm ci
-
-      - name: Строгий astro check (единственный прод-гейт)
-        run: NODE_OPTIONS="--max-old-space-size=2048" npm run check:public
-
   deploy-dev:
-    if: ${{ !inputs.release_sha }}
-    needs: build
+    name: Сборка + dev-стенд (Атлас) + smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      # fetch-depth: 1 — deploy.sh сверяет только HEAD с origin/dev (pre-flight
-      # guard), история для этого не нужна: ветка чекаутится по имени, remote-ref
-      # на месте. Полный клон стоил ~10с на каждый деплой-job (репозиторий тяжёлый,
-      # в нём 60 МБ картинок в public/).
       - uses: actions/checkout@v5
-        with: { ref: dev, fetch-depth: 1 }
 
-      - name: Установка SSH-ключа
+      - name: SSH-ключ
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
-        run: ./scripts/ci-setup-ssh.sh
-
-      - name: Скачать собранный dist
-        uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
-        with: { name: site-dist, path: dist }
-
-      # Runner-образ не гарантирует rsync (та же причина падения, что закрыли
-      # в deploy-prod 21.09.2026 — там шаг был, тут его забыли завести).
-      - name: Установить rsync для штатного deploy.sh
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          if ! command -v rsync >/dev/null; then
-            apt-get update
-            apt-get install -y --no-install-recommends rsync
-          fi
-          for tool in curl rsync ssh tar bash; do command -v "$tool"; done
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
-      # deploy.sh dev сам гоняет smoke.sh в конце. Красный smoke → exit 1 → поезд встал.
-      # SKIP_BUILD=1 — используем dist из job build, не пересобираем.
-      - name: Деплой на dev + smoke
-        env:
-          SKIP_BUILD: '1'
-        run: ./scripts/deploy.sh dev
-
-      # С 2026-08-14 dev едет параллельно проду и больше НЕ останавливает поезд.
-      # Раньше его падение было заметно само собой — прод просто не выезжал.
-      # Теперь красный dev ничего не блокирует, поэтому о нём нужно узнавать явно,
-      # иначе он молча деградирует и перестанет быть окружением, которому верят.
-      - name: Сигнал о красном dev
-        if: failure()
-        continue-on-error: true
-        env:
-          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Сборка
         run: |
-          [ -z "$TG_TOKEN" ] && { echo "TELEGRAM_BOT_TOKEN не задан — пропускаю"; exit 0; }
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
-            -d chat_id="$TG_CHAT" \
-            -d text="⚠️ dev-деплой упал (прод при этом едет своим путём и проверяется сам)
-          commit: ${{ github.sha }}
-          $RUN_URL" >/dev/null
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          SKIP_ASTRO_CHECK=1 NODE_OPTIONS=--max-old-space-size=3072 npm run build --silent
+          test -f dist/server/entry.mjs && test -d dist/client
+          npm prune --omit=dev --no-audit --no-fund
+          tar --exclude=.git --exclude=.github --exclude='test-results' --exclude=node_modules/.cache --exclude='dist.bak*' -czf "$RUNNER_TEMP/release.tgz" .
+          ls -la "$RUNNER_TEMP/release.tgz"
+
+      - name: Выкат на dev-стенд
+        run: |
+          set -euo pipefail
+          SSH="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15"
+          $SSH "$ATLAS" "upload ${GITHUB_SHA}" < "$RUNNER_TEMP/release.tgz"
+          $SSH "$ATLAS" "activate ${GITHUB_SHA}"
+
+      - name: Smoke dev-стенда
+        run: |
+          set -euo pipefail
+          base=http://192.168.1.43:18201
+          for p in / /stati/ /robots.txt ; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base$p")
+            echo "dev $p -> $code"; [ "$code" = 200 ]
+          done
+          body=$(curl -fsS --max-time 15 "$base/")
+          grep -qi '<title' <<<"$body"
+          echo "Стенд собран из ${GITHUB_SHA}"
 
   promote:
-    needs: [resolve, build, typecheck]
-    if: ${{ inputs.skip_prod != 'true' && inputs.skip_prod != true }}
+    name: Fast-forward main ← dev
+    needs: deploy-dev
+    if: ${{ !inputs.skip_prod }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-
-      # Ждём зелёный required-check "quality" именно на этом SHA перед пушем в main.
-      #
-      # Инцидент 2026-07-26: раньше deploy-dev (со сборкой) был медленнее quality-gate
-      # (~7 мин против ~5 мин) — quality-gate успевал закончиться первым чисто по
-      # случайности порядка, и promote никогда не видел гонку. После ускорения
-      # deploy-dev (~2 мин) он стал финишировать РАНЬШЕ quality-gate, и push в
-      # защищённый main падал: "Required status check "quality" is in progress".
-      # Особенно актуально при squash-мерже PR — squash создаёт НОВЫЙ SHA, для
-      # которого quality-gate стартует с нуля по push-триггеру, а не переиспользует
-      # результат PR-проверки.
-      - name: Дождаться зелёного quality-gate на этом SHA
-        if: ${{ !inputs.release_sha }}
-        # Forgejo (17.09.2026): на раннере нет `gh`, а check-runs — GitHub-only API.
-        # Forgejo Actions пишет результат job'а в commit status с контекстом
-        # «Quality Gate / quality (push)» — читаем его автоматическим токеном прогона.
-        # Берём только push-статус: PR-проверка того же SHA промоуту не указ.
-        env:
-          API: ${{ github.api_url }}
-          REPO: ${{ github.repository }}
-          TOKEN: ${{ github.token }}
-          SHA: ${{ github.sha }}
+      # main получает РОВНО тот SHA, что прошёл smoke. Без форса: если main не предок dev —
+      # это стоп-сигнал (нужен back-merge), а не тихая перезапись.
+      - name: Fast-forward main ← dev
         run: |
-          echo "Жду статус 'quality (push)' на $SHA (таймаут 15 мин)..."
-          for i in $(seq 1 60); do
-            CONCLUSION=$(python3 - <<'PY'
-          import json, os, urllib.request
-          req = urllib.request.Request(
-              f"{os.environ['API']}/repos/{os.environ['REPO']}/commits/{os.environ['SHA']}/status",
-              headers={"Authorization": f"token {os.environ['TOKEN']}"},
-          )
-          try:
-              statuses = json.load(urllib.request.urlopen(req, timeout=30)).get("statuses") or []
-          except Exception as e:
-              print(f"pending(api:{type(e).__name__})")
-              raise SystemExit
-          q = [s for s in statuses
-               if "quality" in s.get("context", "").lower() and "(push)" in s.get("context", "")]
-          q.sort(key=lambda s: s.get("created_at", ""))
-          print(q[-1].get("status", "pending") if q else "pending")
-          PY
-            )
-            echo "  [$i/60] quality: $CONCLUSION"
-            if [ "$CONCLUSION" = "success" ]; then
-              echo "✅ quality зелёный — можно промоутить"
-              exit 0
-            fi
-            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "error" ]; then
-              echo "::error::quality завершился с '$CONCLUSION' — промоут отменён"
-              exit 1
-            fi
-            sleep 15
-          done
-          echo "::error::quality не позеленел за 15 минут — промоут отменён"
-          exit 1
-
-      # ⚡ Прод-гейт (2026-07-26): typescript-тайпчек (`astro check`, ~2.5 мин по
-      # всем 385 страницам) — не в quality-gate (тот быстрый, гейтит только мерж в
-      # dev), а перед КАЖДЫМ автопромоутом. Идея: dev — быстрый прототип (видно
-      # через пару минут после пуша, без тайпчека вообще), прод — строгий. Упал —
-      # main НЕ обновляется, dev остаётся с показанным (но непроверенным по типам)
-      # прототипом, прод — на предыдущей исправной версии.
-      # С 2026-08-14 сам чек живёт в job `typecheck` и крутится параллельно с
-      # build; сюда он приходит через needs — гейт тот же, но не в критическом пути.
-      # Пересборка не нужна: astro check не меняет вывод сборки, только проверяет
-      # типы — dist/, который уже задеплоен на dev, годится и для прода.
-
-      # Fast-forward, а не merge-коммит.
-      #
-      # main получает РОВНО тот SHA, что и dev — тот самый, на котором уже
-      # зелёный quality. Новых непроверенных коммитов в main не появляется,
-      # и ветки физически не могут разойтись.
-      #
-      # Merge-коммит так не умеет: у него свой SHA без статусов, и он
-      # оставляет main впереди dev — после чего strict-проверка блокирует
-      # следующий PR. Именно от этого main и dev разъехались на 16 коммитов,
-      # а хотфикс fix(ask) пришлось коммитить дважды.
-      #
-      # `git push origin dev:main` не форсит: если main не предок dev,
-      # push отклоняется — это стоп-сигнал, а не тихое затирание.
-      - name: Fast-forward main → dev
-        if: ${{ !inputs.release_sha }}
-        env:
-          BUILD_SHA: ${{ needs.resolve.outputs.sha }}
-        run: |
+          set -euo pipefail
           git fetch origin main dev
-          test "$(git rev-parse origin/dev)" = "$BUILD_SHA"
           if ! git merge-base --is-ancestor origin/main origin/dev; then
-            echo "::error::main не является предком dev — fast-forward невозможен."
-            echo "Нужен back-merge main→dev отдельным PR, затем повтор."
+            echo "::error::main не предок dev — fast-forward невозможен (нужен back-merge main→dev)"
             exit 1
           fi
-          git push origin refs/remotes/origin/dev:refs/heads/main
-
-      - name: SSH для проверки исходного прода
-        if: ${{ inputs.release_sha }}
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
-        run: ./scripts/ci-setup-ssh.sh
-
-      - name: Проверить и продвинуть только проверенный hotfix
-        if: ${{ inputs.release_sha }}
-        env:
-          RELEASE_SHA: ${{ needs.resolve.outputs.sha }}
-          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
-          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
-          API_URL: ${{ github.api_url }}
-          REPOSITORY: ${{ github.repository }}
-          API_TOKEN: ${{ github.token }}
-        run: |
-          python3 scripts/check-hotfix-status.py
-          git fetch origin main dev
-          MAIN_SHA=$(git rev-parse origin/main)
-          test "$MAIN_SHA" = "$EXPECTED_PROD_SHA" || test "$MAIN_SHA" = "$RELEASE_SHA"
-          git merge-base --is-ancestor "$EXPECTED_PROD_SHA" "$RELEASE_SHA"
-          git merge-base --is-ancestor "$RELEASE_SHA" origin/dev
-          ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
-          test "$ACTUAL" = "$EXPECTED_PROD_SHA"
-          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < scripts/check-hotfix-runtime.py
-          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 /opt/restic-snapshot.sh
-          ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
-          test "$ACTUAL" = "$EXPECTED_PROD_SHA"
-          ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < scripts/check-hotfix-runtime.py
-          git push origin "$RELEASE_SHA:refs/heads/main"
+          git push origin "${GITHUB_SHA}:refs/heads/main"
 
   deploy-prod:
-    needs: [resolve, promote]
+    name: deploy-prod
+    needs: promote
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      # fetch-depth: 1 — deploy.sh сверяет HEAD с origin/main, история не нужна.
-      - uses: actions/checkout@v5
-        with: { ref: main, fetch-depth: 0 }
-
-      - name: Установка SSH-ключа
+      - name: SSH-ключ
         env:
-          SSH_KEY: ${{ secrets.SSH_KEY_PROD }}
-        run: ./scripts/ci-setup-ssh.sh
-
-      - name: Проверить соответствие main собранному SHA
-        env:
-          BUILD_SHA: ${{ needs.resolve.outputs.sha }}
-          EXPECTED_PROD_SHA: ${{ inputs.expected_prod_sha }}
-          ISOLATED: ${{ inputs.release_sha }}
-          EXPECTED_RUNTIME_DIGEST: ${{ inputs.expected_runtime_digest }}
-          CONTROL_SHA: ${{ github.sha }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          test "$(git rev-parse HEAD)" = "$BUILD_SHA"
-          if [ -n "$ISOLATED" ]; then
-            ACTUAL=$(ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 'cat /var/www/aidacamp/current/.deployed-sha')
-            test "$ACTUAL" = "$EXPECTED_PROD_SHA"
-            git show "$CONTROL_SHA:scripts/check-hotfix-runtime.py" > "$RUNNER_TEMP/check-hotfix-runtime.py"
-            ssh -i "$HOME/.ssh/aidacamp_prod" root@159.194.223.55 python3 - "$EXPECTED_RUNTIME_DIGEST" < "$RUNNER_TEMP/check-hotfix-runtime.py"
-          fi
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
-      # Тот же dist, что уже прошёл smoke на dev — main сейчас == dev SHA
-      # (fast-forward в job promote), пересборка не нужна.
-      - name: Скачать собранный dist
-        uses: https://code.forgejo.org/forgejo/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3, Forgejo-compatible
-        with: { name: site-dist, path: dist }
-
-      - name: Установить rsync для штатного deploy.sh
+      - name: Артефакт Атлас → Буран и активация
         run: |
-          if ! command -v rsync >/dev/null; then
-            apt-get update
-            apt-get install -y --no-install-recommends rsync
-          fi
-          for tool in curl rsync ssh tar bash; do command -v "$tool"; done
+          set -euo pipefail
+          SSH="ssh -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15"
+          $SSH "$ATLAS" "export ${GITHUB_SHA}" | $SSH "$BURAN" "upload ${GITHUB_SHA}"
+          # activate сам откатывается на предыдущий релиз при красном health и возвращает код 1
+          $SSH "$BURAN" "activate ${GITHUB_SHA}"
 
-      - name: Деплой на прод (авто-откат при провале)
-        env:
-          ISOLATED_RELEASE_SHA: ${{ inputs.release_sha && needs.resolve.outputs.sha || '' }}
-          MASTER_AGENT: '1'    # запуск санкционирован этим workflow
-          DEPLOY_YES: '1'      # неинтерактивно: в Actions нет stdin
-          AUTO_ROLLBACK: '1'   # провал верификации/smoke → откат на backup-*
-          SKIP_BUILD: '1'      # используем dist из job build, не пересобираем
-          # Для smoke-conversion.sh: алерт «конверсионный контур сломан, откатывай»
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: ./scripts/deploy.sh prod
-
-      # Переобход в Яндексе (IndexNow) — только страницы, изменившиеся с прошлого выката.
-      # Идёт ПОСЛЕ успешного deploy.sh (верификация и smoke прошли), иначе робот пришёл бы
-      # за ещё не выложенной версией. Бонус-шаг: провал не роняет деплой. Манифест хэшей
-      # живёт на сервере рядом с current/ (rsync --delete его не трогает).
-      - name: IndexNow — переобход изменённых страниц
-        continue-on-error: true
+      - name: Smoke прода
         run: |
-          MANIFEST=/var/www/aidacamp/.indexnow-manifest.json
-          SSH_OPTS="-i $HOME/.ssh/aidacamp_prod -o StrictHostKeyChecking=accept-new"
-          scp $SSH_OPTS "root@159.194.223.55:$MANIFEST" "$RUNNER_TEMP/indexnow-old.json" || : > "$RUNNER_TEMP/indexnow-old.json"
-          python3 scripts/indexnow-deploy.py --dist dist/client \
-            --old-manifest "$RUNNER_TEMP/indexnow-old.json" \
-            --out-manifest "$RUNNER_TEMP/indexnow-new.json"
-          scp $SSH_OPTS "$RUNNER_TEMP/indexnow-new.json" "root@159.194.223.55:$MANIFEST"
-
-      - name: Уведомление в Telegram
-        if: always()
-        continue-on-error: true
-        env:
-          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
-          STATUS: ${{ job.status }}
-        run: |
-          [ -z "$TG_TOKEN" ] && { echo "TELEGRAM_BOT_TOKEN не задан — пропускаю"; exit 0; }
-          if [ "$STATUS" = "success" ]; then ICON="✅"; else ICON="🔥"; fi
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
-            -d chat_id="$TG_CHAT" \
-            -d text="$ICON Прод-деплой: $STATUS
-          commit: ${{ github.sha }}
-          $RUN_URL" >/dev/null
+          set -euo pipefail
+          base=http://192.168.1.147:18088
+          for p in / /stati/ /robots.txt ; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$base$p")
+            echo "prod $p -> $code"; [ "$code" = 200 ]
+          done
+          echo "Прод aidacamp.ru (LAN) на ${GITHUB_SHA}"
