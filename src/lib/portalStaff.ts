@@ -18,6 +18,8 @@ export interface StaffRowFull extends StaffRow {
   staff_key: string | null;
   /** Персональный код-вход (альтернатива TG). NULL — кода нет. */
   code?: string | null;
+  /** Телефон для Telegram-доставки ссылки входа (7XXXXXXXXXX). */
+  phone?: string | null;
 }
 
 /** Запись сотрудника по telegram_id (или null). */
@@ -54,7 +56,7 @@ export async function ensurePending(
 
 export async function listStaff(): Promise<StaffRowFull[]> {
   const rows = await query<StaffRowFull>(
-    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
+    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code, phone FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
   );
   return rows ?? [];
 }
@@ -273,4 +275,9 @@ export async function regenerateStaffCode(id: number): Promise<string | null> {
 /** Убрать код-вход у сотрудника (останется только вход через TG). */
 export async function clearStaffCode(id: number): Promise<void> {
   await query('UPDATE portal_staff SET code=NULL, code_login_at=NULL WHERE id=$1', [id]);
+}
+
+/** Сохраняет контакты Telegram сотрудника (уже провалидированные/нормализованные; null — очистить). */
+export async function setContactById(id: number, phone: string | null, tgUsername: string | null): Promise<void> {
+  await query('UPDATE portal_staff SET phone=$2, tg_username=$3 WHERE id=$1', [id, phone, tgUsername]);
 }
