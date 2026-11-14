@@ -1,0 +1,53 @@
+---
+export const prerender = false;
+import { findStaffByLinkToken, markStaffCodeLogin } from '../../lib/portalStaff';
+import { highestRole } from '../../lib/portalRoles';
+import { signSession } from '../../lib/portalSession';
+import { portalCookieOptions } from '../../lib/portalCookie';
+import { logAuth, logAction } from '../../lib/portalLog';
+
+/**
+ * Постоянная личная ссылка входа сотрудника: /s/<link_token>. Многоразовая — каждый переход
+ * заново выдаёт сессию (как код-вход: sid = portal_staff.id, роль — высшая из ролей).
+ * Отозвать — «Новая ссылка» в карточке сотрудника (старый токен перестаёт работать).
+ */
+const token = String(Astro.params.token || '').trim();
+const ip = Astro.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+const st = token ? await findStaffByLinkToken(token) : null;
+const rs = st ? ((st.roles && st.roles.length > 0) ? st.roles : (st.role ? [st.role] : [])) : [];
+const role = st ? (highestRole(rs as any) ?? rs[0] ?? null) : null;
+const secret = process.env.PORTAL_SESSION_SECRET ?? '';
+
+if (st && role && secret) {
+  const sid = Number(st.id);
+  markStaffCodeLogin(sid).catch(() => {});
+  logAuth({ method: 'link', outcome: 'success', role, ip } as any);
+  logAction({ staffId: sid, action: 'login', entityType: 'session', ip, payload: { method: 'link', role } });
+  Astro.cookies.set('portal_session', signSession(role as any, secret, Date.now(), undefined, sid), portalCookieOptions());
+  return Astro.redirect('/portal/', 303);
+}
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Ссылка недоступна — АйДаКемп</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8f9fb; margin: 0; padding: 24px; color: #0f172a; }
+    .card { max-width: 460px; margin: 40px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; }
+    .err { background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 16px; border-radius: 8px; color: #991b1b; font-size: 14px; }
+    a { color: #ea580c; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Ссылка недоступна</h1>
+    <div class="err">Ссылка заменена или отключена. Попросите администратора прислать новую.</div>
+    <p><a href="/portal/login">Войти по коду</a></p>
+  </div>
+</body>
+</html>

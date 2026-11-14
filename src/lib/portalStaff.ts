@@ -18,6 +18,8 @@ export interface StaffRowFull extends StaffRow {
   staff_key: string | null;
   /** Персональный код-вход (альтернатива TG). NULL — кода нет. */
   code?: string | null;
+  /** Телефон для Telegram-доставки ссылки входа (7XXXXXXXXXX). */
+  phone?: string | null;
 }
 
 /** Запись сотрудника по telegram_id (или null). */
@@ -54,7 +56,7 @@ export async function ensurePending(
 
 export async function listStaff(): Promise<StaffRowFull[]> {
   const rows = await query<StaffRowFull>(
-    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
+    'SELECT id, telegram_id, full_name, tg_username, role, COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code, phone FROM portal_staff ORDER BY active DESC, role NULLS FIRST, created_at',
   );
   return rows ?? [];
 }
@@ -273,4 +275,41 @@ export async function regenerateStaffCode(id: number): Promise<string | null> {
 /** Убрать код-вход у сотрудника (останется только вход через TG). */
 export async function clearStaffCode(id: number): Promise<void> {
   await query('UPDATE portal_staff SET code=NULL, code_login_at=NULL WHERE id=$1', [id]);
+}
+
+/** Сохраняет контакты Telegram сотрудника (уже провалидированные/нормализованные; null — очистить). */
+export async function setContactById(id: number, phone: string | null, tgUsername: string | null): Promise<void> {
+  await query('UPDATE portal_staff SET phone=$2, tg_username=$3 WHERE id=$1', [id, phone, tgUsername]);
+}
+
+/** Постоянный токен ссылки входа сотрудника. rotate=true — выпустить новый (старая ссылка перестаёт работать). */
+export async function getOrCreateLinkToken(id: number, rotate = false): Promise<string | null> {
+  const crypto = await import('node:crypto');
+  if (!rotate) {
+    const r = await query<{ link_token: string | null }>('SELECT link_token FROM portal_staff WHERE id=$1', [id]);
+    if (!r?.length) return null;
+    if (r[0].link_token) return r[0].link_token;
+  }
+  for (let i = 0; i < 5; i++) {
+    const token = crypto.randomBytes(18).toString('base64url');
+    try {
+      const r = await query<{ link_token: string }>(
+        'UPDATE portal_staff SET link_token=$2 WHERE id=$1 RETURNING link_token', [id, token]);
+      return r?.[0]?.link_token ?? null;
+    } catch (e: any) {
+      if (e?.code === '23505') continue;
+      throw e;
+    }
+  }
+  return null;
+}
+
+/** Активный сотрудник по постоянной ссылке /s/<token>. */
+export async function findStaffByLinkToken(token: string): Promise<StaffRowFull | null> {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+  const rows = await query<StaffRowFull>(
+    `SELECT id, telegram_id, full_name, tg_username, role,
+            COALESCE(roles, ARRAY[]::TEXT[]) AS roles, active, staff_key, code
+       FROM portal_staff WHERE link_token=$1 AND active=TRUE`, [token]);
+  return rows?.[0] ?? null;
 }

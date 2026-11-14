@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { requireStaff } from '../../../../lib/portalPerms';
 import { type PortalRole } from '../../../../lib/portalSession';
 import { withDbClient } from '../../../../lib/db';
+import { dbDeps, deliverStaffLink, normalizePhone, normalizeUsername } from '../../../../lib/portalLinkDelivery';
 
 const VALID: PortalRole[] = ['admin', 'rukovoditel', 'teacher', 'vozhaty', 'student'];
 
@@ -39,14 +40,27 @@ export const POST: APIRoute = async ({ locals, request, redirect }) => {
   if (roles.length === 0) return new Response('at least one role required', { status: 400 });
   const staff_key = body.staff_key ? String(body.staff_key).trim() || null : null;
   const activeRole = roles[0];
+  const rawPhone = String(body.phone ?? '').trim();
+  const rawTg = String(body.tg_username ?? '').trim();
+  const phone = rawPhone ? normalizePhone(rawPhone) : null;
+  const tg_username = rawTg ? normalizeUsername(rawTg) : null;
+  if (rawPhone && !phone) return new Response('Неверный телефон', { status: 400 });
+  if (rawTg && !tg_username) return new Response('Неверный @username', { status: 400 });
 
-  await withDbClient(async (c) => {
-    await c.query(
-      `INSERT INTO portal_staff (full_name, role, roles, active, staff_key, approved_by, approved_at)
-       VALUES ($1, $2, $3, TRUE, $4, $5, now())`,
-      [full_name, activeRole, roles, staff_key, sub ?? 0],
+  const newId = await withDbClient(async (c) => {
+    const r = await c.query(
+      `INSERT INTO portal_staff (full_name, role, roles, active, staff_key, approved_by, approved_at, phone, tg_username)
+       VALUES ($1, $2, $3, TRUE, $4, $5, now(), $6, $7) RETURNING id`,
+      [full_name, activeRole, roles, staff_key, sub ?? 0, phone, tg_username],
     );
+    return Number(r.rows[0]?.id);
   });
+
+  // Преподавателю с контактом автоматически уходит постоянная ссылка входа (один раз при создании, без автоповторов).
+  if (newId && roles.includes('teacher') && (phone || tg_username)) {
+    const baseUrl = process.env.PORTAL_PUBLIC_URL || 'https://aidacamp.ru';
+    await deliverStaffLink(newId, { baseUrl }, dbDeps).catch(() => {});
+  }
 
   return redirect('/portal/staff-admin');
 };

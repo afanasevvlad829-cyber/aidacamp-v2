@@ -4,11 +4,13 @@ export const prerender = false;
 import PortalLayout from '../../layouts/PortalLayout.astro';
 import { listStaff } from '../../lib/portalStaff';
 import { listInvites } from '../../lib/portalInvite';
+import { lastDeliveries } from '../../lib/portalLinkDelivery';
+import StaffTgBlock from '../../components/portal/StaffTgBlock.astro';
 
 if (Astro.locals.portalRole !== 'admin') return Astro.redirect('/portal/');
 
 // listStaff и listInvites независимы — запрашиваем параллельно
-const [staff, invites] = await Promise.all([listStaff(), listInvites()]);
+const [staff, invites, deliveries] = await Promise.all([listStaff(), listInvites(), lastDeliveries()]);
 const activeInvites = invites.filter((i) => !i.revoked && !i.used_at && new Date(i.expires_at) > new Date());
 const usedInvites = invites.filter((i) => i.used_at);
 const baseUrl = Astro.url.origin;
@@ -248,6 +250,17 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
             <p class="mt-1 text-[12px] text-body-muted">Если не задавать — сотрудник появится без привязки к семантическому ключу.</p>
           </div>
         </div>
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="form-label">Телефон в Telegram <span class="text-body-muted">(опц.)</span></label>
+            <input name="phone" placeholder="11 цифр" inputmode="tel" class="form-input" />
+          </div>
+          <div>
+            <label class="form-label">@username <span class="text-body-muted">(опц.)</span></label>
+            <input name="tg_username" placeholder="@ivan_ivanov" class="form-input" />
+          </div>
+        </div>
+        <p class="text-[12px] text-body-muted">Преподавателю с телефоном или @username постоянная ссылка входа уйдёт в Telegram сразу после создания.</p>
         <div>
           <label class="form-label">Роли (можно несколько)</label>
           <div class="mt-1 flex flex-wrap gap-3">
@@ -382,6 +395,7 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
           <button type="button" class="staff-code-gen rounded-[8px] border border-primary px-2 py-1 text-[12px] text-primary transition hover:bg-primary-soft">{ph.code ? 'Обновить код' : 'Выдать код'}</button>
           <button type="button" class={`staff-code-revoke rounded-[8px] border border-border px-2 py-1 text-[12px] text-body-muted transition hover:text-red-700 ${ph.code ? '' : 'hidden'}`}>Убрать</button>
         </div>
+        <StaffTgBlock id={ph.id} phone={ph.phone} tgUsername={ph.tg_username} delivery={deliveries.get(ph.id)} />
         <form method="POST" action="/api/portal/staff/by-id">
           <input type="hidden" name="id" value={ph.id} />
           <input type="hidden" name="action" value={ph.active ? 'deactivate' : 'activate'} />
@@ -451,6 +465,7 @@ const roleLabel = (r: string | null | undefined): string => (r ? ROLE_LABELS[r] 
             <button type="button" class="staff-code-gen rounded-[8px] border border-primary px-2 py-1 text-[12px] text-primary transition hover:bg-primary-soft">{s.code ? 'Обновить код' : 'Выдать код'}</button>
             <button type="button" class={`staff-code-revoke rounded-[8px] border border-border px-2 py-1 text-[12px] text-body-muted transition hover:text-red-700 ${s.code ? '' : 'hidden'}`}>Убрать</button>
           </div>
+        <StaffTgBlock id={s.id} phone={s.phone} tgUsername={s.tg_username} delivery={deliveries.get(s.id)} />
         </div>
         <form method="POST" action="/api/portal/staff">
           <input type="hidden" name="telegram_id" value={s.telegram_id!} />
