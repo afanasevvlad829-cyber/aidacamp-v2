@@ -1,5 +1,5 @@
 /**
- * Доставка одноразовой ссылки входа (/i/<token>) сотруднику в Telegram через Green API.
+ * Доставка ПОСТОЯННОЙ ссылки входа (/s/<link_token>, многоразовая) сотруднику в Telegram через Green API.
  *
  * Источник отправки — Telegram-инстанс школы (GREENAPI_SCHOOL_INSTANCE_ID / GREENAPI_SCHOOL_TOKEN,
  * хост GREENAPI_SCHOOL_HOST, по умолчанию https://api.greenapi.com). Ключи — только из окружения.
@@ -7,11 +7,11 @@
  * chatId для Telegram-инстанса (документация Green API, SendMessage):
  *   «79876543210@c.us» — по телефону, «@username» — по нику, «10000000» — по числовому id.
  *
- * Логика вынесена в deliverStaffLink(deps): всё внешнее (БД, invite, HTTP) подаётся снаружи,
+ * Логика вынесена в deliverStaffLink(deps): всё внешнее (БД, токен ссылки, HTTP) подаётся снаружи,
  * поэтому тестируется без сети и без БД. Автоповторов нет: повтор — только кнопкой «Отправить заново».
  */
 import { query, withDbClient } from './db';
-import { createInvite, revokeInvite, type Invite } from './portalInvite';
+import { getOrCreateLinkToken } from './portalStaff';
 
 export type DeliveryStatus = 'queued' | 'sent' | 'failed';
 
@@ -57,7 +57,7 @@ export function resolveTarget(c: StaffContact): TgTarget | null {
 
 export function buildLinkMessage(name: string | null, url: string): string {
   const hello = name ? `Здравствуйте, ${name}!` : 'Здравствуйте!';
-  return `${hello} Это ссылка для входа в портал АйДаКемп. Она одноразовая и действует 14 дней:\n${url}`;
+  return `${hello} Это ваша личная ссылка для входа в портал АйДаКемп, она постоянная — сохраните её:\n${url}`;
 }
 
 export interface StaffForDelivery extends StaffContact {
@@ -68,10 +68,9 @@ export interface StaffForDelivery extends StaffContact {
 
 export interface DeliveryDeps {
   loadStaff(id: number): Promise<StaffForDelivery | null>;
-  /** Отозвать прошлую неиспользованную ссылку этого сотрудника (для «Отправить заново»). */
-  revokePrevious(staffId: number): Promise<void>;
-  createInvite(p: { name: string | null; roles: string[]; created_by: string | null; comment: string }): Promise<Pick<Invite, 'id' | 'token'> | null>;
-  insertDelivery(p: { staff_id: number; invite_id: number | null; target: string; status: DeliveryStatus; error?: string | null }): Promise<number>;
+  /** Постоянный токен ссылки; rotate=true выпускает новый (старая ссылка перестаёт работать). */
+  getLinkToken(staffId: number, rotate: boolean): Promise<string | null>;
+  insertDelivery(p: { staff_id: number; target: string; status: DeliveryStatus; error?: string | null }): Promise<number>;
   updateDelivery(id: number, p: { status: DeliveryStatus; error?: string | null; message_id?: string | null }): Promise<void>;
   send(chatId: string, text: string): Promise<{ idMessage: string | null }>;
 }
@@ -88,7 +87,7 @@ export function safeError(e: unknown): string {
 
 export async function deliverStaffLink(
   staffId: number,
-  opts: { baseUrl: string; createdBy?: string | null },
+  opts: { baseUrl: string; rotate?: boolean },
   deps: DeliveryDeps,
 ): Promise<DeliveryResult> {
   const staff = await deps.loadStaff(staffId);
@@ -97,30 +96,26 @@ export async function deliverStaffLink(
   const raw = staff.phone || staff.tg_username || String(staff.telegram_id ?? '');
   const target = resolveTarget(staff);
   if (!target) {
-    // Валидация ДО отправки и до создания invite.
+    // Валидация ДО отправки и до выдачи ссылки.
     const id = await deps.insertDelivery({
-      staff_id: staffId, invite_id: null, target: raw || '—', status: 'failed',
+      staff_id: staffId, target: raw || '—', status: 'failed',
       error: 'Нет корректного телефона или @username',
     });
     return { ok: false, status: 'failed', error: 'Нет корректного телефона или @username', deliveryId: id };
   }
   if (!staff.roles?.length) {
-    const id = await deps.insertDelivery({ staff_id: staffId, invite_id: null, target: target.chatId, status: 'failed', error: 'У сотрудника нет ролей' });
+    const id = await deps.insertDelivery({ staff_id: staffId, target: target.chatId, status: 'failed', error: 'У сотрудника нет ролей' });
     return { ok: false, status: 'failed', error: 'У сотрудника нет ролей', deliveryId: id };
   }
 
-  await deps.revokePrevious(staffId);
-  const inv = await deps.createInvite({
-    name: staff.full_name, roles: staff.roles, created_by: opts.createdBy ?? null,
-    comment: `auto-link staff#${staffId}`,
-  });
-  if (!inv) {
-    const id = await deps.insertDelivery({ staff_id: staffId, invite_id: null, target: target.chatId, status: 'failed', error: 'Не удалось создать приглашение' });
-    return { ok: false, status: 'failed', error: 'Не удалось создать приглашение', deliveryId: id };
+  const linkToken = await deps.getLinkToken(staffId, opts.rotate === true);
+  if (!linkToken) {
+    const id = await deps.insertDelivery({ staff_id: staffId, target: target.chatId, status: 'failed', error: 'Не удалось выдать ссылку' });
+    return { ok: false, status: 'failed', error: 'Не удалось выдать ссылку', deliveryId: id };
   }
 
-  const deliveryId = await deps.insertDelivery({ staff_id: staffId, invite_id: inv.id, target: target.chatId, status: 'queued' });
-  const url = `${opts.baseUrl.replace(/\/+$/, '')}/i/${inv.token}`;
+  const deliveryId = await deps.insertDelivery({ staff_id: staffId, target: target.chatId, status: 'queued' });
+  const url = `${opts.baseUrl.replace(/\/+$/, '')}/s/${linkToken}`;
   try {
     const r = await deps.send(target.chatId, buildLinkMessage(staff.full_name, url));
     await deps.updateDelivery(deliveryId, { status: 'sent', message_id: r.idMessage });
@@ -135,7 +130,7 @@ export async function deliverStaffLink(
 /** Пачка: пауза между отправками (Green API лимитирует частоту). Последовательно. */
 export async function deliverBatch(
   ids: number[],
-  opts: { baseUrl: string; createdBy?: string | null; pauseMs?: number; sleep?: (ms: number) => Promise<void> },
+  opts: { baseUrl: string; pauseMs?: number; sleep?: (ms: number) => Promise<void> },
   deps: DeliveryDeps,
 ): Promise<DeliveryResult[]> {
   const pause = opts.pauseMs ?? 4000;
@@ -176,22 +171,12 @@ export const dbDeps: DeliveryDeps = {
     const s = r?.[0];
     return s ? { ...s, id: Number(s.id), telegram_id: s.telegram_id == null ? null : Number(s.telegram_id) } : null;
   },
-  async revokePrevious(staffId) {
-    const r = await query<{ invite_id: string }>(
-      `SELECT DISTINCT d.invite_id FROM portal_link_delivery d
-         JOIN portal_invite i ON i.id = d.invite_id
-        WHERE d.staff_id=$1 AND i.used_at IS NULL AND i.revoked = FALSE`, [staffId]);
-    for (const row of r ?? []) await revokeInvite(Number(row.invite_id));
-  },
-  async createInvite(p) {
-    const inv = await createInvite(p);
-    return inv ? { id: inv.id, token: inv.token } : null;
-  },
+  getLinkToken: (staffId, rotate) => getOrCreateLinkToken(staffId, rotate),
   async insertDelivery(p) {
     const r = await query<{ id: string }>(
-      `INSERT INTO portal_link_delivery (staff_id, invite_id, target, status, error)
-       VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-      [p.staff_id, p.invite_id, p.target, p.status, p.error ?? null]);
+      `INSERT INTO portal_link_delivery (staff_id, target, status, error)
+       VALUES ($1,$2,$3,$4) RETURNING id`,
+      [p.staff_id, p.target, p.status, p.error ?? null]);
     return Number(r?.[0]?.id ?? 0);
   },
   async updateDelivery(id, p) {

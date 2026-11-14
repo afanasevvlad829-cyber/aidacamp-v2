@@ -8,8 +8,7 @@ function makeDeps(over: Partial<DeliveryDeps> = {}) {
   const log: string[] = [];
   const deps: DeliveryDeps = {
     loadStaff: vi.fn(async (id) => ({ id, full_name: 'Анна', roles: ['teacher'], phone: '8 (916) 123-45-67', tg_username: null, telegram_id: null })),
-    revokePrevious: vi.fn(async () => { log.push('revoke'); }),
-    createInvite: vi.fn(async () => { log.push('invite'); return { id: 5, token: 'abcd1234' }; }),
+    getLinkToken: vi.fn(async () => { log.push('token'); return 'PERMtoken0123456789abcd'; }),
     insertDelivery: vi.fn(async (p) => { log.push(`ins:${p.status}`); return 11; }),
     updateDelivery: vi.fn(async (_id, p) => { log.push(`upd:${p.status}`); }),
     send: vi.fn(async () => { log.push('send'); return { idMessage: 'MSG1' }; }),
@@ -44,8 +43,8 @@ describe('нормализация контактов', () => {
     expect(resolveTarget({ phone: 'xx', tg_username: 'a' })).toBeNull();
   });
   it('сообщение содержит ссылку и не содержит 6-значного кода', () => {
-    const m = buildLinkMessage('Анна', 'https://aidacamp.ru/i/abcd1234');
-    expect(m).toContain('https://aidacamp.ru/i/abcd1234');
+    const m = buildLinkMessage('Анна', 'https://aidacamp.ru/s/PERMtoken0123456789abcd');
+    expect(m).toContain('https://aidacamp.ru/s/PERMtoken0123456789abcd');
     expect(m).not.toMatch(/\b\d{6}\b/);
   });
 });
@@ -55,14 +54,14 @@ describe('deliverStaffLink', () => {
     const { deps, log } = makeDeps();
     const r = await deliverStaffLink(1, { baseUrl: 'https://aidacamp.ru/' }, deps);
     expect(r).toEqual({ ok: true, status: 'sent', deliveryId: 11 });
-    expect(log).toEqual(['revoke', 'invite', 'ins:queued', 'send', 'upd:sent']);
+    expect(log).toEqual(['token', 'ins:queued', 'send', 'upd:sent']);
     const [chatId, text] = (deps.send as any).mock.calls[0];
     expect(chatId).toBe('79161234567@c.us');
-    expect(text).toContain('https://aidacamp.ru/i/abcd1234');
+    expect(text).toContain('https://aidacamp.ru/s/PERMtoken0123456789abcd');
     expect((deps.updateDelivery as any).mock.calls[0][1].message_id).toBe('MSG1');
   });
 
-  it('невалидный контакт: ничего не отправляем и invite не создаём', async () => {
+  it('невалидный контакт: ничего не отправляем и токен не выдаём', async () => {
     const { deps, log } = makeDeps({
       loadStaff: vi.fn(async (id) => ({ id, full_name: 'Б', roles: ['teacher'], phone: '123', tg_username: null, telegram_id: null })),
     });
@@ -70,7 +69,7 @@ describe('deliverStaffLink', () => {
     expect(r.ok).toBe(false);
     expect(log).toEqual(['ins:failed']);
     expect(deps.send).not.toHaveBeenCalled();
-    expect(deps.createInvite).not.toHaveBeenCalled();
+    expect(deps.getLinkToken).not.toHaveBeenCalled();
   });
 
   it('ошибка Green API: статус failed, ошибка записана, повтора нет', async () => {
@@ -86,14 +85,28 @@ describe('deliverStaffLink', () => {
     expect((await deliverStaffLink(9, { baseUrl: 'x' }, a.deps)).ok).toBe(false);
     const b = makeDeps({ loadStaff: vi.fn(async (id) => ({ id, full_name: 'В', roles: [], phone: '89161234567' })) });
     expect((await deliverStaffLink(1, { baseUrl: 'x' }, b.deps)).ok).toBe(false);
-    expect(b.deps.createInvite).not.toHaveBeenCalled();
+    expect(b.deps.getLinkToken).not.toHaveBeenCalled();
   });
 
-  it('invite не создался → failed без отправки', async () => {
-    const { deps } = makeDeps({ createInvite: vi.fn(async () => null) });
+  it('токен не выдался → failed без отправки', async () => {
+    const { deps } = makeDeps({ getLinkToken: vi.fn(async () => null) });
     const r = await deliverStaffLink(1, { baseUrl: 'x' }, deps);
     expect(r.ok).toBe(false);
     expect(deps.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('постоянная ссылка', () => {
+  it('«Отправить заново» шлёт тот же токен (rotate=false), «Новая ссылка» просит ротацию', async () => {
+    const { deps } = makeDeps();
+    await deliverStaffLink(1, { baseUrl: 'https://x' }, deps);
+    await deliverStaffLink(1, { baseUrl: 'https://x', rotate: true }, deps);
+    expect((deps.getLinkToken as any).mock.calls).toEqual([[1, false], [1, true]]);
+  });
+  it('сообщение не называет ссылку одноразовой и не содержит срока', () => {
+    const m = buildLinkMessage(null, 'https://x/s/T');
+    expect(m).toContain('постоянная');
+    expect(m).not.toMatch(/одноразов|14 дней/);
   });
 });
 

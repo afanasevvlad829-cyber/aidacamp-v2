@@ -1,7 +1,7 @@
 ---
 /**
  * Telegram сотрудника: телефон / @username (редактирование) + статус последней доставки ссылки входа
- * и кнопка «Отправить заново» (новый одноразовый токен, без автоповторов).
+ * и кнопка «Отправить заново» (та же постоянная ссылка) и «Новая ссылка» (новый токен, старый отключается); автоповторов нет.
  */
 import type { LastDelivery } from '../../lib/portalLinkDelivery';
 interface Props {
@@ -38,9 +38,14 @@ const when = delivery ? new Date(delivery.sent_at ?? delivery.created_at).toLoca
     )}
     {delivery && <span class="text-[12px] text-body-muted">{when}</span>}
     {delivery?.status === 'failed' && delivery.error && <span class="text-[12px] text-red-700">{delivery.error}</span>}
-    <form method="POST" action="/api/portal/staff/send-link" onsubmit="return confirm('Отправить новую ссылку входа в Telegram? Прежняя неиспользованная перестанет работать.')">
+    <form method="POST" action="/api/portal/staff/send-link" onsubmit="return confirm('Отправить ссылку входа в Telegram?')">
       <input type="hidden" name="id" value={id} />
       <button type="submit" class="rounded-[8px] border border-primary px-2 py-1 text-[12px] text-primary transition hover:bg-primary-soft">{delivery ? 'Отправить заново' : 'Отправить ссылку'}</button>
+    </form>
+    <form method="POST" action="/api/portal/staff/send-link" onsubmit="return confirm('Выпустить НОВУЮ ссылку и отправить? Прежняя ссылка перестанет работать.')">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="rotate" value="1" />
+      <button type="submit" class="rounded-[8px] border border-border px-2 py-1 text-[12px] text-body-muted transition hover:text-red-700">Новая ссылка</button>
     </form>
   </div>
 </div>

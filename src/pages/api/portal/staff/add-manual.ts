@@ -56,10 +56,10 @@ export const POST: APIRoute = async ({ locals, request, redirect }) => {
     return Number(r.rows[0]?.id);
   });
 
-  // Преподавателю с контактом автоматически уходит одноразовая ссылка входа (один раз, без автоповторов).
+  // Преподавателю с контактом автоматически уходит постоянная ссылка входа (один раз при создании, без автоповторов).
   if (newId && roles.includes('teacher') && (phone || tg_username)) {
     const baseUrl = process.env.PORTAL_PUBLIC_URL || 'https://aidacamp.ru';
-    await deliverStaffLink(newId, { baseUrl, createdBy: String(sub ?? role) }, dbDeps).catch(() => {});
+    await deliverStaffLink(newId, { baseUrl }, dbDeps).catch(() => {});
   }
 
   return redirect('/portal/staff-admin');

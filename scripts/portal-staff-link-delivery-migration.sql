@@ -6,10 +6,13 @@ BEGIN;
 -- Телефон для Telegram-доставки (цифры, 7XXXXXXXXXX). tg_username уже есть.
 ALTER TABLE portal_staff ADD COLUMN IF NOT EXISTS phone TEXT;
 
+-- Постоянный токен ссылки входа /s/<link_token> (не одноразовый). NULL — ссылка не выдавалась.
+ALTER TABLE portal_staff ADD COLUMN IF NOT EXISTS link_token TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_staff_link_token ON portal_staff(link_token) WHERE link_token IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS portal_link_delivery (
   id          BIGSERIAL PRIMARY KEY,
   staff_id    BIGINT NOT NULL REFERENCES portal_staff(id) ON DELETE CASCADE,
-  invite_id   BIGINT,                         -- portal_invite.id (NULL, если отправка не дошла до invite)
   channel     TEXT NOT NULL DEFAULT 'telegram',
   target      TEXT NOT NULL,                  -- chatId, как ушло в Green API (или введённое значение при failed)
   status      TEXT NOT NULL CHECK (status IN ('queued','sent','failed')),
